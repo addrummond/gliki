@@ -13,8 +13,8 @@ CREATE TABLE wikiusers
 CREATE TABLE articles
 (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    -- Either redirect is NULL and source_text and cached_xhtml are non-null,
-    -- or redirect is non-null and source_text and cached_xhtml are both null.
+    -- Either redirect is NULL and cached_xhtml is non-null,
+    -- or redirect is non-null and cached_xhtml is null.
     redirect TEXT,
     source TEXT,
     cached_xhtml,

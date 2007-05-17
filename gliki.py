@@ -505,9 +505,11 @@ class ShowWikiArticle(object):
 
             # Is this a redirect?
             if row['redirect']:
+                # We use a temporary redirect because the redirect could go
+                # away at any time, and we don't want any weird cash issues.
                 raise control.Redirect(links.article_link(row['redirect']),
                                        'text/html; charset=UTF-8',
-                                       'permanent')
+                                       'temporary')
 
             ntitle = row['title']
             cached_xhtml = row['cached_xhtml']
@@ -765,54 +767,8 @@ class ReviseWikiArticle(object):
             dbcon = get_dbcon()
             cur = dbcon.cursor()
 
-            # Check that they're not renaming the article to the title of an
-            # existing article (you cunning bastard, Mue).
-            # Some nasty logic here because we're dealing with two cases:
-            # one where the revision is specified by title, and the other
-            # where it's specified by thread_id.
-            if new_title and ((title is None) or (title != new_title)):
-                rev = get_revision(dbcon, cur, new_title, 1)
-                if rev and ((title is not None) or (rev['threads_id'] != threads_id)):
-                    return my_utils.merge_dicts(
-                        d,
-                        dict(
-                            article_source = source,
-                            article_title = get_title_for_user(),
-                            threads_id = threads_id,
-                            comment = comment,
-                            error_message = "You cannot rename %s to %s because an article with this title already exists." % (get_title_for_user(), new_title),
-                            line = 1,
-                            column = 1
-                        )
-                    )
-
-            # Create a new article.
-            res = cur.execute(
-                """
-                INSERT INTO articles
-                    (id, source, redirect, cached_xhtml, title)
-                    VALUES
-                    (NULL, ?, NULL, ?, ?)
-                """,
-                (source, xhtml_output, new_title)
-            )
-            articles_id = cur.lastrowid
-
-            # Find/create the article using either the title or threads_id provided.
-            if not threads_id:
-                rev = get_revision(dbcon, cur, title, 1)
-                if not rev:
-                    # Create a new thread.
-                    res = cur.execute(
-                        """
-                        INSERT INTO threads (id) VALUES (NULL)
-                        """
-                    )
-                    threads_id = cur.lastrowid
-                else:
-                    threads_id = rev['threads_id']
-            else: # if threads_id
-                # Is this a valid threads_id?
+            # If threads_id is set make sure it is valid.
+            if threads_id:
                 res = cur.execute(
                     """
                     SELECT * FROM threads WHERE id = ?
@@ -822,32 +778,116 @@ class ReviseWikiArticle(object):
                 if len(list(res)) == 0:
                     raise control.BadRequestError()
 
-            # THE threads_id VARIABLE IS NOW SET.
-            res = cur.execute(
+            def make_thread(title):
+                """Find/create the article using the title provided
+                   Returns a thread_id.
                 """
-                INSERT INTO revision_histories
-                   (threads_id, articles_id, revision_date, wikiusers_id, user_comment)
-                   VALUES
-                   (?, ?, ?, ?, ?)
-                """,
-                (threads_id, articles_id, int_time, revision_user_id, comment)
-            )
+                if not threads_id:
+                    rev = get_revision(dbcon, cur, title, 1)
+                    if not rev:
+                        # Create a new thread.
+                        res = cur.execute(
+                            """
+                            INSERT INTO threads (id) VALUES (NULL)
+                            """
+                        )
+                        return cur.lastrowid
+                    else:
+                        return rev['threads_id']
 
-            # Update the links table.
-            revhisid = res.lastrowid
-            linked_to = sourceparser_state['article_refs']
-            for lt in linked_to:
-                cur.execute(
-                """
-                INSERT INTO links (from_revision_histories_id, to_title)
-                VALUES
-                (?, ?)
-                """,
-                (revhisid, lt)
+            #
+            # TODO: Really need some refactoring here.
+            # THE BIG IF: Is it a redirect or not?
+            #
+            if isinstance(r, sourceparser.Redirect):
+                res = cur.execute(
+                    """
+                    INSERT INTO articles
+                    (id, source, redirect, cached_xhtml, title)
+                    VALUES
+                    (NULL, ?, ?, NULL, ?)
+                    """,
+                    (source, r.title, new_title)
+                )
+                articles_id = cur.lastrowid
+
+                # Find/create the article using either the title or threads_id provided.
+                if not threads_id:
+                    threads_id = make_thread(title)
+
+                res = cur.execute(
+                    """
+                    INSERT INTO revision_histories
+                        (threads_id, articles_id, revision_date, wikiusers_id, user_comment)
+                        VALUES
+                        (?, ?, ?, ?, ?)
+                    """,
+                    (threads_id, articles_id, int_time, revision_user_id, comment)
+                )
+            else:
+                # Check that they're not renaming the article to the title of an
+                # existing article (you cunning bastard, Mue).
+                # Some nasty logic here because we're dealing with two cases:
+                # one where the revision is specified by title, and the other
+                # where it's specified by thread_id.
+                if new_title and ((title is None) or (title != new_title)):
+                    rev = get_revision(dbcon, cur, new_title, 1)
+                    if rev and ((title is not None) or (rev['threads_id'] != threads_id)):
+                        return my_utils.merge_dicts(
+                            d,
+                            dict(
+                                article_source = source,
+                                article_title = get_title_for_user(),
+                                threads_id = threads_id,
+                                comment = comment,
+                                error_message = "You cannot rename %s to %s because an article with this title already exists." % (get_title_for_user(), new_title),
+                                line = 1,
+                                column = 1
+                            )
+                        )
+
+                # Create a new article.
+                res = cur.execute(
+                    """
+                    INSERT INTO articles
+                        (id, source, redirect, cached_xhtml, title)
+                        VALUES
+                        (NULL, ?, NULL, ?, ?)
+                    """,
+                    (source, xhtml_output, new_title)
+                )
+                articles_id = cur.lastrowid
+
+                # Find/create the article using either the title or threads_id provided.
+                if not threads_id:
+                    threads_id = make_thread(title)
+
+                # THE threads_id VARIABLE IS NOW SET.
+                res = cur.execute(
+                    """
+                    INSERT INTO revision_histories
+                       (threads_id, articles_id, revision_date, wikiusers_id, user_comment)
+                       VALUES
+                       (?, ?, ?, ?, ?)
+                    """,
+                    (threads_id, articles_id, int_time, revision_user_id, comment)
                 )
 
-            # Update the categories for this article.
-            update_categories_for_thread(dbcon, cur, r, threads_id)
+                # Update the links table.
+                revhisid = res.lastrowid
+                linked_to = sourceparser_state['article_refs']
+                for lt in linked_to:
+                    cur.execute(
+                    """
+                    INSERT INTO links (from_revision_histories_id, to_title)
+                    VALUES
+                    (?, ?)
+                    """,
+                    (revhisid, lt)
+                    )
+
+                # Update the categories for this article.
+                update_categories_for_thread(dbcon, cur, r, threads_id)
 
             dbcon.commit()
         except sqlite.Error, e:

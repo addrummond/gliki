@@ -679,7 +679,7 @@ redirect = (
     StrCI('redirect') >>
     CMany0(Whitespace) >>
     Str("[[") >>
-    SUntil0(escchr, Str("]]")) >>
+    SUntilNRW0(escchr, Str("]]")) >>
     (lambda name:
     CMany0(Whitespace) >>
     EOF >>
@@ -811,7 +811,7 @@ def parse_wiki_document(str, footnotes=True):
 
         # TODO: Find out why duplicate categories sometimes get added to the
         # list. Really obscure behavior no doubt caused by too much backtracking.
-        if not isinstance(r, ParserError):
+        if not (isinstance(r, ParserError) or isinstance(r, Redirect)):
             r.categories = my_utils.unique(r.categories)
 
         if isinstance(r, ParserError):
