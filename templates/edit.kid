@@ -10,18 +10,18 @@ import links
 </head>
 
 <body>
-    <div class="edit_error">
-        <p py:if="locals().has_key('error_message') and error_message">
+    <div class="edit_error" py:if="locals().has_key('error_message') and error_message">
+        <p> 
             <b class="error">The change was not committed due to the following error:</b>
         </p>
-        <p py:if="locals().has_key('error_message') and error_message" class="error">
+        <p class="error">
             At line ${line}, column ${column}: ${error_message}
         </p>
         <p>
             If you are using a reasonably modern browser
             and have Javacript turned on,
-            the cursor in the text box below will have been
-            moved to the position of the error.
+            the region in the text box near the error
+            will have been highlighted.
         </p>
     </div>
 
@@ -50,23 +50,27 @@ ${XML(preview)}
         <input class="f-comment" id="____comment" type="text" name="comment" value="${comment}" size="70"></input>
         <br />
         <label for="____t1">Enter your text here:</label>
-        <textarea name="sourceText" id="____t1" style="width: 100%;" name="source" cols="80" rows="25">${article_source}</textarea>
+        <textarea id="____t1" style="width: 100%;" name="source" cols="80" rows="25">${article_source}</textarea>
         <input name="update" type="submit" value="Update page"></input>
         <input name="preview" type="submit" value="Preview changes"></input>
     </form>
     <license_boilerplate />
 
+    <form>
+        <input type="hidden" id="____errorLineNumber" value="${locals().has_key('line') and line or 1}"></input>
+        <input type="hidden" id="____errorColumnNumber" value="${locals().has_key('column') and column or 0}"></input>
+    </form>
     <script type="text/javascript">
     <!--
     function lineColToIndex(str, line, col) {
         // First get the index of the beginning of the line.
         var i;
-        for (i = 0; i < str.length && line > 0; ++i) {
+        for (i = 0; i < str.length && line > 1; ++i) {
             if (str[i] == '\n') {
-                --line;
+                line -= 1;
             }
             else if (str[i] == '\r') {
-                --line;
+                line -= 1;
                 ++i; // Presumably '\n' will follow.
             }
         }
@@ -77,13 +81,24 @@ ${XML(preview)}
     function setCursorPos(textArea, index) {
         if (textArea.selectionStart) { // Mozilla
             textArea.selectionStart = index;
+            textArea.selectionEnd = index == 0 ? index : index + 5;
         }
         else if (false) { // IE.
             // TODO.
         }
     }
 
-    setCursorPos(document.sourceText, lineColToIndex(document.sourceText.value, ${line}, ${column}));
+    var text = document.getElementById('____t1')
+    setCursorPos(
+        text,
+        lineColToIndex(
+            text.value,
+            parseInt(document.getElementById('____errorLineNumber').value),
+            parseInt(document.getElementById('____errorColumnNumber').value)
+        )
+    );
+
+    text.focus()
     -->
     </script>
 </body>
