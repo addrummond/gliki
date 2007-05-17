@@ -34,8 +34,8 @@ import links
     <p>
         You might want to read about
         <a href="${links.article_link('Gliki-revision-numbering')}" class="article_ref">
-        Gliki's revision numbering system.
-        </a>
+        Gliki's revision numbering system
+        </a>.
     </p>
 ${diff_html and XML(diff_html) or ''}
 </body>
