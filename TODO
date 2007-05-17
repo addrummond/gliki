@@ -7,8 +7,7 @@
   user page has been edited or commented on.
 * Tree drawing (bugs in sizing trees, but 90% complete).
 * Fix bad line/column numbers in parser.
-* At least do something with parser error messages, and use Javascript to place
-  cursor at location of error.
+* Get cursor placement working in IE and other non-Firefox browsers.
 * Preferences page -- either get rid of it or implement email feature.
 * Table of contents for articles.
 * Allow list of articles, list of categories and page history to be split
