@@ -419,6 +419,23 @@ class GenericInternalError(object):
                ]
 generic_internal_error = GenericInternalError()
 
+def get_redirect_path(dbcon, cur, goingfrom, to):
+    """Check whether or not a putative redirect
+       would create a circularity.
+    """
+    visited = [goingfrom, to]
+    while True:
+        rev = get_revision(dbcon, cur, visited[len(visited) - 1], -1)
+        if not rev:
+            return False, visited
+        if not rev['redirect']:
+            return False, visited
+        else:
+            if rev['redirect'] in visited:
+                visited.append(rev['redirect'])
+                return True, visited
+            visited.append(rev['redirect'])
+
 class EditWikiArticle(object):
     def __init__(self, exists):
         self.exists = exists
@@ -476,6 +493,9 @@ class NoSuchRevision(object):
 class ShowWikiArticle(object):
     uris = [VParm(links.ARTICLE_LINK_PREFIX) >> Opt(VParm(links.REVISIONS_SUFFIX), {links.REVISIONS_SUFFIX: '-1' }) >> OptDir()]
 
+    def __init__(self, redirect_path=[]):
+        self.redirect_path = redirect_path
+
     @ok_html
     @showkid('templates/article.kid')
     def GET(self, d, extras):
@@ -505,11 +525,14 @@ class ShowWikiArticle(object):
 
             # Is this a redirect?
             if row['redirect']:
+                # TODO: Using SwitchHandler here is unnecessary and a bit of a
+                # hack.
+                is_circular, path = get_redirect_path(dbcon, cur, title, row['redirect'])
+                assert not is_circular
                 # We use a temporary redirect because the redirect could go
                 # away at any time, and we don't want any weird cash issues.
-                raise control.Redirect(links.article_link(row['redirect']),
-                                       'text/html; charset=UTF-8',
-                                       'temporary')
+                d[links.ARTICLE_LINK_PREFIX] = path[len(path) -1]
+                raise control.SwitchHandler(ShowWikiArticle(path), d, 'GET')
 
             ntitle = row['title']
             cached_xhtml = row['cached_xhtml']
@@ -532,7 +555,8 @@ class ShowWikiArticle(object):
                          newest_article_title=title,
                          revision=revision,
                          threads_id=threads_id,
-                         categories=categories)
+                         categories=categories,
+                         redirects=self.redirect_path)
             merge_login(extras, rdict)
             # If this is a user page, add login info.
             if ntitle.startswith(links.USER_PAGE_PREFIX):
@@ -800,6 +824,23 @@ class ReviseWikiArticle(object):
             # THE BIG IF: Is it a redirect or not?
             #
             if isinstance(r, sourceparser.Redirect):
+                # Check for circular redirects.
+                is_circular, path = get_redirect_path(dbcon, cur, new_title, r.title)
+                if is_circular:
+                    path_string = ' -> '.join(map(lambda s: '"' + s + '"', path))
+                    return my_utils.merge_dicts(
+                        d,
+                        dict(
+                            article_source = source,
+                            article_title = get_title_for_user(),
+                            threads_id = threads_id,
+                            comment = comment,
+                            error_message = "This redirect would lead to a circularity: %s" % path_string,
+                            line = 1,
+                            column = 1
+                        )
+                    )
+
                 res = cur.execute(
                     """
                     INSERT INTO articles

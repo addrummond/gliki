@@ -370,6 +370,15 @@ span.category-sep {
   color: UNDERLINE_GREY;
 }
 
+p.redirects {
+  font-size: SMALL_TEXT;
+  font-style: italic;
+  padding-top: 0;
+  margin-top: 0;
+  padding-bottom: 0;
+  margin-bottom: 0;
+}
+
 form.edit th { text-align: left; }
 
 img.logo { clear: both; }

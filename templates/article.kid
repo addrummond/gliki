@@ -1,7 +1,10 @@
 <?python
 import urllib
 import my_utils
+import htmlutils
 import links
+# KID fucks up if you use an inline Python string with HTML special things.
+rarr = ' &rarr; '
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:py="http://purl.org/kid/ns#" py:extends="'base.kid', 'comment_form.kid'">
@@ -42,6 +45,10 @@ import links
         </span>
     </p>
     <h1 class="article-title">${article_title}</h1>
+    <p py:if="locals().has_key('redirects') and redirects" class="redirects">
+        Redirects:
+        ${XML(rarr.join(map(htmlutils.htmlencode, redirects)))}
+    </p>
     <div class="article-text">
 ${XML(article_xhtml)}
     </div>
