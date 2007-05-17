@@ -13,6 +13,7 @@
 * Allow list of articles, list of categories and page history to be split
   over multiple pages when it gets too big.
 * Log IP addresses for edits made from accounts.
+* Edit conflict support.
 
 == Would be nice ==
 * Remove dependence on diff, and do diffs properly (not just line by line).
