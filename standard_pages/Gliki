@@ -1,0 +1,159 @@
+#CATEGORY [[gliki]]
+
+==The basics==
+This section covers everything you need to know to get started editing.
+
+Gliki is mostly inspired by {{http://www.wikipedia.org|Wikipedia}}, which is great in general, but not so much for linguistics. Gliki is not intended to be an encyclopaedia for a general readership (or indeed an encyclopaedia at all), so there should be much more scope for theoretical discussion than there is on Wikipedia. Gliki has a very loose editorial policy: you can write whatever you like about whatever you like (so long as it's not libelous or a copyright infringement). You don't even have to write about linguistics if you don't want to (although it is encouraged). This being said, there are a few guidelines which editors are expected to follow, and one hard-and-fast rule about copyrighted material and other obviously inappropriate content.
+
+===The guidelines===
+====There is plenty of room====
+There's plenty of room for everyone to advocate their pet theories. It's not a good idea to edit or remove someone else's argument just because you don't like it; instead, explain why you think they're wrong in a separate section or article.
+
+====Capital letters, please====
+Gliki article titles are case-sensitive. By convention, the first word in an article title
+ //always// begins with a capital letter. Also by convention, subsequent words are only capitalized if they're proper nouns. The names of theories and grammatical processes count as proper nouns (e.g. "Government And Binding Theory", "Heavy NP Shift", "Optimality Theory"). Capitalize little words like "and" and "or" if they're part of a proper noun phrase -- it's ugly but it's easier to be consistent this way.
+
+There's one exception to the rule: user pages begin with a lowercase "user " to distinguish them from articles.
+
+====Nothing is off-topic====
+Although this is //intended// to be a wiki for generative linguistics and linguistics in general, there are not any official rules about what's on topic and what isn't, and you should not delete material which isn't relevant to linguistics (unless it's vandalism or {{http://en.wikipedia.org/wiki/Wikipedia:Patent_nonsense|patent nonsense}}).
+
+====Don't be a dick====
+{{http://meta.wikimedia.org/wiki/Don't_be_a_dick|Don't be a dick}} and {{http://meta.wikimedia.org/wiki/Don't_be_dense|Don't be dense}}.
+
+====Rules====
+These are imposed by the law, the terms of the web host, and good taste. No copyrighted material (unless you are the copyright holder and agree to license it), no porn, no libel, no illegal images, and no links to any of the former, with the exception of copyrighted material legitimately hosted on another site.
+
+===Security===
+Gliki accounts are **not** particularly secure. Don't use a high-value password for your Gliki account. This is especially so if you are using Internet Explorer 6 or lower, since its implementation of the more secure HTTP "digest" authentication system is buggy, forcing Gliki to use the less secure "basic" authentication system with this browser. Digest authentication works with just about every other browser (tested on IE7, Firefox, Opera, Safari, Konqueror and w3m).
+
+===Gliki markup===
+The markup language used by Gliki is specially designed to do the sorts of things that linguists like to do, chief among these being numbered examples and footnotes. Before we get onto those, a quick overview of the basic markup.
+
+====Text styles====
+Gliki allows for **bold**, //italic//, __underlined__ and ||small caps|| text, along with |^superscripts^| and |_subscripts_|:
+
+@@
+**some bold text**
+//some italic text//
+__some underlined text__ (two "_" underscores in a row there)
+||some small caps text|| (lower case letters will automatically be converted to upper case)
+|^a superscript^|
+|_a subscript_|
+@@
+
+
+You can combine different kinds of formatting to get monstrosities such as |^||**//__bold, italic and underlined superscript in small caps__//**||^|:
+
+@@
+|^||**//__bold, italic and underlined superscript in small caps__//**||^|
+@@
+
+====Examples====
+Now let's look at examples. Here's a glossed example: ^^This is Finnish, taken from Bresnan (2001, p. 373).^^
+
+    :example:
+    <Hän|_i_|> <auttaa> <minau> <pese-mään> <auto-nsa|_i_|>
+    <3||sg||> <helps> <me> <wash-||inf||> <car-3||P||x>
+    He helps me wash his car
+
+And an automatically numbered reference back to it: [:example:]. Here's the code for the example in Gliki markup:
+
+@@
+    :example:
+    <Hän|_i_|> <auttaa> <minau> <pese-mään> <auto-nsa|_i_|>
+    <3||sg||> <helps> <me> <wash-||inf||> <car-3||P||x>
+    He helps me wash his car
+@@
+
+You introduce the example by putting four (or more) spaces at the beginning of a line. The first part of the above code (":example:") is the label for the example. We've been imaginative and called this one "example". Labels are optional, but they allow you to refer back to examples easily. The second line is the native sentence and the third its literal translation. Note how the words are grouped together using "<...>", allowing the two lines to be properly matched even if there isn't a one-to-one correspondence of words. The fourth line is the gloss. If we want to refer back to this example, we can just write:
+
+@@
+[:example:]
+@@
+
+This will be translated to the example number enclosed in square brackets. You can group examples together like this:
+
+    :example2:
+    (+) :sentence1: Did John see Bill?
+    (+) :sentence2: No, he saw ||Mary||
+
+And refer back to the example group collectively, [:example2:], or refer to each individual example, [:sentence1:], [:sentence2:]. Here's the code for the example:
+
+@@
+    :example2:
+    (+) :sentence1: Did John see Bill?
+    (+) :sentence2: No, he saw ||Mary||
+@@
+
+References to the examples work as before.
+
+====Footnotes====
+You've already seen a couple of footnotes, but here's another ^^Footnote!^^ just for good measure. You insert them into the text like this:
+
+@@
+Blah blah blah ^^footnote text^^ blah blah blah...
+@@
+
+====Sections and subsections====
+Sections look like this:
+
+@@
+==My section==
+Text in my section...
+
+Another paragraph in my section...
+
+===A subsection of my section===
+Text in a subsection of my section...
+
+====A sub-subsection====
+Blah blah...
+
+===Another subsection===
+Blah blah...
+@@
+
+====Lists====
+You can create a simple bullet-point list like this:
+
+@@
+Blah blah blah...
+
+    (*) **First** //bullet// __point__.
+    (*) Second bullet point.
+    (*) Third bullet point.
+
+Blah blah blah...
+@@
+
+The first (*) must be at the beginning of a new paragraph and preceded by four or more spaces (just like an example sentence). The list above looks like this:
+
+    (*) **First** //bullet// __point__.
+    (*) Second bullet point.
+    (*) Third bullet point.
+
+It is, unfortunately, easy to forget that (*) is used in bullet lists whereas (+) is used for examples in a group of examples, rather than the other way round. Numbered lists use (\#):
+
+@@
+    (#) Number 1
+    (#) Number 2
+    (#) Number 3
+@@
+
+This gives:
+
+    (#) Number 1
+    (#) Number 2
+    (#) Number 3
+
+====Categories====
+
+Gliki has a simple system of categories. To add an article to a category, just place the following at the top of the article (or anywhere else, but the top is the conventional place).
+
+@@
+#CATEGORY [[category name]]
+@@
+
+Categories are always converted to lower case (trendy!). Categories are flat, i.e. there is no way of saying that one category is a subcategory of another. Apart from making categories easier to implement, this lack of a complex structure prevents an un-wiki-like hierarchical organization of articles. This article is in the "gliki" category, which contains a small number of articles about various aspects of Gliki. To see all the articles in a category, you can go to http://gliki.whsites.net/categories/CATEGORY_NAME
+

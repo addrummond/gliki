@@ -1,0 +1,42 @@
+== Make development easier ==
+* Add logging function to control.py
+* Allow KID templates to be modified without restarting server.
+
+== Cruicial ==
+* "Last seen" field for users so that we can add a message saying that their
+  user page has been edited or commented on.
+* Tree drawing (bugs in sizing trees, but 90% complete).
+* Finish code in gliki.py for handling redirects.
+* Fix bad line/column numbers in parser.
+* At least do something with parser error messages, and use Javascript to place
+  cursor at location of error.
+* Preferences page -- either get rid of it or implement email feature.
+* Table of contents for articles.
+* Allow list of articles, list of categories and page history to be split
+  over multiple pages when it gets too big.
+* Log IP addresses for edits made from accounts.
+
+== Would be nice ==
+* Remove dependence on diff, and do diffs properly (not just line by line).
+* Unicode audit (unicode seems to work fine, but only by a UTF-8 miracle)
+* Color links to existent/non-existent articles differently.
+* Orphaned, abandoned pages, etc.
+* Provide a way of uploading images.
+* Correct positioning of example numbers.
+* Automatically find the dimensions of images + check that the link isn't broken.
+* Bibliography features. (Could this ever be worth the trouble?)
+* Don't store plaintext passwords?
+
+== Fixing parser error messages ==
+Make sure we get good errors for the following specific cases:
+
+    * EOF before closing of ** etc.
+    * Mismatched bold/italic/etc. closing. E.g. "**fooo//bar**"
+    * Missing == at the end of a section title.
+    * Mismatched '<' and '>' in a glossed example.
+    * [[ or {{ without closing }} or ]].
+    * @@ without closing @@.
+    * "[:example]" instead of "[:example:]"
+    * Subscript/superscript errors (different opening and closing symbols,
+      so perhaps we can do better than for ** etc.)
+

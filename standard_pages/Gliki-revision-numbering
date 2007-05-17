@@ -1,0 +1,13 @@
+#CATEGORY [[gliki]]
+
+Gliki's revision numbering system is used to identify revisions in URLs. For example, the link {{/articles/Gliki/revisions/1}} specifies the earliest revision of the Gliki article. The number after "revisions/" may be one of the following:
+
+    (*) A positive integer: this specifies the nth revision (i.e. 1 is the earliest revision, 2 is the revision after that, etc.)
+    (*) A negative integer: this specifies the -nth most recent revision (i.e. -1 is the most recent revision, -2 is the second most recent, etc.)
+
+**0 is not a valid revision number.**
+
+Note that only the positive integers give references which won't be invalidated as more edits are made.
+You should therefore use a positive integer to link to a particular revision of an article.
+All of the links to revisions on Gliki pages use positive integers.
+

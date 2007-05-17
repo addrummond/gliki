@@ -1,0 +1,1655 @@
+import config
+import sys
+import re
+from urimatch import *
+import control
+from control import ok_text, ok_html, ok_xhtml
+import urllib
+import difflib
+# Python 2.5 has sqlite support built in, with a different module name.
+# String comparison for version numbers looks dodgy but it does actually
+# work.
+if (sys.version.split(' ')[0]) >= '2.5':
+    from sqlite3 import dbapi2 as sqlite
+else:
+    from pysqlite2 import dbapi2 as sqlite
+import kid
+import time
+import htmlutils
+import itertools
+import myitertools
+import my_utils
+import sourceparser
+import treedraw
+import types
+import base64
+import parcombs
+import cairo
+import StringIO
+import links
+from my_utils import *
+
+USER_AUTH_REALM = "Wikiuser"
+USER_AUTH_METHOD = 'digest'
+
+DATABASE = "main.db"
+
+SERVER_PORT = 3000
+
+def showkid(file, serializer=kid.HTMLSerializer(encoding=config.ARTICLE_XHTML_ENCODING)):
+    """Decorator for handler methods which passes the return value of the method
+       into a Kid template.
+    """
+    #kid.enable_import()
+
+    def decorator(f):
+        template_module = kid.load_template(file, cache=1)
+
+        def r(*args):
+            parms = f(*args)
+            t = template_module.Template(file=file, **parms)
+            return [t.serialize(output=serializer)]
+        return r
+    return decorator
+
+__ie6_regex = re.compile(r"MSIE\s*([^;]+)")
+__number_regex = re.compile(r"(\d*)(\.)?(\d*)")
+def browser_is_ie6_or_earlier(extras):
+    """Used to prevent digest authentication being used with IE6, which has
+       a broken implementation (typical).
+    """
+    agent = extras.env['HTTP_USER_AGENT']
+    m = __ie6_regex.search(agent)
+    if not m:
+        return False
+    else:
+        number_string = m.groups(1)[0]
+        majmi = __number_regex.search(number_string)
+        if not majmi: # Should never be true, really.
+            return False
+        else:
+            n = float(majmi.groups(0)[0])
+            return n < 7.0
+
+def get_auth_method(extras):
+    if browser_is_ie6_or_earlier(extras):
+        return 'basic'
+    else:
+        return USER_AUTH_METHOD
+
+def merge_login(extras, dict):
+    """Merges username and user_id into a dictionary if the HTTP header
+       has auth information. Raises AuthenticationRequired if auth info is
+       given but is incorrect."""
+    if not extras.auth:
+        return dict
+    elif isinstance(extras.auth, control.Extras.DigestAuth) and extras.auth.bad_auth_header:
+        raise control.AuthenticationRequired(
+            USER_AUTH_REALM,
+            get_auth_method(extras),
+            stale=extras.auth.bad_because == 'stale_nonce')
+    elif isinstance(extras.auth, control.Extras.BasicAuth) or isinstance(extras.auth, control.Extras.DigestAuth):
+        authfunc = None
+        if isinstance(extras.auth, control.Extras.BasicAuth):
+            authfunc = lambda p: p == extras.auth.password
+        else:
+            authfunc = extras.auth.test
+
+        id = dbcon_check_bonafides(extras.auth.username, authfunc)
+        if id:
+            dict['username'] = extras.auth.username
+            dict['user_id'] = id
+            return dict
+        else:
+            raise control.AuthenticationRequired(USER_AUTH_REALM, get_auth_method(extras))
+    else:
+        assert False
+
+__qstring = \
+    """
+    SELECT articles.title, articles.source, articles.cached_xhtml, articles.id, revision_histories.threads_id, revision_histories.revision_date, revision_histories.user_comment, articles.redirect, wikiusers.username
+        FROM
+            (SELECT threads_id
+             FROM
+                (SELECT MAX(revision_date), threads_id, title
+                 FROM revision_histories
+                 INNER JOIN articles ON articles.id = revision_histories.articles_id
+                 GROUP BY revision_histories.threads_id
+                 ) query1
+             WHERE query1.title = ?
+            ) query2
+            INNER JOIN revision_histories ON revision_histories.threads_id = query2.threads_id
+            INNER JOIN articles ON articles.id = revision_histories.articles_id
+            INNER JOIN wikiusers ON revision_histories.wikiusers_id = wikiusers.id
+        ORDER BY revision_histories.revision_date %s
+        LIMIT -1 OFFSET %i
+    """ 
+
+def __row_to_hash(r):
+    return {
+        'title'         : r[0],
+        'source'        : r[1],
+        'cached_xhtml'  : r[2],
+        'articles_id'   : r[3],
+        'threads_id'    : r[4],
+        'revision_date' : r[5],
+        'comment'       : r[6],
+        'redirect'      : r[7],
+        'username'      : r[8]
+    }
+
+def get_revision(dbcon, cur, title, revision):
+    """Get a particular revision of a particular title
+       (returns a dictionary).
+    """
+    assert revision != 0
+    use_desc = True
+    if revision > 0:
+        use_desc = False
+    offset = abs(revision) - 1
+
+    qstring = __qstring % (use_desc and "DESC" or "", offset)
+
+    rows = cur.execute(
+        qstring,
+        (title,)
+    )
+    rows = list(rows)
+
+    for r in rows:
+        return __row_to_hash(r)
+    # If no revisions for this title were found.
+    return None
+
+def make_article_exists_pred(dbcon, cur):
+    """Returns predicate to be passed to sourceparser.translate_to_xhtml(...)"""
+    def pred(title):
+        rev = get_revision(dbcon, cur, title, 1)
+        if rev:
+            return True
+        else:
+            return False
+
+def get_ordered_revisions(dbcon, cur, title):
+    """Get all revisions of a title, most recent first."""
+    qstring = __qstring % ("DESC", 0)
+    rows = cur.execute(
+        qstring,
+        (title,)
+    )
+    rows = map(__row_to_hash, rows)
+    l = len(rows)
+    for i, row in itertools.izip(itertools.count(0), rows):
+        row['diff_revs_pair'] = (l - i,
+                                 l - i != 1 and l - i - 1 or None)
+    return rows
+
+def get_diff_revision_number_pair(dbcon, cur, threads_id, revision_date):
+    revs = cur.execute(
+        """
+        SELECT revision_date FROM revision_histories
+        WHERE revision_histories.threads_id = ?
+        ORDER BY revision_date ASC
+        """,
+        (threads_id,)
+    )
+
+    for num, rev in itertools.izip(itertools.count(1), revs):
+        if rev[0] == revision_date:
+            if num == 1:
+                return((1, None))
+            else:
+                return((num, num - 1))
+    return None # Error.
+
+def delete_article(dbcon, cur, title):
+    """Delete an article with a given title.
+       Returns True if the article exists, or False if it doesn't.
+    """
+    # TODO: The loop will be quite inefficient for articles with lots of
+    # revisions. The loop should really be moved inside the SQL query.
+    # Anyway, deleting articles shouldn't be a very common operation, so
+    # this shouldn't be too much of a problem.
+
+    revs = get_ordered_revisions(dbcon, cur, title)
+    exists = False
+    first_iteration = True
+    for r in revs:
+        exists = True
+
+        cur.execute(
+            """
+            DELETE FROM articles WHERE id = ?
+            """,
+            (r['articles_id'],)
+        )
+
+        if first_iteration:
+            cur.execute(
+                """
+                DELETE FROM threads WHERE id = ?
+                """,
+                (r['threads_id'],))
+
+        first_iteration = False
+    dbcon.commit()
+    return exists
+
+def article_is_on_watchlist(username, title):
+    """Checks whether an article is on a given user's watchlist.
+       Returns a boolean.
+    """
+    try:
+        dbcon = get_dbcon()
+        cur = dbcon.cursor()
+
+        # Is this article already on the user's watchlist?
+        res = cur.execute(
+            """
+            SELECT q1.articles_id FROM
+                (SELECT MAX(revision_date), articles_id, threads_id
+                 FROM revision_histories
+                 GROUP BY revision_histories.threads_id) q1
+            INNER JOIN watchlist_items ON
+                (watchlist_items.wikiusers_id IN
+                     (SELECT id FROM wikiusers WHERE username = ?))
+                AND
+                watchlist_items.threads_id = q1.threads_id
+            INNER JOIN articles ON
+                articles.title = ? AND
+                q1.articles_id = articles.id
+            """,
+            (username, title)
+        )
+
+        for r in res:
+            if len(r) != 1: continue
+            return True
+        return False
+    except sqlite.Error, e:
+        dberror(e)
+
+def get_list_of_categories_for_thread(dbcon, cur, thread):
+    res = cur.execute(
+              """
+              SELECT name FROM category_specs
+              WHERE category_specs.threads_id = ?
+              """,
+              (thread,)
+          ) 
+    return list(map(lambda x: x[0].lower(), res))
+
+def add_thread_to_categories(dbcon, cur, thread, categories):
+    # SQLITE DOESN'T SUPPORT THIS SYNTAX.
+    #values = ','.join(itertools.repeat('(?, ?)', len(categories)))
+    #qstring = """
+    #    INSERT INTO category_specs (threads_id, name)
+    #    VALUES %s
+    #""" % values
+    #print qstring
+    #cur.execute(qstring, my_utils.flatten_list(map(lambda cat: (thread, cat), categories)))
+
+    for c in categories:
+        cur.execute(
+            """
+            INSERT INTO category_specs (threads_id, name)
+            VALUES (?, ?)
+            """,
+            (thread, c.lower())
+        )
+
+def remove_thread_from_categories(dbcon, cur, thread, categories):
+    # SQLITE DOESN'T SUPPORT THIS SYNTAX.
+    #expr = 'OR '.join(itertools.repeat('category_specs.name = ?', len(categories)))
+    #qstring = """
+    #    DELETE FROM category_specs
+    #    WHERE category_specs.threads_id = ? AND (%s)
+    #""" % expr
+    #print qstring
+    #cur.execute(qstring, [thread] + categories)
+
+    for c in categories:
+        cur.execute(
+            """
+            DELETE FROM category_specs
+            WHERE threads_id = ? AND name = ?
+            """,
+            (thread, c)
+        )
+
+def update_categories_for_thread(dbcon, cur, parse_result, thread):
+    current_cats = get_list_of_categories_for_thread(dbcon, cur, thread)
+    specified_cats = parse_result.categories
+    new, removed = diff_lists(current_cats, specified_cats)
+    add_thread_to_categories(dbcon, cur, thread, new)
+    remove_thread_from_categories(dbcon, cur, thread, removed)
+
+def check_bonafides(dbcon, cur, username, check_func):
+    res = cur.execute(
+        """
+        SELECT wikiusers.id, wikiusers.password FROM wikiusers
+        WHERE wikiusers.username = ?
+        """,
+        (username,)
+    )
+    rlist = list(res)
+    if len(rlist) == 0:
+        return False
+    elif check_func(rlist[0][1]):
+        return rlist[0][0] # The user ID.
+    else:
+        return False
+
+def dbcon_check_bonafides(username, check_func):
+    try:
+        dbcon = get_dbcon()
+        cur = dbcon.cursor()
+        return check_bonafides(dbcon, cur, username, check_func)
+    except sqlite.Error, e:
+        dberror(e)
+
+class DatabaseError(object):
+    @ok_html
+    def GET(self, dict, extras):
+        r = ''
+        if dict['exception']:
+            r = str(dict['exception'])
+        return ['<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">',
+                '<html><head><title>Database error - Gliki</title></head>',
+                '<body><h2>Server error</h2>',
+                '<p>There was an error connecting to the database: "%s"</p>' % htmlutils.htmlencode(str(dict['exception'])),
+                '</body></html>'
+               ]
+database_error = DatabaseError()
+
+def dberror(e): raise control.SwitchHandler(database_error, dict(exception=e), 'GET')
+
+def get_dbcon():
+    return sqlite.connect(DATABASE)
+
+def get_anon_user_wikiuser_id(ipaddress):
+    """Given an IP address, return the user ID for the anonymous user at this
+       address. A new account is created if necessary.
+    """
+    try:
+        dbcon = get_dbcon()
+        cur = dbcon.cursor()
+
+        # Does this anon user already exist?
+        rows = cur.execute(
+        """
+        SELECT wikiusers.id FROM wikiusers WHERE username = ?
+        """,
+        (ipaddress,)
+        )
+        for r in rows:
+            if len(r) == 1:
+                return r[0] # Return the wikiuser.id field
+
+        # We need to create the user.
+        cur.execute(
+        """
+        INSERT INTO wikiusers (id, username, email, password)
+        VALUES
+        (NULL, ?, NULL, NULL)
+        """,
+        (ipaddress,)
+        )
+
+        id = cur.lastrowid
+        dbcon.commit()
+        return id
+    except sqlite.Error, e:
+        dberror(e)
+
+def unixify_text(source):
+    source = source.replace("\r\n", "\n") # Windows?
+    if '\r' in source: # Anyone still using Mac classic?
+        source = source.replace("\r", "\n")
+    return source
+
+class GenericInternalError(object):
+    @ok_html
+    def GET(self, dict, extras):
+        return ['<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">',
+                '<html><head><title>Server error - Gliki</title></head>',
+                '<body><h2>Server error</h2>',
+                "<p>Something's up with the server</p>",
+                '</body></html>'
+               ]
+generic_internal_error = GenericInternalError()
+
+class EditWikiArticle(object):
+    def __init__(self, exists):
+        self.exists = exists
+
+    uris = [VParm(links.ARTICLE_LINK_PREFIX) >> Opt(VParm(links.REVISIONS_SUFFIX), { links.REVISIONS_SUFFIX: '-1' }) >> Abs(links.EDIT_SUFFIX) >> OptDir()]
+
+    @ok_html
+    @showkid('templates/edit.kid')
+    def GET(self, parms, extras):
+        title = urllib.unquote(unfutz_article_title(parms[links.ARTICLE_LINK_PREFIX]))
+        text = ''
+        revision = None
+        try:
+            revision = int(parms[links.REVISIONS_SUFFIX])
+            if revision == 0: raise ValueError()
+        except (KeyError, ValueError):
+            raise control.BadRequestError()
+
+        rev = None
+        if self.exists:
+            try:
+                dbcon = get_dbcon()
+                cur = dbcon.cursor()
+
+                rev = get_revision(dbcon, cur, title, revision)
+            except sqlite.Error, e:
+                dberror(e)
+        source = ''
+        if rev:
+            source = rev['source']
+        comment = ''
+        if source == '': comment = 'First version'
+        return merge_login(extras,
+                           dict(article_source=source,
+                                article_title=title,
+                                # This allows the edit form to edit the correct
+                                # article even if the article is renamed while
+                                # the user is editing it.
+                                threads_id=(rev and rev['threads_id'] or None),
+                                comment=comment,
+                                error_message=None))
+edit_wiki_article = EditWikiArticle(True)
+
+class NoSuchRevision(object):
+    def __init__(self, kind, title):
+        assert kind == 'show' or kind == 'diff'
+        self.kind = kind
+        self.title=title
+
+    @ok_html
+    @showkid('templates/no_such_revision.kid')
+    def GET(self, parms, extras):
+        return dict(kind=self.kind, article_title=self.title)
+
+class ShowWikiArticle(object):
+    uris = [VParm(links.ARTICLE_LINK_PREFIX) >> Opt(VParm(links.REVISIONS_SUFFIX), {links.REVISIONS_SUFFIX: '-1' }) >> OptDir()]
+
+    @ok_html
+    @showkid('templates/article.kid')
+    def GET(self, d, extras):
+        try:
+            title = urllib.unquote(unfutz_article_title(d[links.ARTICLE_LINK_PREFIX]))
+            revision = None
+            try:
+                revision = int(d[links.REVISIONS_SUFFIX])
+                if revision == 0: raise ValueError()
+            except (KeyError, ValueError):
+                raise control.BadRequestError()
+            dbcon = get_dbcon()
+            cur = dbcon.cursor()
+            rows = None
+
+            row = get_revision(dbcon, cur, title, revision)
+            if not row:
+                # Let's see whether or not /some/ revision of the article exists.
+                row = get_revision(dbcon, cur, title, 1)
+                if row:
+                    # The article exists, but that revision of it doesn't.
+                    raise control.SwitchHandler(NoSuchRevision('show', title), { }, 'GET')
+                else:
+                    # The article doesn't exist at all.
+                    raise control.SwitchHandler(
+                        EditWikiArticle(exists=False), { links.ARTICLE_LINK_PREFIX: title, links.REVISIONS_SUFFIX: '-1' }, 'GET')
+
+            # Is this a redirect?
+            if row['redirect']:
+                raise control.Redirect(links.article_link(row['redirect']),
+                                       'text/html; charset=UTF-8',
+                                       'permanent')
+
+            ntitle = row['title']
+            cached_xhtml = row['cached_xhtml']
+            articles_id = row['articles_id']
+            threads_id = row['threads_id']
+
+            # Get the list of categories that the article belongs to.
+            res = cur.execute(
+                """
+                SELECT DISTINCT name FROM category_specs WHERE category_specs.threads_id = ?
+                """,
+                (row['threads_id'],)
+            )
+            categories = list(map(lambda x: x[0], res))
+
+            # We pass in the threads_id so that this can be added as a hidden
+            # value in the comment submission form.
+            rdict = dict(article_xhtml=cached_xhtml,
+                         article_title=ntitle,
+                         newest_article_title=title,
+                         revision=revision,
+                         threads_id=threads_id,
+                         categories=categories)
+            merge_login(extras, rdict)
+            # If this is a user page, add login info.
+            if ntitle.startswith(links.USER_PAGE_PREFIX):
+                # If this is the currently' logged in user's userpage,
+                # add a link to the user's preferences.
+                if rdict.has_key('username') and rdict['username'] == ntitle.lstrip(links.USER_PAGE_PREFIX):
+                    rdict['show_prefs_link'] = True
+            # Show a watch/unwatch link if the user is logged in.
+            if rdict.has_key('username'):
+                rdict['on_watchlist'] = article_is_on_watchlist(rdict['username'], ntitle)
+
+            return rdict
+        except sqlite.Error, e:
+            dberror(e)
+show_wiki_article = ShowWikiArticle()
+
+class RecentChangesList(object):
+    # /recent-changes/             List of 50 most recent changes
+    # /recent-changes/100          List of 100 most recent changes
+    # /recent-changes/from/65      List of 50 most recent changes with offset 65
+    # /recent-changes/from/65/100  List of 100 most recent changes with offset 65
+    uris = [Abs(links.RECENT_CHANGES) >> Opt(VParm(links.FROM_SUFFIX), {'from' : 0}) >> Opt(Selector('n'), {'n' : 50}) >> OptDir()]
+
+    @ok_html
+    @showkid('templates/recent_changes_list.kid')
+    def GET(self, parms, extras):
+        from_, n = None, None
+        try:
+            from_ = int(parms['from'])
+            n = int(parms['n'])
+        except ValueError:
+            raise control.BadRequestError()
+
+        # Don't allow enormous requests.
+        if n > 1000:
+            raise control.BadRequestError()
+
+        try:
+            dbcon = get_dbcon()
+            cur = dbcon.cursor()
+
+            # Quite complex because we need to get the most recent title for
+            # each thread (otherwise we get diff links with old article titles,
+            # which don't work).
+            most_recent_revisions = cur.execute(
+                """
+                SELECT title, user_comment, revision_date, threads_id, username, newest_title FROM revision_histories
+                INNER JOIN articles ON revision_histories.articles_id = articles.id
+                INNER JOIN wikiusers ON wikiusers_id = wikiusers.id
+                INNER JOIN (
+                    SELECT MAX(revision_date), articles.title AS newest_title, threads_id AS matching_threads_id FROM revision_histories
+                    INNER JOIN threads ON threads.id = revision_histories.threads_id
+                    INNER JOIN articles ON articles.id = revision_histories.articles_id
+                    GROUP BY revision_histories.threads_id
+                ) ON threads_id = matching_threads_id
+                ORDER BY revision_date DESC
+                LIMIT ?
+                OFFSET ?
+                """,
+                (n, from_)
+            )
+            most_recent_revisions = list(most_recent_revisions)
+
+            # For each of these changes, we want to find out the revision number
+            # of the preceding revision so we can give a link to a diff.
+            revnos = []
+            for r in most_recent_revisions:
+                threads_id = r[3]
+                revision_date = r[2]
+
+                rnp = get_diff_revision_number_pair(dbcon, cur, threads_id, revision_date)
+                assert rnp
+                revnos.append(rnp)
+
+            changes = map(lambda r_and_n:
+                              dict(article_title=r_and_n[0][0],
+                                   newest_article_title=r_and_n[0][5],
+                                   comment=r_and_n[0][1],
+                                   date=time.gmtime(int(r_and_n[0][2])),
+                                   username=r_and_n[0][4],
+                                   diff_revno_pair=r_and_n[1]),
+                          itertools.izip(most_recent_revisions, revnos))
+
+            return merge_login(extras, dict(changes=changes, from_=from_, n=n))
+        except sqlite.Error, e:
+            dberror(e)
+recent_changes_list = RecentChangesList()
+
+class ReviseWikiArticle(object):
+    # We allow the article to be specified either by the threads_id or the title.
+    uris = [
+        # By title.
+        VParm(links.ARTICLE_LINK_PREFIX) >> Abs(links.REVISE_SUFFIX) >> OptDir(),
+        # By threads_id.
+        VParm(links.REVISE_PREFIX) >> OptDir()
+    ]
+
+    @ok_html
+    @showkid('templates/edit.kid')
+    def POST(self, parms, extras):
+        int_time = int(time.time())
+
+        title, source, threads_id = None, None, None
+        
+        # Can't specify both title and threads_id.
+        if parms.has_key(links.REVISE_SUFFIX) and parms.has_key(links.ARTICLE_LINK_PREFIX):
+            raise control.BadRequestError()
+
+        try:
+            if parms.has_key(links.ARTICLE_LINK_PREFIX):
+                title = urllib.unquote(unfutz_article_title(parms[links.ARTICLE_LINK_PREFIX]))
+            else:
+                threads_id = int(parms[links.REVISE_SUFFIX])
+            source = urllib.unquote(parms['source']).decode(config.ARTICLE_SOURCE_ENCODING)
+        except (KeyError, ValueError), e:
+            raise control.BadRequestError()
+        new_title = title
+        if parms.has_key('new_title'):
+            new_title = urllib.unquote(parms['new_title'])
+        comment = ''
+        if parms.has_key('comment'):
+            comment = urllib.unquote(parms['comment'])
+        # This should be specified if editing by thread_id so that we can
+        # include the title of the page being edited in any pages we send
+        # back.
+        redundant_title = None
+        if parms.has_key('redundant_title'):
+            redundant_title = parms['redundant_title']
+        def get_title_for_user():
+            # Oh dear.
+            if title:
+                if redundant_title and title != redundant_title:
+                    raise control.BadRequestError()
+                return new_title
+            elif redundant_title:
+                if new_title:
+                    return new_title
+                else:
+                    return redundant_title
+            else:
+                return '[unknown title]'
+
+        # Find out who's making the revision.
+        revision_user_id = None
+        d = { }
+        merge_login(extras, d)
+        if not d.has_key('username'):
+            # Note that get_anon_wikiuser_id(...) raises an exception if there's
+            # a DB error.
+            revision_user_id = get_anon_user_wikiuser_id(extras.remote_ip)
+        else:
+            revision_user_id = d['user_id']
+
+        # Cant' have '-' or '_' in the title.
+        tfu = get_title_for_user()
+        if '-' in tfu or '_' in tfu:
+            return my_utils.merge_dicts(
+                d,
+                dict(
+                    article_source = source,
+                    article_title = get_title_for_user(),
+                    threads_id = threads_id,
+                    comment = comment,
+                    error_message = "Article titles cannot contain '-' or '_'.",
+                    line = 1,
+                    column = 1
+                )
+            )
+
+        year,month,hour,day,minute,second = my_utils.get_ymdhms_tuple()
+
+        # Parse the wiki markup.
+        result = sourceparser.parse_wiki_document(unixify_text(source))
+        if isinstance(result, sourceparser.ParserError):
+            # This goes to the edit.kid template.
+            return my_utils.merge_dicts(
+                d,
+                dict(
+                    article_source=source,
+                    article_title=get_title_for_user(),
+                    threads_id = threads_id,
+                    comment=comment,
+                    error_message=result.message,
+                    line=result.line,
+                    column=result.col
+                )
+            )
+        r, sourceparser_state = result
+
+        # If it was parsed successfully AND it's not a redirect,
+        # convert the source to XHTML.
+        xhtml_output = None
+        if not isinstance(r, sourceparser.Redirect):
+            try:
+                #dbcon = get_dbcon() # For marking existent/non-existent article links.
+                #cur = dbcon.cursor()
+                sb = StringIO.StringIO()
+                sourceparser.translate_to_xhtml(r, sb) #, make_article_exists_pred(dbcon, cur))
+                xhtml_output = sb.getvalue() # TODO: Some unicode stuff?
+            except sqlite.Error, e:
+                dberror(e)
+
+        # Now, if it's a preview, we'll go straight to the preview page.
+        if parms.has_key('preview'):
+            # You can't preview a redirect!
+            if xhtml_output is None: # If it's a redirect.
+                return my_utils.merge_dicts(
+                    d,
+                    dict(
+                        article_source = source,
+                        article_title = get_title_for_user(),
+                        threads_id = threads_id,
+                        comment = comment,
+                        error_message = "You cannot preview a redirect.",
+                        line = 1,
+                        column = 1
+                    )
+                )
+            return my_utils.merge_dicts(
+                d,
+                dict(
+                    article_source=source,
+                    article_title=get_title_for_user(),
+                    threads_id = threads_id,
+                    comment=comment,
+                    preview=xhtml_output
+                )
+            )
+
+        # If it's not a preview, we'd better update the DB.
+        try:
+            dbcon = get_dbcon()
+            cur = dbcon.cursor()
+
+            # Check that they're not renaming the article to the title of an
+            # existing article (you cunning bastard, Mue).
+            # Some nasty logic here because we're dealing with two cases:
+            # one where the revision is specified by title, and the other
+            # where it's specified by thread_id.
+            if new_title and ((title is None) or (title != new_title)):
+                rev = get_revision(dbcon, cur, new_title, 1)
+                if rev and ((title is not None) or (rev['threads_id'] != threads_id)):
+                    return my_utils.merge_dicts(
+                        d,
+                        dict(
+                            article_source = source,
+                            article_title = get_title_for_user(),
+                            threads_id = threads_id,
+                            comment = comment,
+                            error_message = "You cannot rename %s to %s because an article with this title already exists." % (get_title_for_user(), new_title),
+                            line = 1,
+                            column = 1
+                        )
+                    )
+
+            # Create a new article.
+            res = cur.execute(
+                """
+                INSERT INTO articles
+                    (id, source, redirect, cached_xhtml, title)
+                    VALUES
+                    (NULL, ?, NULL, ?, ?)
+                """,
+                (source, xhtml_output, new_title)
+            )
+            articles_id = cur.lastrowid
+
+            # Find/create the article using either the title or threads_id provided.
+            if not threads_id:
+                rev = get_revision(dbcon, cur, title, 1)
+                if not rev:
+                    # Create a new thread.
+                    res = cur.execute(
+                        """
+                        INSERT INTO threads (id) VALUES (NULL)
+                        """
+                    )
+                    threads_id = cur.lastrowid
+                else:
+                    threads_id = rev['threads_id']
+            else: # if threads_id
+                # Is this a valid threads_id?
+                res = cur.execute(
+                    """
+                    SELECT * FROM threads WHERE id = ?
+                    """,
+                    (threads_id,)
+                )
+                if len(list(res)) == 0:
+                    raise control.BadRequestError()
+
+            # THE threads_id VARIABLE IS NOW SET.
+            res = cur.execute(
+                """
+                INSERT INTO revision_histories
+                   (threads_id, articles_id, revision_date, wikiusers_id, user_comment)
+                   VALUES
+                   (?, ?, ?, ?, ?)
+                """,
+                (threads_id, articles_id, int_time, revision_user_id, comment)
+            )
+
+            # Update the links table.
+            revhisid = res.lastrowid
+            linked_to = sourceparser_state['article_refs']
+            for lt in linked_to:
+                cur.execute(
+                """
+                INSERT INTO links (from_revision_histories_id, to_title)
+                VALUES
+                (?, ?)
+                """,
+                (revhisid, lt)
+                )
+
+            # Update the categories for this article.
+            update_categories_for_thread(dbcon, cur, r, threads_id)
+
+            dbcon.commit()
+        except sqlite.Error, e:
+            dberror(e)
+        raise control.Redirect(links.article_link(new_title),
+                               'text/html; charset=UTF-8',
+                               'see_other')
+revise_wiki_article = ReviseWikiArticle()
+
+class Category(object):
+    uris = [VParm(links.CATEGORIES_PREFIX) >> OptDir()]
+
+    @ok_html
+    @showkid('templates/articles_matching_category.kid')
+    def GET(self, parms, extras):
+        # NOTE THAT CATEGORIES ARE CASE INSENSITIVE, SO THERE ARE SOME
+        # CASE INSENSITIVE SQL STRING COMPARISONS HERE.
+
+        category = my_utils.unfutz_article_title(urllib.unquote(parms[links.CATEGORIES_PREFIX])).lower()
+
+        try:
+            dbcon = get_dbcon()
+            cur = dbcon.cursor()
+
+            res = cur.execute(
+                """
+                SELECT query1.title
+                FROM
+                    (SELECT MAX(revision_date), threads_id, title
+                     FROM revision_histories
+                     INNER JOIN articles ON articles.id = revision_histories.articles_id
+                     GROUP BY revision_histories.threads_id
+                    ) query1
+                INNER JOIN category_specs ON query1.threads_id = category_specs.threads_id AND
+                                             category_specs.name = ?
+                """,
+                (category,)
+            )
+
+            return merge_login(extras, dict(category=category, article_titles=list(map(lambda x: x[0], res))))
+        except sqlite.Error, e:
+            dberror(e)
+category = Category()
+
+class CategoryList(object):
+    uris = [Abs(links.CATEGORIES_PREFIX) >> OptDir(),
+            Abs(links.CATEGORY_LIST) >> OptDir()]
+
+    @ok_html
+    @showkid('templates/category_list.kid')
+    def GET(self, parms, extras):
+        try:
+            dbcon = get_dbcon()
+            cur = dbcon.cursor()
+
+            res = cur.execute(
+                """
+                SELECT DISTINCT NAME FROM category_specs
+                """
+            )
+
+            return merge_login(extras, dict(categories=list(map(lambda x: x[0].lower(), res))))
+        except sqlite.Error, e:
+            raise dberror(e)
+category_list = CategoryList()
+
+class WikiArticleHistory(object):
+    uris = [VParm(links.ARTICLE_LINK_PREFIX) >> Abs(links.HISTORY_SUFFIX) >> OptDir()]
+
+    @ok_html
+    @showkid('templates/history.kid')
+    def GET(self, parms, extras):
+        title = urllib.unquote(unfutz_article_title(parms[links.ARTICLE_LINK_PREFIX]))
+
+        try:
+            dbcon = get_dbcon()
+            cur = dbcon.cursor()
+
+            rows = get_ordered_revisions(dbcon, cur, title)
+            if not rows:
+                raise control.NotFoundError()
+            return merge_login(extras,
+                               dict(article_title = title,
+                                    revisions =
+                                        [dict(article_title = row['title'],
+                                              revision_date = time.gmtime(int(row['revision_date'])),
+                                              username      = row['username'],
+                                              comment       = row['comment'],
+                                              diff_revs_pair = row['diff_revs_pair'])
+                                         for row in rows
+                                        ]
+                               ))
+        except sqlite.Error, e:
+            dberror(e)
+        except ValueError:
+            # The use of int(...) above could potentially raise an exception.
+            raise control.InternalServerError()
+wiki_article_history = WikiArticleHistory()
+
+class WikiArticleList(object):
+    uris = [Abs(links.ARTICLE_LINK_PREFIX) >> OptDir(),
+            Abs(links.ARTICLE_LIST) >> Opt(VParm(links.FROM_SUFFIX), {'from' : '0'}) >> OptDir()]
+
+    @showkid('templates/article_list.kid')
+    @ok_html
+    def GET(self, parms, extras):
+        index = None
+        if parms.has_key('from'):
+            index = parms['from']
+            try:
+                index = int(index)
+            except ValueError:
+                raise control.BadRequestError()
+        else:
+            raise control.Redirect(links.article_list_link(), 'text/html; charset=UTF-8', 'permanent')
+
+        try:
+            dbcon = get_dbcon()
+            cur = dbcon.cursor()
+
+            # Get the (alphabetically) first 100 article titles.
+            rows = cur.execute(
+                """
+                SELECT MAX(revision_date), title FROM revision_histories
+                INNER JOIN articles ON articles.id = revision_histories.articles_id
+                GROUP BY revision_histories.threads_id
+                ORDER BY articles.title
+                LIMIT 100 OFFSET ?
+                """,
+                (index,)
+            )
+
+            titles = [row[1] for row in rows]
+            return merge_login(extras,
+                               dict(article_titles=titles,
+                                    starting_from=index + 1,
+                                    going_to=index + len(titles),
+                                    partial=len(titles) == 100))
+        except sqlite.Error, e:
+            dberror(e)
+wiki_article_list = WikiArticleList()
+
+class LinksHere(object):
+    uris = [VParm(links.ARTICLE_LINK_PREFIX) >> Abs(links.LINKS_HERE_SUFFIX) >> OptDir()]
+
+    @showkid('templates/links-here.kid')
+    @ok_html
+    def GET(self, parms, extras):
+        title = urllib.unquote(unfutz_article_title(parms[links.ARTICLE_LINK_PREFIX]))
+
+        try:
+            dbcon = get_dbcon()
+            cur = dbcon.cursor()
+
+            rows = cur.execute(
+            """
+            SELECT title FROM links
+            INNER JOIN
+                (SELECT MAX(revision_date), id, title
+                 FROM revision_histories
+                 INNER JOIN articles
+                 ON articles.id = articles_id
+                 GROUP BY revision_histories.threads_id) query1
+            ON query1.id = links.from_revision_histories_id
+            WHERE links.to_title = ?;
+            """,
+            (title,)
+            )
+
+            titles = map(lambda x: x[0], list(rows))
+            return merge_login(extras, dict(article_title=title, titles=titles))
+        except sqlite.Error, e:
+            dberror(e)
+links_here = LinksHere()
+
+class Diff(object):
+    uris = [VParm(links.ARTICLE_LINK_PREFIX) >> VParm(links.DIFF_SUFFIX) >> Selector('with') >> OptDir()]
+
+    @showkid('templates/diff.kid')
+    @ok_html
+    def GET(self, parms, extras):
+        title = urllib.unquote(unfutz_article_title(parms[links.ARTICLE_LINK_PREFIX]))
+        rev1 = parms[links.DIFF_SUFFIX]
+        rev2 = parms['with']
+        try:
+            rev1 = int(rev1)
+            rev2 = int(rev2)
+            if rev1 == 0 or rev2 == 0: raise ValueError()
+        except ValueError:
+            raise control.BadRequestError()
+
+        try:
+            dbcon = get_dbcon()
+            cur = dbcon.cursor()
+
+            r1 = get_revision(dbcon, cur, title, rev1)
+            r2 = get_revision(dbcon, cur, title, rev2)
+            if not (r1 and r2):
+                raise control.SwitchHandler(NoSuchRevision('diff', title), { }, 'GET')
+            rev1src = r1['source']
+            rev2src = r2['source']
+            rev1title = r1['title']
+            rev2title = r2['title']
+            revision_comment = r1['comment']
+
+            # formertitle is set if both of the specified revisions have the
+            # same title, but the newest revision of the article has a different
+            # title. oldtitle and newtitle are both set if the specified
+            # revisions do not have the same title. formertitle and
+            # oldtitle/newtitle are never both set.
+            formertitle, oldtitle, newtitle = None, None, None
+            if rev1title != rev2title:
+                oldtitle = rev1title
+                newtitle = rev2title
+            elif rev1title != title:
+                formertitle = rev1title
+
+            try: # Becuase pretty_diff might fail.
+                return merge_login(extras,
+                                   dict(article_title=title,
+                                        diff_html=pretty_diff(rev1src, rev2src, 60),
+                                        rev1=rev1,
+                                        rev2=rev2,
+                                        formertitle=formertitle,
+                                        newtitle=newtitle,
+                                        oldtitle=oldtitle,
+                                        revision_comment=revision_comment))
+            except PrettyDiffError, e:
+                raise control.SwitchHandler(generic_internal_error, { }, 'GET')
+        except sqlite.Error, e:
+            dberror(e)
+diff = Diff()
+
+class FrontPage(object):
+    uris = [Abs("")]
+
+    @showkid('templates/frontpage.kid')
+    @ok_html
+    def GET(self, parms, extras):
+        return merge_login(extras, { })
+front_page = FrontPage()
+
+class CreateAccount(object):
+    uris = [Abs(links.CREATE_ACCOUNT) >> OptDir()]
+
+    @showkid('templates/create_account.kid')
+    @ok_html
+    def GET(self, parms, extras):
+        return merge_login(extras, { })
+create_account = CreateAccount()
+
+class MakeNewAccount(object):
+    uris = [Abs(links.MAKE_NEW_ACCOUNT) >> OptDir()]
+
+    ip_addy_regex_string = r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
+    ip_addy_regex = re.compile(ip_addy_regex_string)
+
+    @ok_html
+    @showkid('templates/create_account.kid') # Go here if there's an error.
+    def POST(self, parms, extras):
+        if not (parms.has_key('username') and
+                parms.has_key('password')):
+            return dict(default_email=(parms.has_key('email') and parms['email'] or ''),
+                        default_username=(parms.has_key('username') and parms['username'] or ''),
+                        error="You must give a username and a password (email address is optional).")
+        username, password = parms['username'], parms['password']
+        email = None
+        if parms.has_key('email') and parms['email'] != '':
+            email = parms['email']
+
+        # Usernames and passwords can't contain the ':' character because that
+        # interferes with the HTTP AUTH mechanism.
+        if ':' in username or ':' in password:
+            return dict(default_email=email,
+                        default_username=username,
+                        error="Usernames and passwords cannot contain a colon.")
+
+        try:
+            dbcon = get_dbcon()
+            cur = dbcon.cursor()
+
+            # Does an account with this username or email already exist?
+            res = cur.execute(
+                """
+                SELECT wikiusers.email, wikiusers.username FROM wikiusers
+                WHERE (wikiusers.email IS NOT NULL AND wikiusers.email = ?) OR
+                      wikiusers.username = ?
+                """,
+                (email, username)
+            )
+            res = list(res)
+            if len(res) != 0:
+                if res[0][0] is not None and res[0][0] == email:
+                    return dict(default_email=email,
+                                default_username=username,
+                                error="An account with that email address already exists.")
+                else:
+                    return dict(default_email=email,
+                                default_username=username,
+                                error="An account with that username already exists.")
+            # Also, you can't create an account with an IP address name, since
+            # they're reserved for anon users.
+            if self.ip_addy_regex.match(username):
+                return dict(default_email=email,
+                            default_username=username,
+                            error="You cannot create an account with a username which is an IP address.")
+
+            # User's need a user page. Perhaps someone has mischeivously created
+            # a user-$USERNAME page already.
+            rev = get_revision(dbcon, cur, links.USER_PAGE_PREFIX + username, 1)
+            if rev:
+                return dict(default_email=email,
+                            default_username=username,
+                            error="The page 'user-%s' already exists. However, no such user exists, so if you move this page somewhere else you can create an account with this username." % username)
+
+            # All clear: we can go ahead and create a new account.
+            res = cur.execute(
+                """
+                INSERT INTO wikiusers
+                (id, email, username, password)
+                VALUES
+                (NULL, ?, ?, ?)
+                """,
+                (email, username, password)
+            )
+            wikiusers_id = cur.lastrowid
+
+            # And the default preferences for the new account.
+            res2 = cur.execute(
+                """
+                INSERT INTO wikiusers_prefs
+                (wikiusers_id, email_changes, digest)
+                VALUES
+                (?, 0, 0)
+                """,
+                (wikiusers_id,)
+            )
+
+            int_time = int(time.time())
+
+            # Now create the user's user page.
+            userpage_source = "#CATEGORY [[user pages]]\n\nThis is the user page for %s." % username
+            userpage_title = links.USER_PAGE_PREFIX + username
+            result = sourceparser.parse_wiki_document(userpage_source)
+            assert not isinstance(result, sourceparser.ParserError)
+            r, sourceparser_state = result
+            import StringIO
+            sb = StringIO.StringIO()
+            sourceparser.translate_to_xhtml(r, sb) #, make_article_exists_pred(dbcon, cur))
+            cached_xhtml = sb.getvalue()
+            res = cur.execute(
+                """
+                INSERT INTO articles
+                (id, source, redirect, cached_xhtml, title)
+                VALUES
+                (NULL, ?, NULL, ?, ?)
+                """,
+                (userpage_source,
+                 cached_xhtml,
+                 userpage_title)
+            )
+            user_page_id = cur.lastrowid
+            res = cur.execute(
+                """
+                INSERT INTO threads (id) VALUES (NULL)
+                """
+            )
+            threads_id = cur.lastrowid
+            res = cur.execute(
+                """
+                INSERT INTO revision_histories
+                (threads_id, articles_id, revision_date, wikiusers_id, user_comment)
+                VALUES
+                (?, ?, ?, ?, ?)
+                """,
+                # User ID 1 is the "system" user.
+                (threads_id, user_page_id, int_time, 1, "Automatically created user page")
+            )
+
+            update_categories_for_thread(dbcon, cur, r, threads_id)
+
+            dbcon.commit()
+
+            raise control.Redirect(links.login_link(), 'text/html; charset=UTF-8', 'see_other')
+        except sqlite.Error, e:
+            dberror(e)
+make_new_account = MakeNewAccount()
+
+class DeleteAccountConfirm(object):
+    uris = [Abs(links.DELETE_ACCOUNT_CONFIRM)]
+
+    @ok_html
+    @showkid('templates/delete_account_confirm.kid')
+    def GET(self, parms, extras):
+        d = { }
+        merge_login(extras, d)
+
+        if not d.has_key('username'):
+            return dict(error="You cannot delete your account because you are not logged in.")
+        else:
+            return d
+delete_account_confirm = DeleteAccountConfirm()
+
+class DeleteAccount(object):
+    uris = [Abs(links.DELETE_ACCOUNT)]
+
+    @ok_html
+    @showkid('templates/delete_account.kid')
+    def POST(self, parms, extras):
+        d = { }
+        merge_login(extras, d)
+
+        if not d.has_key('username'):
+            return dict(error="You cannot delete your account because you are not logged in.")
+
+        try:
+            dbcon = get_dbcon()
+            cur = dbcon.cursor()
+
+            # Check this user exists.
+            res = cur.execute(
+                """
+                SELECT id FROM wikiusers WHERE
+                username = ?
+                """,
+                (d['username'],)
+            )
+
+            for r in res:
+                # Delete the user.
+                res2 = cur.execute(
+                    """
+                    DELETE FROM wikiusers WHERE
+                    id = ?
+                    """,
+                    (r[0],)
+                )
+
+                dbcon.commit()
+
+                # Delete the user's userpage (this function will just do nothing
+                # if the page doesn't exist).
+                delete_article(dbcon, cur, links.USER_PAGE_PREFIX + d['username'])
+
+                # We don't merge login info, since if we do the user will be
+                # informed that they're logged in as the user we've just deleted.
+                return dict(username_=d['username'])
+
+            # Should never get here -- it would mean that a non-existent user
+            # was logged in.
+            assert False
+        except sqlite.Error, e:
+            dberror(e)
+delete_account = DeleteAccount()
+
+class Login(object):
+    uris = [Abs(links.LOGIN)]
+
+    @ok_html
+    def GET(self, parms, extras):
+        d = { }
+        merge_login(extras, d)
+        # They might be logged in already.
+        if d.has_key('username'):
+            raise control.Redirect(links.article_link(links.USER_PAGE_PREFIX + extras.auth.username),
+                                   'text/html; charset=UTF-8',
+                                   'see_other')
+        else:
+            raise control.AuthenticationRequired(USER_AUTH_REALM, get_auth_method(extras))
+login = Login()
+
+class Preferences(object):
+    uris = [Abs(links.PREFERENCES)]
+
+    @showkid('templates/preferences.kid')
+    @ok_html
+    def GET(self, parms, extras):
+        d = { }
+        merge_login(extras, d) # Raises control.[something] if auth incorrect.
+        if len(d) == 0:
+            return dict(found=False)
+
+        # Get the preferences for this user.
+        try:
+            dbcon = get_dbcon()
+            cur = dbcon.cursor()
+
+            res = cur.execute(
+                """
+                SELECT wikiusers_prefs.email_changes, wikiusers_prefs.digest FROM wikiusers
+                INNER JOIN wikiusers_prefs
+                ON wikiusers_prefs.wikiusers_id = wikiusers.id
+                WHERE wikiusers.username = ?
+                """,
+                (d['username'],)
+            )
+
+            for r in res:
+                if len(r) != 2: continue
+                email_changes = r[0]
+                digest = r[1]
+                return dict(found=True,
+                            updated=False,
+                            username=d['username'],
+                            email_changes=email_changes,
+                            digest=digest)
+            # If we get here we didn't find any preferences for this user.
+            return merge_login(extras, dict(found=False))
+        except sqlite.Error, e:
+            dberror(e)
+
+        return merge_login(extras, { })
+preferences = Preferences()
+
+class UpdatePreferences(object):
+    uris = [Abs(links.UPDATE_PREFERENCES)]
+
+    def POST(self, parms, extras, start_response):
+        if not parms.has_key('username'):
+            raise control.BadRequestError()
+        username = parms['username']
+        email_changes = False
+        digest = False
+        if parms.has_key('email_changes'):
+            email_changes = True
+        if parms.has_key('digest'):
+            digest = True
+
+        try:
+            dbcon = get_dbcon()
+            cur = dbcon.cursor()
+
+            res = cur.execute(
+                """
+                UPDATE wikiusers_prefs SET email_changes = ?, digest = ? WHERE wikiusers_prefs.wikiusers_id IN (SELECT wikiusers_prefs.wikiusers_id FROM wikiusers_prefs INNER JOIN wikiusers ON wikiusers.id = wikiusers_prefs.wikiusers_id WHERE wikiusers.username = ? LIMIT 1);
+                """,
+                (email_changes and 1 or 0, digest and 1 or 0, username)
+            )
+
+            dbcon.commit()
+
+            # Redirect to the preferences view.
+            raise control.Redirect(links.preferences_link(),
+                                   'text/html; charset=UTF-8',
+                                   'see_other')
+        except sqlite.Error, e:
+            dberror(e)
+update_preferences = UpdatePreferences()
+
+class Watch(object):
+    uris = [VParm(links.ARTICLE_LINK_PREFIX) >> Abs(links.WATCH_SUFFIX) >> OptDir()]
+
+    @ok_html
+    @showkid('templates/watch.kid')
+    def POST(self, parms, extras):
+        title = urllib.unquote(unfutz_article_title(parms[links.ARTICLE_LINK_PREFIX]))
+        d = { }
+        merge_login(extras, d)
+        if len(d) == 0:
+            return dict(error="You must be logged in to add an item to your watchlist.")
+
+        try:
+            if article_is_on_watchlist(d['username'], title):
+                return dict(error="The article is already on your watchlist.")
+            else:
+                dbcon = get_dbcon()
+                cur = dbcon.cursor()
+
+                res = cur.execute(
+                    """
+                    INSERT INTO watchlist_items
+                    (wikiusers_id, threads_id)
+                    VALUES
+                    (
+                        (SELECT id FROM wikiusers WHERE wikiusers.username = ? LIMIT 1)
+                        ,
+                        (SELECT q1.threads_id FROM
+                             (SELECT MAX(revision_date), threads_id, articles_id
+                              FROM revision_histories
+                              GROUP BY revision_histories.threads_id) q1
+                         INNER JOIN articles ON
+                             articles.title = ? AND
+                             articles.id = q1.articles_id
+                         LIMIT 1)
+                    )
+                    """,
+                    (d['username'], title)
+                )
+
+                dbcon.commit()
+
+                d['article_title'] = title
+                return d
+        except sqlite.Error, e:
+            dberror(e)
+watch = Watch()
+
+class Unwatch(object):
+    uris = [VParm(links.ARTICLE_LINK_PREFIX) >> Abs(links.UNWATCH_SUFFIX) >> OptDir()]
+
+    @ok_html
+    @showkid('templates/unwatch.kid')
+    def POST(self, parms, extras):
+        title = urllib.unquote(unfutz_article_title(parms[links.ARTICLE_LINK_PREFIX]))
+        d = { }
+        merge_login(extras, d)
+
+        try:
+            dbcon = get_dbcon()
+            cur = dbcon.cursor()
+
+            res = cur.execute(
+                """
+                DELETE FROM watchlist_items
+                WHERE threads_id IN
+                    (SELECT q1.threads_id FROM
+                         (SELECT MAX(revision_date), threads_id, articles_id
+                          FROM revision_histories
+                          GROUP BY revision_histories.threads_id) q1
+                     INNER JOIN articles ON
+                     articles.title = ? AND
+                     articles.id = q1.articles_id)
+                """,
+                (title,)
+            )
+
+            dbcon.commit()
+
+            d['article_title'] = title
+            return d
+        except sqlite.Error, e:
+            dberror(e)
+unwatch = Unwatch()
+
+class Watchlist(object):
+    uris = [Abs(links.WATCHLIST)]
+
+    @ok_html
+    @showkid('templates/watchlist.kid')
+    def GET(self, parms, extras):
+        try:
+            dbcon = get_dbcon()
+            cur = dbcon.cursor()
+
+            d = { }
+            merge_login(extras, d)
+            if len(d) == 0:
+                return dict(error="You must be logged in to view your watchlist.")
+
+            res = cur.execute(
+                # Don't actually need a subquery here, but putting the second
+                # join outside the subquery should be more efficient.
+                """
+                SELECT title FROM
+                    (SELECT MAX(revision_date), articles_id FROM watchlist_items
+                     INNER JOIN revision_histories ON revision_histories.threads_id = watchlist_items.threads_id
+                     WHERE watchlist_items.wikiusers_id IN
+                         (SELECT id FROM wikiusers WHERE wikiusers.username = ?)
+                     GROUP BY revision_histories.threads_id) q1
+                INNER JOIN articles ON articles.id = q1.articles_id
+                """,
+                (d['username'],)
+            )
+
+            d['article_titles'] = [r[0] for r in res if len(r) == 1]
+            return d
+        except sqlite.Error, e:
+            dberror(e)
+watchlist = Watchlist()
+
+class TrackedChanges(object):
+    uris = [Abs(links.TRACKED_CHANGES)]
+
+    @ok_html
+    @showkid('templates/tracked_changes.kid')
+    def GET(self, parms, extras):
+        d = { }
+        merge_login(extras, d)
+        if len(d) == 0:
+            return dict(error="You must be logged in to view your recent changes list.")
+
+        try:
+            dbcon = get_dbcon()
+            cur = dbcon.cursor()
+
+            # Select the 50 items on the watchlist with the most recent changes.
+            res = cur.execute(
+                """
+                SELECT title, revision_date, _threads_id, username, user_comment
+                FROM
+                    (SELECT MAX(revision_date), revision_date, articles_id, user_comment, revision_histories.threads_id AS _threads_id, revision_histories.wikiusers_id AS _wikiusers_id FROM watchlist_items
+                     INNER JOIN revision_histories ON revision_histories.threads_id = watchlist_items.threads_id
+                     WHERE watchlist_items.wikiusers_id IN
+                         (SELECT id FROM wikiusers WHERE wikiusers.username = ?)
+                     GROUP BY revision_histories.threads_id
+                     LIMIT 50) q1
+                INNER JOIN articles ON articles.id = articles_id
+                INNER JOIN wikiusers ON wikiusers.id = q1._wikiusers_id
+                ORDER BY q1.revision_date DESC
+                """,
+                (d['username'],)
+            )
+            res = list(res)
+
+            # TODO: Some minor copy/pasting from RecentChangesList.
+            # For each of these changes, we want to find out the revision number
+            # of the preceding revision so we can give a link to a diff.
+            revnos = []
+            for r in res:
+                threads_id = r[2]
+                revision_date = r[1]
+
+                rnp = get_diff_revision_number_pair(dbcon, cur, threads_id, revision_date)
+                assert rnp
+                revnos.append(rnp)
+
+            revisions = \
+                map(
+                    lambda r_and_d:
+                        dict(article_title = r_and_d[0][0],
+                             revision_date=time.gmtime(int(r_and_d[0][1])),
+                             username=r_and_d[0][3],
+                             comment=r_and_d[0][4],
+                             diff_revs_pair=r_and_d[1]),
+                    itertools.izip(res, revnos)
+                )
+                    
+            d['revisions'] = revisions
+            return d
+        except sqlite.Error, e:
+            dberror(e)
+tracked_changes = TrackedChanges()
+
+class RenderTree(object):
+    uris = [Abs(links.RENDER_SYNTAX_TREE)]
+
+    def POST(self, parms, extras, start_response):
+        import StringIO
+
+        if not parms.has_key('tree'):
+            raise control.BadRequestError()
+        
+        r = sourceparser.run_parser(sourceparser.tree, parms['tree'], { })
+        if isinstance(r, parcombs.ParserError):
+            raise control.BadRequestError()
+        tree, movements = r
+
+        # This is just a temporary surface, since we need to create a surface
+        # in order to get font metrics etc. Once we've determined how big
+        # the tree will be, we'll create the real surface.
+        surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, 1, 1)
+        context = cairo.Context(surface)
+        cs = treedraw.CairoState(surface, (parms.has_key('font_size') and (parms['font_size'],) or (20,))[0])
+        tree.size(cs, root=True)
+        # Found the size of the (image containing the) tree, so create a
+        # surface to draw it on.
+        surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, int(tree.dimensions[0]) + 5, int(tree.dimensions[1]) + 5)
+        context = cairo.Context(surface)
+        cs = treedraw.CairoState(surface, (parms.has_key('font_size') and (parms['font_size'],) or (20,))[0])        
+        treedraw.draw_tree(tree, movements, cs)
+
+        buffer = StringIO.StringIO()
+        surface.write_to_png(buffer)
+
+        start_response('200 OK', [('Content-Type', 'image/png'), ('Accept-Range', 'bytes')])
+        return [ buffer.getvalue() ]
+render_tree = RenderTree()
+
+class SyntaxTree(object):
+    uris = [Abs(links.SYNTAX_TREE)]
+
+    @ok_html
+    @showkid('templates/syntax_tree.kid')
+    def GET(self, parms, extras):
+        d = { }
+        merge_login(extras, d)
+        return d
+syntax_tree = SyntaxTree()
+
+control.register_handlers([front_page,
+                           show_wiki_article,
+                           edit_wiki_article,
+                           revise_wiki_article,
+                           wiki_article_history,
+                           wiki_article_list,
+                           create_account,
+                           delete_account,
+                           make_new_account,
+                           login,
+                           links_here,
+                           diff,
+                           preferences,
+                           update_preferences,
+                           watch,
+                           unwatch,
+                           watchlist,
+                           tracked_changes,
+                           render_tree,
+                           syntax_tree,
+                           delete_account_confirm,
+                           category,
+                           category_list,
+                           recent_changes_list])
+control.start_server(SERVER_PORT)
+
