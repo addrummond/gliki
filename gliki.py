@@ -90,6 +90,9 @@ def browser_is_ie6_or_earlier(extras):
             return n < 7.0
 
 def get_auth_method(extras):
+    """IE6 has a buggy digest auth implementation, and I haven't yet got round
+       to adding support for it.
+    """
     if browser_is_ie6_or_earlier(extras):
         return 'basic'
     else:
