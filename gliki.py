@@ -529,7 +529,9 @@ class ShowWikiArticle(object):
                 # TODO: Using SwitchHandler here is unnecessary and a bit of a
                 # hack.
                 is_circular, path = get_redirect_path(dbcon, cur, title, row['redirect'])
-                assert not is_circular
+                if is_circular:
+                    logging.log(logging.INTERNAL_LOG, 'Unexpected circular redirect,"%s"\n' % htmlutils.htmlencode(row['title']))
+                    raise control.SwitchHandler(generic_internal_error, { }, 'GET')
                 # We use a temporary redirect because the redirect could go
                 # away at any time, and we don't want any weird cash issues.
                 d[links.ARTICLE_LINK_PREFIX] = path[len(path) -1]
@@ -1050,7 +1052,8 @@ class WikiArticleHistory(object):
             dberror(e)
         except ValueError:
             # The use of int(...) above could potentially raise an exception.
-            raise control.InternalServerError()
+            logging.log(logging.INTERNAL_LOG, "Not int\n")
+            raise control.SwitchHandler(generic_internal_error, { }, 'GET')
 wiki_article_history = WikiArticleHistory()
 
 class WikiArticleList(object):
