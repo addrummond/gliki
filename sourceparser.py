@@ -479,11 +479,12 @@ formatted_in_bullets = (
 )
 
 class Paragraph(object):
-    def __init__(self, text_nodes, preformatted=None):
+    def __init__(self, text_nodes, preformatted, indent):
         # text_nodes is None and preformatted is a string if this is
         # preformatted text.
         self.text_nodes = text_nodes
         self.preformatted = preformatted
+        self.indent = indent
 
     def __repr__(self):
         return "p" + repr(self.text_nodes)
@@ -493,7 +494,7 @@ def paragraph_():
         Str("@@") >>
         SUntilNRW1(escchr, Str("@@")) >>
         (lambda pre:
-        Option(None, CMany(2, Chr("\n")) * EOF) >>
+        Option(None, Str("\n\n") * EOF) >>
         Return(pre))
         ,
         formatted >>
@@ -511,15 +512,17 @@ def paragraph_():
 
 import types
 paragraph = (
+    CMany0(Chr('>')) >>
+    (lambda indent:
     paragraph_() >>
     (lambda r:
     r == [] and \
         RError("Couldn't find paragraph")
             or \
                 ((type(r) == types.StringType or type(r) == types.UnicodeType) and \
-                    Return(Paragraph(None, r)) \
+                    Return(Paragraph(None, r, indent)) \
                                                  or \
-                    Return(Paragraph(r))))
+                    Return(Paragraph(r, None, indent)))))
 )
 
 acceptability = Or(None, SMany1(Chrs('*!#?')))
@@ -1052,6 +1055,11 @@ def translate_to_xhtml_(state, elem, writer, article_exists_pred):
         for c in elem.children:
             translate_to_xhtml_(state, c, writer, article_exists_pred)
     elif isinstance(elem, Paragraph):
+        if elem.indent != 0:
+            writer.ownline()
+            for _ in range(elem.indent):
+                writer.write('<div class="indent">')
+            writer.nlindentplus(4)
         if elem.preformatted:
             writer.ownline()
             writer.write('<pre>')
@@ -1073,6 +1081,12 @@ def translate_to_xhtml_(state, elem, writer, article_exists_pred):
             writer.indentminus(4)
             writer.ownline()
             writer.write("</p>\n")
+        if elem.indent != 0:
+            writer.indentminus(4)
+            writer.ownline()
+            for _ in range(elem.indent):
+                writer.write('</div>')
+            writer.write('\n')
     elif isinstance(elem, Formatted):
         if elem.kind in markup:
             writer.write(markup[elem.kind][0])

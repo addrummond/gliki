@@ -43,6 +43,8 @@ define(`PRE_BACKGROUND_COLOR', `#fcfdcc')
 
 define(`BUTTON_SEP', `1.5em')
 
+define(`INDENT_DISTANCE', `2em')
+
 body {
   margin-top: 0;
   padding-top: 0;
@@ -399,5 +401,9 @@ p.login-message {
 }
 p.login-message a {
   font-size: SMALL_TEXT;
+}
+
+div.indent {
+  padding-left: INDENT_DISTANCE;
 }
 
