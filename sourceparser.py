@@ -496,12 +496,13 @@ formatted_in_bullets = (
 )
 
 class Paragraph(object):
-    def __init__(self, text_nodes, preformatted, indent):
+    def __init__(self, text_nodes, preformatted, left_indent, right_indent):
         # text_nodes is None and preformatted is a string if this is
         # preformatted text.
         self.text_nodes = text_nodes
         self.preformatted = preformatted
-        self.indent = indent
+        self.left_indent = left_indent
+        self.right_indent = right_indent
 
     def __repr__(self):
         return "p" + repr(self.text_nodes)
@@ -530,16 +531,18 @@ def paragraph_():
 import types
 paragraph = (
     CMany0(Chr('>')) >>
-    (lambda indent:
+    (lambda left_indent:
+    CMany0(Chr('<')) >>
+    (lambda right_indent:
     paragraph_() >>
     (lambda r:
     r == [] and \
         RError("Couldn't find paragraph")
             or \
                 ((type(r) == types.StringType or type(r) == types.UnicodeType) and \
-                    Return(Paragraph(None, r, indent)) \
+                    Return(Paragraph(None, r, left_indent, right_indent)) \
                                                  or \
-                    Return(Paragraph(r, None, indent)))))
+                    Return(Paragraph(r, None, left_indent, right_indent))))))
 )
 
 acceptability = Or(None, SMany1(Chrs('*!#?')))
@@ -1072,10 +1075,12 @@ def translate_to_xhtml_(state, elem, writer, article_exists_pred):
         for c in elem.children:
             translate_to_xhtml_(state, c, writer, article_exists_pred)
     elif isinstance(elem, Paragraph):
-        if elem.indent != 0:
+        if elem.left_indent != 0 or elem.right_indent != 0:
             writer.ownline()
-            for _ in range(elem.indent):
-                writer.write('<div class="indent">')
+            for _ in range(elem.left_indent):
+                writer.write('<div class="left-indent">')
+            for _ in range(elem.right_indent):
+                writer.write('<div class="right-indent">')
             writer.nlindentplus(4)
         if elem.preformatted:
             writer.ownline()
@@ -1098,10 +1103,10 @@ def translate_to_xhtml_(state, elem, writer, article_exists_pred):
             writer.indentminus(4)
             writer.ownline()
             writer.write("</p>\n")
-        if elem.indent != 0:
+        if elem.left_indent != 0 or elem.right_indent != 0:
             writer.indentminus(4)
             writer.ownline()
-            for _ in range(elem.indent):
+            for _ in range(elem.left_indent + elem.right_indent):
                 writer.write('</div>')
             writer.write('\n')
     elif isinstance(elem, Formatted):

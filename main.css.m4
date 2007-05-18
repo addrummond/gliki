@@ -420,7 +420,10 @@ p.login-message a {
   font-size: SMALL_TEXT;
 }
 
-div.indent {
+div.left-indent {
   padding-left: INDENT_DISTANCE;
+}
+div.right-indent {
+  padding-right: INDENT_DISTANCE;
 }
 
