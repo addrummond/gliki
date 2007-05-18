@@ -27,6 +27,7 @@ import parcombs
 import cairo
 import StringIO
 import links
+import logging
 from my_utils import *
 
 USER_AUTH_REALM = "Wikiuser"
@@ -865,6 +866,19 @@ class ReviseWikiArticle(object):
                     """,
                     (threads_id, articles_id, int_time, revision_user_id, comment)
                 )
+
+                dbcon.commit()
+
+                logging.log(
+                    logging.EDITS_LOG,
+                    '%s,%s,%s,redirect,"%s",%i\n' % (
+                        extras.remote_ip,
+                        d.has_key('username') and d['username'] or '',
+                        threads_id,
+                        htmlutils.htmlencode(comment),
+                        int_time
+                    )
+                )
             else:
                 # Check that they're not renaming the article to the title of an
                 # existing article (you cunning bastard, Mue).
@@ -930,7 +944,18 @@ class ReviseWikiArticle(object):
                 # Update the categories for this article.
                 update_categories_for_thread(dbcon, cur, r, threads_id)
 
-            dbcon.commit()
+                dbcon.commit()
+
+                logging.log(
+                    logging.EDITS_LOG,
+                    '%s,%s,%s,edit,"%s",%i\n' % (
+                        extras.remote_ip,
+                        d.has_key('username') and d['username'] or '',
+                        threads_id,
+                        htmlutils.htmlencode(comment),
+                        int_time
+                    )
+                )
         except sqlite.Error, e:
             dberror(e)
         raise control.Redirect(links.article_link(new_title),
