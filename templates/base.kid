@@ -25,8 +25,8 @@ import links
     </p>
     <p class="login-message" py:if="(not locals().has_key('username')) or (not username)">
         <i>You are not currently logged in.</i>
-        <a class="action" href="links.create_account_link()">create an account</a> |
-        <a class="action" href="links.login_link()">log in</a>.
+        <a class="action" href="${links.create_account_link()}">create an account</a> |
+        <a class="action" href="${links.login_link()}">log in</a>.
     </p>
     <ul class="home"><li><a class="button" href="/">Home</a></li></ul>
     <span py:replace="item[:]">The body.</span>
