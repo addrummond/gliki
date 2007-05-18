@@ -33,7 +33,7 @@ The markup language used by Gliki is specially designed to do the sorts of thing
 ====Text styles====
 Gliki allows for **bold**, //italic//, __underlined__ and ||small caps|| text, along with |^superscripts^| and |_subscripts_|:
 
-@@
+>@@
 **some bold text**
 //some italic text//
 __some underlined text__ (two "_" underscores in a row there)
@@ -45,7 +45,7 @@ __some underlined text__ (two "_" underscores in a row there)
 
 You can combine different kinds of formatting to get monstrosities such as |^||**//__bold, italic and underlined superscript in small caps__//**||^|:
 
-@@
+>@@
 |^||**//__bold, italic and underlined superscript in small caps__//**||^|
 @@
 
@@ -59,7 +59,7 @@ Now let's look at examples. Here's a glossed example: ^^This is Finnish, taken f
 
 And an automatically numbered reference back to it: [:example:]. Here's the code for the example in Gliki markup:
 
-@@
+>@@
     :example:
     <Hän|_i_|> <auttaa> <minau> <pese-mään> <auto-nsa|_i_|>
     <3||sg||> <helps> <me> <wash-||inf||> <car-3||P||x>
@@ -68,7 +68,7 @@ And an automatically numbered reference back to it: [:example:]. Here's the code
 
 You introduce the example by putting four (or more) spaces at the beginning of a line. The first part of the above code (":example:") is the label for the example. We've been imaginative and called this one "example". Labels are optional, but they allow you to refer back to examples easily. The second line is the native sentence and the third its literal translation. Note how the words are grouped together using "<...>", allowing the two lines to be properly matched even if there isn't a one-to-one correspondence of words. The fourth line is the gloss. If we want to refer back to this example, we can just write:
 
-@@
+>@@
 [:example:]
 @@
 
@@ -80,7 +80,7 @@ This will be translated to the example number enclosed in square brackets. You c
 
 And refer back to the example group collectively, [:example2:], or refer to each individual example, [:sentence1:], [:sentence2:]. Here's the code for the example:
 
-@@
+>@@
     :example2:
     (+) :sentence1: Did John see Bill?
     (+) :sentence2: No, he saw ||Mary||
@@ -91,14 +91,36 @@ References to the examples work as before.
 ====Footnotes====
 You've already seen a couple of footnotes, but here's another ^^Footnote!^^ just for good measure. You insert them into the text like this:
 
-@@
+>@@
 Blah blah blah ^^footnote text^^ blah blah blah...
+@@
+
+====Indented paragraphs====
+If you begin a paragraph with one or more ">" characters, it will be indented. This can be useful for organizing discussions, or for block quotes. The first ">" must be the first character on the line (i.e. no spaces or tabs can precede it), and there cannot be any spaces between subsequent ">" characters.
+
+>@@
+> An indented paragraph.
+
+>> An even more indented paragraph.
+@@
+
+The above looks like this:
+
+> An indented paragraph.
+
+>> An even more indented paragraph.
+
+Note to wikipedians who are used to indenting using ":". In Gliki, there must be a blank line separating every paragaph, so the following will **not** do what you want:
+
+>@@
+> An indented paragraph.
+>> Not an even more indented paragraph, because there's no blank line.
 @@
 
 ====Sections and subsections====
 Sections look like this:
 
-@@
+>@@
 ==My section==
 Text in my section...
 
@@ -117,8 +139,8 @@ Blah blah...
 ====Lists====
 You can create a simple bullet-point list like this:
 
-@@
-Blah blah blah...
+>@@
+Blah lah blah...
 
     (*) **First** //bullet// __point__.
     (*) Second bullet point.
@@ -135,7 +157,7 @@ The first (*) must be at the beginning of a new paragraph and preceded by four o
 
 It is, unfortunately, easy to forget that (*) is used in bullet lists whereas (+) is used for examples in a group of examples, rather than the other way round. Numbered lists use (\#):
 
-@@
+>@@
     (#) Number 1
     (#) Number 2
     (#) Number 3
@@ -151,7 +173,7 @@ This gives:
 
 Gliki has a simple system of categories. To add an article to a category, just place the following at the top of the article (or anywhere else, but the top is the conventional place).
 
-@@
+>@@
 #CATEGORY [[category name]]
 @@
 
