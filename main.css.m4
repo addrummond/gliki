@@ -1,8 +1,25 @@
-/**
-* Gliki CSS Styling - James "Mue" Adams, 2006
-*/
-define(`BODY_BACKGROUND', `white') /* #EEE */
+# Copyright (C) 2007 Alex Drummond <a.d.drummond@gmail.com>
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor,
+# Boston, MA  02110-1301, USA.
 
+#
+# Gliki CSS Styling - James "Mue" Adams, 2006.
+#
+
+define(`BODY_BACKGROUND', `white')
 define(`HEADING_COLOR', `#222')
 
 define(`TEXT_COLOR', `black')
@@ -19,7 +36,7 @@ define(`SMALL_TEXT', `8pt')
 define(`TABLE_COLOR', `black')
 define(`TABLE_HISTORY_COLOR', `black')
 
-define(`LINK_BACKGROUND_COLOR', `#e7efff') /* #ddf */
+define(`LINK_BACKGROUND_COLOR', `#e7efff')
 define(`HIGHLIGHTED_LINK_BACKGROUND_COLOR', `#DDE')
 
 define(`PRE_COLOR', `black')
@@ -30,8 +47,8 @@ define(`SECTION_INDENT', `eval(`('$1`-1)*10')pt')
 
 define(`LIGHT_BORDER_COLOR', `#BBB')
 
-define(`EXTERNAL_LINK_COLOR', `#04681e') /* #494 */
-define(`INTERNAL_LINK_COLOR', `#3939ff') /* #557 */
+define(`EXTERNAL_LINK_COLOR', `#04681e')
+define(`INTERNAL_LINK_COLOR', `#3939ff')
 define(`EXAMPLE_LINK_COLOR', `#3939ff')
 define(`CATEGORY_REF_COLOR', `#ff7e00')
 
@@ -92,8 +109,8 @@ h5 {
 }
 
 p {
-	font-size: TEXT_BASE(0);
-	color: TEXT_COLOR;
+  font-size: TEXT_BASE(0);
+  color: TEXT_COLOR;
 }
 
 ul {
@@ -156,7 +173,7 @@ div.article-text {
 
 div.comment {
   width: 100%;
-  /*color: TABLE_COLOR;*/
+# color: TABLE_COLOR;
   border-bottom: 1px dashed LIGHT_BORDER_COLOR;
 }
 
