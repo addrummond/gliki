@@ -72,6 +72,7 @@ RENDER_SYNTAX_TREE = 'render-tree'
 SYNTAX_TREE = 'syntax-tree'
 
 USER_PAGE_PREFIX = 'user '
+CATEGORY_PAGE_PREFIX = 'category '
 
 def article_link(title, revision=None):
     assert_is_int_or_none(revision)
@@ -80,6 +81,9 @@ def article_link(title, revision=None):
 
 def user_page_link(name):
     return '/' + ARTICLE_LINK_PREFIX + '/' + qaf(USER_PAGE_PREFIX + name)
+
+def category_page_link(name):
+    return '/' + ARTICLE_LINK_PREFIX + '/' + qaf(CATEGORY_PAGE_PREFIX + name)
 
 def article_list_link():
     return '/' + ARTICLE_LIST

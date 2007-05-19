@@ -29,7 +29,12 @@ import links
 </head>
 
 <body>
-    <p>You can also look at a list of <a class="category_ref" href="${links.category_list_link()}">all the categories</a> in Gliki.</p>
+    <p>
+        You can also look at a list of <a class="category_ref" href="${links.category_list_link()}">all the categories</a> in Gliki.
+        <br />
+        By convention, any information relating to this category should go in
+        <a class="article_ref" href="${links.category_page_link(category)}">${links.CATEGORY_PAGE_PREFIX}${category}</a>.
+    </p>
 
     <p py:if="article_titles != []">The following articles are in category &lsquo;${category}&rsquo;:</p>
 
