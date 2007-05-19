@@ -23,6 +23,7 @@ LOG_DIR = 'logs'
 # Some standard log names.
 EDITS_LOG = 'edits'
 INTERNAL_LOG = 'internal'
+SERVER_LOG = 'server'
 
 LOGGING_ON = True
 
