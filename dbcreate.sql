@@ -31,7 +31,7 @@ CREATE TABLE last_seens
 (
     wikiusers_id INTEGER NOT NULL PRIMARY KEY,
     seen_on INTEGER NOT NULL,
-    FOREIGN KEY (id) REFERENCES wikiusers(id)
+    FOREIGN KEY (wikiusers_id) REFERENCES wikiusers(id)
 );
 
 CREATE TABLE articles
