@@ -27,6 +27,13 @@ CREATE TABLE wikiusers
     email TEXT UNIQUE
 );
 
+CREATE TABLE last_seens
+(
+    wikiusers_id INTEGER NOT NULL PRIMARY KEY,
+    seen_on INTEGER NOT NULL,
+    FOREIGN KEY (id) REFERENCES wikiusers(id)
+)
+
 CREATE TABLE articles
 (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,

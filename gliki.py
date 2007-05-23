@@ -89,6 +89,54 @@ def browser_is_ie6_or_earlier(extras):
             n = float(majmi.groups(0)[0])
             return n < 7.0
 
+def update_last_seen(dbcon, cur, user_id):
+    """Updates the record for when a given user was last seen. Returns the
+       previous time recorded for the user's last visit, or 0 if no previous
+       visit is recorded.
+    """
+    # Is there already a last_seen record for this user.
+    res = cur.execute(
+        """
+        SELECT seen_on FROM last_seens
+        WHERE wikiusers_id = ?
+        """,
+        (user_id,)
+    )
+    res = list(res)
+
+    assert len(res) == 0 or len(res) == 1
+    if len(res) == 0:
+        # Create a new last_seen record.
+        res2 = cur.execute(
+            """
+            INSERT INTO
+                last_seens (wikiusers_id, seen_on)
+                VALUES
+                (?, ?)
+            """,
+            (user_id, int(time.gmtime()))
+        )
+        return res[0][0]
+    else:
+        # Update the existing record.
+        res = cur.execute(
+            """
+            UPDATE last_seens
+            SET seen_on = ?
+            WHERE wikiusers_id = ?
+            """,
+            (int(time.gmtime()), user_id)
+        )
+        return 0
+
+def dbcon_update_last_seen(user_id):
+    try:
+        dbcon = get_dbcon()
+        cur = dbcon.cursor()
+        return update_last_seen(dbcon, cur, user_id)
+    except sqlite.Error, e:
+        dberror(e)
+
 def get_auth_method(extras):
     """IE6 has a buggy digest auth implementation, and I haven't yet got round
        to adding support for it.
@@ -98,7 +146,7 @@ def get_auth_method(extras):
     else:
         return USER_AUTH_METHOD
 
-def merge_login(extras, dict):
+def merge_login(dbcon, cur, extras, dict):
     """Merges username and user_id into a dictionary if the HTTP header
        has auth information. Raises AuthenticationRequired if auth info is
        given but is incorrect."""
@@ -117,12 +165,20 @@ def merge_login(extras, dict):
             authfunc = extras.auth.test
 
         id = dbcon_check_bonafides(extras.auth.username, authfunc)
-        if id:
-            dict['username'] = extras.auth.username
-            dict['user_id'] = id
-            return dict
-        else:
+        if not id:
             raise control.AuthenticationRequired(USER_AUTH_REALM, get_auth_method(extras))
+
+        # Has the user's userpage been edited since they last logged on?
+        previously_seen = update_last_seen(dbcon, cur, username)
+        rev = get_revision(dbcon, cur, links.USER_PAGE_PREFIX + extras.auth.username)
+        if rev and rev['revision_date'] > previously_seen:
+            # Add a key to the dict indicating that a "your user page has been
+            # updated" message should be shown.
+            dict['user_page_has_been_updated'] = True
+
+        dict['username'] = extras.auth.username
+        dict['user_id'] = id
+        return dict
     else:
         assert False
 
@@ -256,37 +312,39 @@ def delete_article(dbcon, cur, title):
     dbcon.commit()
     return exists
 
-def article_is_on_watchlist(username, title):
+def article_is_on_watchlist(dbcon, cur, username, title):
     """Checks whether an article is on a given user's watchlist.
        Returns a boolean.
     """
+    # Is this article already on the user's watchlist?
+    res = cur.execute(
+        """
+        SELECT q1.articles_id FROM
+            (SELECT MAX(revision_date), articles_id, threads_id
+             FROM revision_histories
+             GROUP BY revision_histories.threads_id) q1
+        INNER JOIN watchlist_items ON
+            (watchlist_items.wikiusers_id IN
+                 (SELECT id FROM wikiusers WHERE username = ?))
+            AND
+            watchlist_items.threads_id = q1.threads_id
+        INNER JOIN articles ON
+            articles.title = ? AND
+            q1.articles_id = articles.id
+        """,
+        (username, title)
+    )
+
+    for r in res:
+        if len(r) == 1:
+            return True
+    return False
+
+def dbcon_article_is_on_watchlist(username, title):
     try:
         dbcon = get_dbcon()
         cur = dbcon.cursor()
-
-        # Is this article already on the user's watchlist?
-        res = cur.execute(
-            """
-            SELECT q1.articles_id FROM
-                (SELECT MAX(revision_date), articles_id, threads_id
-                 FROM revision_histories
-                 GROUP BY revision_histories.threads_id) q1
-            INNER JOIN watchlist_items ON
-                (watchlist_items.wikiusers_id IN
-                     (SELECT id FROM wikiusers WHERE username = ?))
-                AND
-                watchlist_items.threads_id = q1.threads_id
-            INNER JOIN articles ON
-                articles.title = ? AND
-                q1.articles_id = articles.id
-            """,
-            (username, title)
-        )
-
-        for r in res:
-            if len(r) != 1: continue
-            return True
-        return False
+        return article_is_on_watchlist(username, title)
     except sqlite.Error, e:
         dberror(e)
 
@@ -489,15 +547,15 @@ class EditWikiArticle(object):
             source = rev['source']
         comment = ''
         if source == '': comment = 'First version'
-        return merge_login(extras,
-                           dict(article_source=source,
-                                article_title=title,
-                                # This allows the edit form to edit the correct
-                                # article even if the article is renamed while
-                                # the user is editing it.
-                                threads_id=(rev and rev['threads_id'] or None),
-                                comment=comment,
-                                error_message=None))
+        return dbcon_merge_login(extras,
+                                 dict(article_source=source,
+                                 article_title=title,
+                                 # This allows the edit form to edit the correct
+                                 # article even if the article is renamed while
+                                 # the user is editing it.
+                                 threads_id=(rev and rev['threads_id'] or None),
+                                 comment=comment,
+                                 error_message=None))
 edit_wiki_article = EditWikiArticle(True)
 
 class NoSuchRevision(object):
@@ -580,7 +638,7 @@ class ShowWikiArticle(object):
                          threads_id=threads_id,
                          categories=categories,
                          redirects=self.redirect_path)
-            merge_login(extras, rdict)
+            merge_login(dbcon, cur, extras, rdict)
             # If this is a user page, add login info.
             if ntitle.startswith(links.USER_PAGE_PREFIX):
                 # If this is the currently' logged in user's userpage,
@@ -589,7 +647,7 @@ class ShowWikiArticle(object):
                     rdict['show_prefs_link'] = True
             # Show a watch/unwatch link if the user is logged in.
             if rdict.has_key('username'):
-                rdict['on_watchlist'] = article_is_on_watchlist(rdict['username'], ntitle)
+                rdict['on_watchlist'] = article_is_on_watchlist(dbcon, cur, rdict['username'], ntitle)
 
             return rdict
         except sqlite.Error, e:
@@ -663,7 +721,7 @@ class RecentChangesList(object):
                                    diff_revno_pair=r_and_n[1]),
                           itertools.izip(most_recent_revisions, revnos))
 
-            return merge_login(extras, dict(changes=changes, from_=from_, n=n))
+            return merge_login(dbcon, cur, extras, dict(changes=changes, from_=from_, n=n))
         except sqlite.Error, e:
             dberror(e)
 recent_changes_list = RecentChangesList()
@@ -725,7 +783,7 @@ class ReviseWikiArticle(object):
         # Find out who's making the revision.
         revision_user_id = None
         d = { }
-        merge_login(extras, d)
+        dbcon_merge_login(extras, d)
         if not d.has_key('username'):
             # Note that get_anon_wikiuser_id(...) raises an exception if there's
             # a DB error.
@@ -1015,7 +1073,7 @@ class Category(object):
                 (category,)
             )
 
-            return merge_login(extras, dict(category=category, article_titles=list(map(lambda x: x[0], res))))
+            return merge_login(dbcon, cur, extras, dict(category=category, article_titles=list(map(lambda x: x[0], res))))
         except sqlite.Error, e:
             dberror(e)
 category = Category()
@@ -1037,7 +1095,7 @@ class CategoryList(object):
                 """
             )
 
-            return merge_login(extras, dict(categories=list(map(lambda x: x[0].lower(), res))))
+            return merge_login(dbcon, cur, extras, dict(categories=list(map(lambda x: x[0].lower(), res))))
         except sqlite.Error, e:
             raise dberror(e)
 category_list = CategoryList()
@@ -1057,7 +1115,8 @@ class WikiArticleHistory(object):
             rows = get_ordered_revisions(dbcon, cur, title)
             if not rows:
                 raise control.NotFoundError()
-            return merge_login(extras,
+            return merge_login(dbcon, cur,
+                               extras,
                                dict(article_title = title,
                                     revisions =
                                         [dict(article_title = row['title'],
@@ -1110,7 +1169,8 @@ class WikiArticleList(object):
             )
 
             titles = [row[1] for row in rows]
-            return merge_login(extras,
+            return merge_login(dbcon, cur,
+                               extras,
                                dict(article_titles=titles,
                                     starting_from=index + 1,
                                     going_to=index + len(titles),
@@ -1147,7 +1207,7 @@ class LinksHere(object):
             )
 
             titles = map(lambda x: x[0], list(rows))
-            return merge_login(extras, dict(article_title=title, titles=titles))
+            return merge_login(dbcon, cur, extras, dict(article_title=title, titles=titles))
         except sqlite.Error, e:
             dberror(e)
 links_here = LinksHere()
@@ -1195,7 +1255,8 @@ class Diff(object):
                 formertitle = rev1title
 
             try: # Becuase pretty_diff might fail.
-                return merge_login(extras,
+                return merge_login(dbcon, cur,
+                                   extras,
                                    dict(article_title=title,
                                         diff_html=pretty_diff(rev1src, rev2src, 60),
                                         rev1=rev1,
@@ -1216,7 +1277,7 @@ class FrontPage(object):
     @showkid('templates/frontpage.kid')
     @ok_html
     def GET(self, parms, extras):
-        return merge_login(extras, { })
+        return dbcon_merge_login(extras, { })
 front_page = FrontPage()
 
 class CreateAccount(object):
@@ -1225,7 +1286,7 @@ class CreateAccount(object):
     @showkid('templates/create_account.kid')
     @ok_html
     def GET(self, parms, extras):
-        return merge_login(extras, { })
+        return dbcon_merge_login(extras, { })
 create_account = CreateAccount()
 
 class MakeNewAccount(object):
@@ -1372,7 +1433,7 @@ class DeleteAccountConfirm(object):
     @showkid('templates/delete_account_confirm.kid')
     def GET(self, parms, extras):
         d = { }
-        merge_login(extras, d)
+        dbcon_merge_login(extras, d)
 
         if not d.has_key('username'):
             return dict(error="You cannot delete your account because you are not logged in.")
@@ -1386,15 +1447,14 @@ class DeleteAccount(object):
     @ok_html
     @showkid('templates/delete_account.kid')
     def POST(self, parms, extras):
-        d = { }
-        merge_login(extras, d)
-
-        if not d.has_key('username'):
-            return dict(error="You cannot delete your account because you are not logged in.")
-
         try:
             dbcon = get_dbcon()
             cur = dbcon.cursor()
+
+            d = { }
+            merge_login(dbcon, cur, extras, d)
+            if not d.has_key('username'):
+                return dict(error="You cannot delete your account because you are not logged in.")
 
             # Check this user exists.
             res = cur.execute(
@@ -1438,7 +1498,7 @@ class Login(object):
     @ok_html
     def GET(self, parms, extras):
         d = { }
-        merge_login(extras, d)
+        dbcon_merge_login(extras, d)
         # They might be logged in already.
         if d.has_key('username'):
             raise control.Redirect(links.article_link(links.USER_PAGE_PREFIX + extras.auth.username),
@@ -1454,15 +1514,15 @@ class Preferences(object):
     @showkid('templates/preferences.kid')
     @ok_html
     def GET(self, parms, extras):
-        d = { }
-        merge_login(extras, d) # Raises control.[something] if auth incorrect.
-        if len(d) == 0:
-            return dict(found=False)
-
         # Get the preferences for this user.
         try:
             dbcon = get_dbcon()
             cur = dbcon.cursor()
+
+            d = { }
+            merge_login(dbcon, cur, extras, d) # Raises control.[something] if auth incorrect.
+            if len(d) == 0:
+                return dict(found=False)
 
             res = cur.execute(
                 """
@@ -1484,11 +1544,9 @@ class Preferences(object):
                             email_changes=email_changes,
                             digest=digest)
             # If we get here we didn't find any preferences for this user.
-            return merge_login(extras, dict(found=False))
+            return merge_login(dbcon, cur, extras, dict(found=False))
         except sqlite.Error, e:
             dberror(e)
-
-        return merge_login(extras, { })
 preferences = Preferences()
 
 class UpdatePreferences(object):
@@ -1533,18 +1591,19 @@ class Watch(object):
     @showkid('templates/watch.kid')
     def POST(self, parms, extras):
         title = urllib.unquote(unfutz_article_title(parms[links.ARTICLE_LINK_PREFIX]))
-        d = { }
-        merge_login(extras, d)
-        if len(d) == 0:
-            return dict(error="You must be logged in to add an item to your watchlist.")
 
         try:
-            if article_is_on_watchlist(d['username'], title):
+            dbcon = get_dbcon()
+            cur = dbcon.cursor()
+
+            d = { }
+            merge_login(dbcon, cur, extras, d)
+            if len(d) == 0:
+                return dict(error="You must be logged in to add an item to your watchlist.")
+
+            if article_is_on_watchlist(dbcon, cur, d['username'], title):
                 return dict(error="The article is already on your watchlist.")
             else:
-                dbcon = get_dbcon()
-                cur = dbcon.cursor()
-
                 res = cur.execute(
                     """
                     INSERT INTO watchlist_items
@@ -1581,12 +1640,13 @@ class Unwatch(object):
     @showkid('templates/unwatch.kid')
     def POST(self, parms, extras):
         title = urllib.unquote(unfutz_article_title(parms[links.ARTICLE_LINK_PREFIX]))
-        d = { }
-        merge_login(extras, d)
 
         try:
             dbcon = get_dbcon()
             cur = dbcon.cursor()
+
+            d = { }
+            merge_login(dbcon, cur, extras, d)
 
             res = cur.execute(
                 """
@@ -1622,7 +1682,7 @@ class Watchlist(object):
             cur = dbcon.cursor()
 
             d = { }
-            merge_login(extras, d)
+            merge_login(dbcon, cur, extras, d)
             if len(d) == 0:
                 return dict(error="You must be logged in to view your watchlist.")
 
@@ -1653,14 +1713,14 @@ class TrackedChanges(object):
     @ok_html
     @showkid('templates/tracked_changes.kid')
     def GET(self, parms, extras):
-        d = { }
-        merge_login(extras, d)
-        if len(d) == 0:
-            return dict(error="You must be logged in to view your recent changes list.")
-
         try:
             dbcon = get_dbcon()
             cur = dbcon.cursor()
+
+            d = { }
+            merge_login(dbcon, cur, extras, d)
+            if len(d) == 0:
+                return dict(error="You must be logged in to view your recent changes list.")
 
             # Select the 50 items on the watchlist with the most recent changes.
             res = cur.execute(
@@ -1752,7 +1812,7 @@ class SyntaxTree(object):
     @showkid('templates/syntax_tree.kid')
     def GET(self, parms, extras):
         d = { }
-        merge_login(extras, d)
+        dbcon_merge_login(extras, d)
         return d
 syntax_tree = SyntaxTree()
 
