@@ -182,6 +182,14 @@ def merge_login(dbcon, cur, extras, dict):
     else:
         assert False
 
+def dbcon_merge_login(extras, dict):
+    try:
+        dbcon = get_dbcon()
+        cur = dbcon.cursor()
+        return merge_login(dbcon, cur, extras, dict)
+    except sqlite.Error, e:
+        dberror(e)
+
 __qstring = \
     """
     SELECT articles.title, articles.source, articles.cached_xhtml, articles.id, revision_histories.threads_id, revision_histories.revision_date, revision_histories.user_comment, articles.redirect, wikiusers.username
