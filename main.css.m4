@@ -184,6 +184,11 @@ p.comment-header + p {
   margin-top: 0.2em;
 }
 
+form.create-account th {
+  text-align: left;
+  padding-right: 1em;
+}
+
 table {
   font-size: 1em;
   color: TABLE_COLOR;

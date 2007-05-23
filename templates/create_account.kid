@@ -31,12 +31,12 @@ import links
     <p py:if="locals().has_key('error')">
         <b class="error">${error}</b>
     </p>
-    <form method="POST" action="${links.make_new_account_link()}">
+    <form class="create-account" method="POST" action="${links.make_new_account_link()}">
         <table>
             <tr>
                 <th>Email</th>
                 <td><input type="text" name="email" value="${locals().has_key('default_email') and default_email or ''}"></input></td>
-                <td>(optional)</td>
+                <td><i>(optional)</i></td>
             </tr>
             <tr>
                 <th>Username</th>
@@ -51,6 +51,11 @@ import links
             </tr>
         </table>
     </form>
+    <p>
+    If you give an email address, it may be used for correspondence in exceptional circumstances,
+    but it will not be published on the site,
+    and no regular emails will be sent to it.
+    </p>
 </body>
 </html>
 
