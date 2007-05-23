@@ -11,10 +11,11 @@
 
 // My utility for printing arrays.
 function strarray($a) {
-    $s = '';
+    $s = '[';
     foreach ($a as $e) {
-        $s .= "$e,";
+        $s .= "$e ";
     }
+    $s .= ']';
     return $s;
 }
 
@@ -184,6 +185,9 @@ class _DiffEngine
 			$xhash[$this->_line_hash($from_lines[$xi])] = 1;
 		}
 
+                echo "2", strarray($this->xchanged), " ", strarray($this->ychanged), "\n";
+                echo "SKIP $skip";
+
 		for ($yi = $skip; $yi < $n_to - $endskip; $yi++) {
 			$line = $to_lines[$yi];
                         //echo $xhash[$this->_line_hash($line)]);
@@ -193,6 +197,7 @@ class _DiffEngine
 			$this->yv[] = $line;
 			$this->yind[] = $yi;
 		}
+                echo "3", strarray($this->xchanged), " ", strarray($this->ychanged), "\n";
 		for ($xi = $skip; $xi < $n_from - $endskip; $xi++) {
 			$line = $from_lines[$xi];
 			if ( ($this->xchanged[$xi] = empty($yhash[$this->_line_hash($line)])) )
@@ -208,10 +213,13 @@ class _DiffEngine
 		$this->_shift_boundaries($from_lines, $this->xchanged, $this->ychanged);
 		$this->_shift_boundaries($to_lines, $this->ychanged, $this->xchanged);
 
+                echo strarray($this->xchanged), "\n", strarray($this->ychanged);
+
 		// Compute the edit operations.
 		$edits = array();
 		$xi = $yi = 0;
 		while ($xi < $n_from || $yi < $n_to) {
+                        echo "beg $xi $n_from $yi $n_to\n";
 			USE_ASSERTS && assert($yi < $n_to || $this->xchanged[$xi]);
 			USE_ASSERTS && assert($xi < $n_from || $this->ychanged[$yi]);
 
@@ -225,6 +233,8 @@ class _DiffEngine
 			if ($copy)
 				$edits[] = new _DiffOp_Copy($copy);
 
+                        echo "mid1 $xi $n_from $yi $n_to\n";
+
 			// Find deletes & adds.
 			$delete = array();
 			while ($xi < $n_from && $this->xchanged[$xi])
@@ -234,12 +244,16 @@ class _DiffEngine
 			while ($yi < $n_to && $this->ychanged[$yi])
 				$add[] = $to_lines[$yi++];
 
+                        echo "mid2 $xi $n_from $yi $n_to\n";
+
 			if ($delete && $add)
 				$edits[] = new _DiffOp_Change($delete, $add);
 			elseif ($delete)
 				$edits[] = new _DiffOp_Delete($delete);
 			elseif ($add)
 				$edits[] = new _DiffOp_Add($add);
+
+                        echo "end $xi $n_from $y $n_to\n";
 		}
 		wfProfileOut( $fname );
 		return $edits;

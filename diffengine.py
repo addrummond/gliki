@@ -26,7 +26,7 @@ from itertools import *
 class PhpArray(dict):
     """Implementation of a PHP-like array."""
     def __init__(self, *elems):
-        self.default = 0
+        self.default = 0 # Important that this is 0 and none None or False.
         for i, e in izip(count(0), elems):
             self[i] = e
 
@@ -62,6 +62,7 @@ class PhpArray(dict):
 # Won't work for negative offsets, but it's never used with them.
 def array_slice(array, offset, length=None, preserve_keys=None):
     """Implementation of PHP's array_slice function for PhpArray objects."""
+    print "SLICE!"
     result = {}
     for k in array.keys():
         if offset > 0:
@@ -193,6 +194,9 @@ class DiffEngine(object):
             xhash[self.line_hash(from_lines[xi])] = 1
             xi += 1
 
+        print "2", self.xchanged, self.ychanged
+
+        print "SKIP", skip
         yi = skip
         while yi < n_to - endskip:
             line = to_lines[yi]
@@ -200,7 +204,7 @@ class DiffEngine(object):
             if xhash.has_key(keyvalue):
                 self.ychanged[yi] = len(xhash[keyvalue]) == 0 and 1 or 0
             else:
-                self.ychanged[yi] = ''
+                self.ychanged[yi] = 1
             if self.ychanged[yi]:
                 yi += 1 # This is in the for loop in the PHP code.
                 continue
@@ -208,6 +212,7 @@ class DiffEngine(object):
             self.yv.append(line)
             self.yind.append(yi)
             yi += 1
+        print "3", self.xchanged, self.ychanged
         xi = skip
         while xi < n_from - endskip:
             line = from_lines[xi]
@@ -230,10 +235,16 @@ class DiffEngine(object):
         self.shift_boundries(from_lines, self.xchanged, self.ychanged)
         self.shift_boundries(to_lines, self.ychanged, self.xchanged)
 
+        print self.xchanged, self.ychanged
+
         # Compute the edit operations.
         edits = PhpArray()
         xi, yi = 0, 0
         while xi < n_from or yi < n_to:
+            print "beg", xi, n_from, yi, n_to
+            assert yi < n_to or self.xchanged[xi]
+            assert xi < n_from or self.ychanged[yi]
+
             # Skip matching "snake".
             copy = PhpArray()
             while xi < n_from and yi < n_to and (not self.xchanged[xi]) and (not self.ychanged[yi]):
@@ -242,6 +253,8 @@ class DiffEngine(object):
                 yi += 1
             if copy:
                 edits.append(DiffOpCopy(copy))
+
+            print "mid1", xi, n_from, yi, n_to
 
             # Find deletes and adds.
             delete = PhpArray()
@@ -254,12 +267,16 @@ class DiffEngine(object):
                 add.append(to_lines[yi])
                 yi += 1
 
+            print "mid2", xi, n_from, yi, n_to
+
             if delete and add:
                 edits.append(DiffOpChange(delete, add))
             elif delete:
                 edits.append(delete)
             elif add:
                 edits.append(add)
+
+            print "end", xi, n_from, yi, n_to
 
         return edits
 
