@@ -114,20 +114,22 @@ def update_last_seen(dbcon, cur, user_id):
                 VALUES
                 (?, ?)
             """,
-            (user_id, int(time.gmtime()))
+            (user_id, int(time.time()))
         )
-        return res[0][0]
+        dbcon.commit()
+        return 0
     else:
         # Update the existing record.
-        res = cur.execute(
+        res2 = cur.execute(
             """
             UPDATE last_seens
             SET seen_on = ?
             WHERE wikiusers_id = ?
             """,
-            (int(time.gmtime()), user_id)
+            (int(time.time()), user_id)
         )
-        return 0
+        dbcon.commit()
+        return res[0][0]
 
 def dbcon_update_last_seen(user_id):
     try:
@@ -169,9 +171,9 @@ def merge_login(dbcon, cur, extras, dict):
             raise control.AuthenticationRequired(USER_AUTH_REALM, get_auth_method(extras))
 
         # Has the user's userpage been edited since they last logged on?
-        previously_seen = update_last_seen(dbcon, cur, username)
-        rev = get_revision(dbcon, cur, links.USER_PAGE_PREFIX + extras.auth.username)
-        if rev and rev['revision_date'] > previously_seen:
+        previously_seen = update_last_seen(dbcon, cur, id)
+        rev = get_revision(dbcon, cur, links.USER_PAGE_PREFIX + extras.auth.username, -1)
+        if rev and rev['revision_date'] != 0 and rev['revision_date'] > previously_seen:
             # Add a key to the dict indicating that a "your user page has been
             # updated" message should be shown.
             dict['user_page_updated'] = True
