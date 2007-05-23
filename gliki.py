@@ -174,7 +174,7 @@ def merge_login(dbcon, cur, extras, dict):
         if rev and rev['revision_date'] > previously_seen:
             # Add a key to the dict indicating that a "your user page has been
             # updated" message should be shown.
-            dict['user_page_has_been_updated'] = True
+            dict['user_page_updated'] = True
 
         dict['username'] = extras.auth.username
         dict['user_id'] = id
