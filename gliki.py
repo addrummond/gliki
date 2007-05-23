@@ -104,7 +104,7 @@ def update_last_seen(dbcon, cur, user_id):
     )
     res = list(res)
 
-    assert len(res) == 0 or len(res) == 1
+    assert len(res) <= 1
     if len(res) == 0:
         # Create a new last_seen record.
         res2 = cur.execute(
@@ -148,7 +148,7 @@ def get_auth_method(extras):
     else:
         return USER_AUTH_METHOD
 
-def merge_login(dbcon, cur, extras, dict):
+def merge_login(dbcon, cur, extras, dict, dont_update_last_seen=False):
     """Merges username and user_id into a dictionary if the HTTP header
        has auth information. Raises AuthenticationRequired if auth info is
        given but is incorrect."""
@@ -171,12 +171,13 @@ def merge_login(dbcon, cur, extras, dict):
             raise control.AuthenticationRequired(USER_AUTH_REALM, get_auth_method(extras))
 
         # Has the user's userpage been edited since they last logged on?
-        previously_seen = update_last_seen(dbcon, cur, id)
-        rev = get_revision(dbcon, cur, links.USER_PAGE_PREFIX + extras.auth.username, -1)
-        if rev and rev['revision_date'] != 0 and rev['revision_date'] > previously_seen:
-            # Add a key to the dict indicating that a "your user page has been
-            # updated" message should be shown.
-            dict['user_page_updated'] = True
+        if not dont_update_last_seen:
+            previously_seen = update_last_seen(dbcon, cur, id)
+            rev = get_revision(dbcon, cur, links.USER_PAGE_PREFIX + extras.auth.username, -1)
+            if rev and rev['revision_date'] != 0 and rev['revision_date'] > previously_seen:
+                # Add a key to the dict indicating that a "your user page has been
+                # updated" message should be shown.
+                dict['user_page_updated'] = True
 
         dict['username'] = extras.auth.username
         dict['user_id'] = id
@@ -184,11 +185,11 @@ def merge_login(dbcon, cur, extras, dict):
     else:
         assert False
 
-def dbcon_merge_login(extras, dict):
+def dbcon_merge_login(extras, dict, dont_update_last_seen=False):
     try:
         dbcon = get_dbcon()
         cur = dbcon.cursor()
-        return merge_login(dbcon, cur, extras, dict)
+        return merge_login(dbcon, cur, extras, dict, dont_update_last_seen)
     except sqlite.Error, e:
         dberror(e)
 
@@ -1508,7 +1509,9 @@ class Login(object):
     @ok_html
     def GET(self, parms, extras):
         d = { }
-        dbcon_merge_login(extras, d)
+        # Updating the last seen thingy will happen when they're redirected to
+        # their user page.
+        dbcon_merge_login(extras, d, dont_update_last_seen=True)
         # They might be logged in already.
         if d.has_key('username'):
             raise control.Redirect(links.article_link(links.USER_PAGE_PREFIX + extras.auth.username),

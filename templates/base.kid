@@ -39,10 +39,11 @@ import links
               it to work or anything.</i></b>
     </p>
     <img class="logo" src="/logo.png" alt="Gliki - the generative linguistics wiki"/>
-    <p class="login-message" py:if="(locals().has_key('username') or globals().has_key('username')) and username">
+    <p class="login-message" py:if="locals().has_key('username') and username">
         <i>You are logged in as <a class="article_ref" href="${links.user_page_link(username)}">${username}</a></i>
         <div py:strip="True" py:if="locals().has_key('user_page_updated') and user_page_updated">
-            <i><b>Your user page has been updated since the last time you logged in.</b></i>
+            <br />
+            <b class="error">Your user page has been updated since the last time you logged in.</b>
         </div>
     </p>
     <p class="login-message" py:if="(not locals().has_key('username')) or (not username)">
