@@ -1529,7 +1529,7 @@ class Preferences(object):
     def GET(self, parms, extras):
         # Get the preferences for this user.
         try:
-            dbcon = get_dbcon()
+           dbcon = get_dbcon()
             cur = dbcon.cursor()
 
             d = { }
@@ -1542,7 +1542,7 @@ class Preferences(object):
                 SELECT wikiusers_prefs.email_changes, wikiusers_prefs.digest FROM wikiusers
                 INNER JOIN wikiusers_prefs
                 ON wikiusers_prefs.wikiusers_id = wikiusers.id
-                WHERE wikiusers.username = ?
+                 WHERE wikiusers.username = ?
                 """,
                 (d['username'],)
             )
