@@ -3,8 +3,6 @@
 * Allow KID templates to be modified without restarting server.
 
 == Cruicial ==
-* "Last seen" field for users so that we can add a message saying that their
-  user page has been edited or commented on.
 * Tree drawing (bugs in sizing trees, but 90% complete).
 * Fix bad line/column numbers in parser.
 * Get cursor placement working in IE and other non-Firefox browsers.
