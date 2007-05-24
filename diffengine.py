@@ -59,10 +59,11 @@ class PhpArray(dict):
             if type(k) == types.IntType:
                 last = k
                 break
-        a = map(lambda x: None, xrange(last))
+        a = map(lambda x: None, xrange(last + 1))
         for k,v in self.iteritems():
             if type(k) == types.IntType:
                 a[k] = v
+        return a
 
     def __repr__(self):
         s = u'['
@@ -130,6 +131,11 @@ class DiffOpCopy(DiffOp):
     def __init__(self, orig, closing=None):
         if not isinstance(closing, PhpArray):
             closing = orig
+
+        if isinstance(orig, PhpArray):
+            orig = orig.to_python_array()
+        if isinstance(closing, PhpArray):
+            closing = closing.to_python_array()
         self.orig = orig
         self.closing = closing
 
@@ -138,6 +144,8 @@ class DiffOpCopy(DiffOp):
 
 class DiffOpDelete(DiffOp):
     def __init__(self, lines):
+        if isinstance(lines, PhpArray):
+            lines = lines.to_python_array()
         self.orig = lines
         self.closing = None
 
@@ -149,6 +157,8 @@ class DiffOpDelete(DiffOp):
 
 class DiffOpAdd(DiffOp):
     def __init__(self, lines):
+        if isinstance(lines, PhpArray):
+            lines = lines.to_python_array()
         self.closing = lines
         self.orig = lines
 
@@ -160,6 +170,10 @@ class DiffOpAdd(DiffOp):
 
 class DiffOpChange(DiffOp):
     def __init__(self, orig, closing):
+        if isinstance(orig, PhpArray):
+            orig = orig.to_python_array()
+        if isinstance(closing, PhpArray):
+            closing = closing.to_python_array()
         self.orig = orig
         self.closing = closing
 
@@ -592,6 +606,20 @@ def pretty_diff(doc1, doc2, max_chars_per_line=80):
     if len(changes) == 0:
         return None
 
+    # For each DiffOpChange, we want to do a sub-diff.
+    #for c in changes:
+    #    if isinstance(c, DiffOpChange):
+    #        orig = c.orig and '\n'.join([s.replace('\n', '\0') for s in c.orig]) or []
+    #        closing = c.closing and '\n'.join([s.replace('\n', '\0') for s in c.closing]) or []
+    #        e2 = DiffEngine()
+    #        changes2 = e2.diff(closing, orig)
+    #        for c2 in changes2:
+    #            c2.orig = c2.orig.replace('\n', '')
+    #            c2.orig = c2.orig.replace('\0', '\n')
+    #            c2.closing = c2.closing.replace('\n', '')
+    #            c2.closing = c2.closing.replace('\0', '')
+    #        print changes2
+
     import StringIO
     import htmlutils
     xhtml = StringIO.StringIO()
@@ -629,4 +657,6 @@ def pretty_diff(doc1, doc2, max_chars_per_line=80):
 #r = e.diff(["I saw a man", "walking down the steet", "yesterday"], ["I saw a man", "walking down the street", "yesterday"])
 #for l in r:
 #    print l
+
+#print PhpArray([1,2,3,4,5]).to_python_array()
 
