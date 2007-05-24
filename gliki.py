@@ -45,6 +45,7 @@ import cairo
 import StringIO
 import links
 import logging
+import diffengine
 from my_utils import *
 
 USER_AUTH_REALM = "Wikiuser"
@@ -1265,19 +1266,16 @@ class Diff(object):
             elif rev1title != title:
                 formertitle = rev1title
 
-            try: # Becuase pretty_diff might fail.
-                return merge_login(dbcon, cur,
-                                   extras,
-                                   dict(article_title=title,
-                                        diff_html=pretty_diff(rev1src, rev2src, 60),
-                                        rev1=rev1,
-                                        rev2=rev2,
-                                        formertitle=formertitle,
-                                        newtitle=newtitle,
-                                        oldtitle=oldtitle,
-                                        revision_comment=revision_comment))
-            except PrettyDiffError, e:
-                raise control.SwitchHandler(generic_internal_error, { }, 'GET')
+            return merge_login(dbcon, cur,
+                               extras,
+                               dict(article_title=title,
+                                    diff_html=diffengine.pretty_diff(rev1src, rev2src, 60),
+                                    rev1=rev1,
+                                    rev2=rev2,
+                                    formertitle=formertitle,
+                                    newtitle=newtitle,
+                                    oldtitle=oldtitle,
+                                    revision_comment=revision_comment))
         except sqlite.Error, e:
             dberror(e)
 diff = Diff()
@@ -1529,7 +1527,7 @@ class Preferences(object):
     def GET(self, parms, extras):
         # Get the preferences for this user.
         try:
-           dbcon = get_dbcon()
+            dbcon = get_dbcon()
             cur = dbcon.cursor()
 
             d = { }

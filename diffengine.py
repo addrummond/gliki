@@ -65,16 +65,16 @@ class PhpArray(dict):
                 a[k] = v
 
     def __repr__(self):
-        s = '['
+        s = u'['
         for kv, last in my_utils.mark_last(self.iteritems()):
             k, v = kv[0], kv[1]
             if type(k) == types.IntType:
                 s += str(v)
             else:
-                s += "(%s : %s)" % (str(k), str(v))
+                s += u"(%s : %s)" % (str(k), str(v))
             if not last:
-                s += ', '
-        s += ']'
+                s += u', '
+        s += u']'
         return s
 
 # Won't work for negative offsets, but it's never used with them.
@@ -226,7 +226,7 @@ class DiffEngine(object):
         while yi < n_to - endskip:
             line = to_lines[yi]
             keyvalue = self.line_hash(line)
-            if xhash.has_key(keyvalue) and len(xhash[keyvalue]) == 0:
+            if xhash.has_key(keyvalue) and (not xhash[keyvalue]):
                 self.ychanged[yi] = 1
             else:
                 self.ychanged[yi] = 1
@@ -241,7 +241,7 @@ class DiffEngine(object):
         while xi < n_from - endskip:
             line = from_lines[xi]
             keyvalue = self.line_hash(line)
-            if yhash.has_key(keyvalue) and len(yhash[keyvalue]) == 0:
+            if yhash.has_key(keyvalue) and (not yhash[keyvalue]):
                 self.xchanged[xi] = 1
             else:
                 self.xchanged[xi] = 1
@@ -555,6 +555,72 @@ class Diff(object):
             if edit.closing:
                 array_splice(lines, len(lines), 0, edit.closing)
         return lines
+
+#
+# Some code for doing pretty diffs (not translated from the Wikimedia code).
+#
+
+def pretty_diff(doc1, doc2, max_chars_per_line=80):
+    """Diffs two docs and outputs the result in in XHTML.
+       Assumes everything is in UTF-8."""
+    def add_brs(text, n):
+        """Add <br /> tags into a string to ensure that line breaks follow
+           as soon as possible after n characters (line breaks are only
+           inserted in place of whitespace).
+        """
+        sstack = []
+        i = 0
+        while i < len(text):
+            found_space = False
+            j = i + n
+            while j < len(text):
+                if text[j].isspace():
+                    sstack.append(text[i : j])
+                    found_space = True
+                    i = j + 1
+                    break
+                j += 1
+            if not found_space:
+                sstack.append(text[i:])
+                break
+        return u'<br />'.join(sstack)                    
+
+    e = DiffEngine()
+    changes = e.diff(doc2.split('\n'), doc1.split('\n'))
+    changes = filter(lambda c: not isinstance(c, DiffOpCopy), changes)
+
+    if len(changes) == 0:
+        return None
+
+    import StringIO
+    import htmlutils
+    xhtml = StringIO.StringIO()
+
+    xhtml.write(u'<table class="diff">\n')
+    for c in changes:
+        xhtml.write(u'    <tr>\n')
+        if c.orig:
+            xhtml.write(u'        <td class="old-text-minus">-</td>\n')
+            xhtml.write(u'        <td class="old-text">\n')
+            for line in c.orig:
+                xhtml.write(u'            ')
+                xhtml.write(add_brs(htmlutils.htmlencode(line), max_chars_per_line))
+                xhtml.write(u'<br />\n')
+            xhtml.write(u'        </td>\n')
+        if c.closing:
+            xhtml.write(u'        <td class="new-text-plus">+</td>\n')
+            if not c.orig:
+                xhtml.write(u'        <td></td>\n')
+            xhtml.write(u'        <td class="new-text">\n')
+            for line in c.closing:
+                xhtml.write(u'            ')
+                xhtml.write(add_brs(htmlutils.htmlencode(line), max_chars_per_line))
+                xhtml.write(u'<br />\n')
+            xhtml.write('        </td>\n')
+        xhtml.write(u'    </tr>\n')
+    xhtml.write(u'</table>')
+
+    return xhtml.getvalue().encode('utf-8')
 
 #
 # TEST CODE
