@@ -21,11 +21,16 @@
 
 import types
 import md5
+import my_utils
 from itertools import *
+
+#
+# Some supporting utilities for mimicing various features of PHP.
+#
 
 class PhpArray(dict):
     """Implementation of a PHP-like array."""
-    def __init__(self, *elems):
+    def __init__(self, elems=[]):
         self.default = 0 # Important that this is 0 and none None or False.
         for i, e in izip(count(0), elems):
             self[i] = e
@@ -59,16 +64,29 @@ class PhpArray(dict):
             if type(k) == types.IntType:
                 a[k] = v
 
+    def __repr__(self):
+        s = '['
+        for kv, last in my_utils.mark_last(self.iteritems()):
+            k, v = kv[0], kv[1]
+            if type(k) == types.IntType:
+                s += str(v)
+            else:
+                s += "(%s : %s)" % (str(k), str(v))
+            if not last:
+                s += ', '
+        s += ']'
+        return s
+
 # Won't work for negative offsets, but it's never used with them.
 def array_slice(array, offset, length=None, preserve_keys=None):
     """Implementation of PHP's array_slice function for PhpArray objects."""
-    print "SLICE!"
     result = {}
     for k in array.keys():
         if offset > 0:
             continue
         else:
             offset -= 1
+
         if length is None:
             result[k] = array[k]
         elif length > 0:
@@ -84,6 +102,10 @@ def array_slice(array, offset, length=None, preserve_keys=None):
         for i, k in izip(count(0), result.iterkeys()):
             newarray[i] = result[k]
         return newarray
+
+#
+# Translation of the PHP code in diff.php (pretty much line-for-line).
+#
 
 def array_splice(array, offset, length, replacement):
     """Implementation of PHP's array_splice function for PhpArray objects."""
@@ -105,8 +127,8 @@ class DiffOp(object):
         return self.closing and len(self.closing) or 0
 
 class DiffOpCopy(DiffOp):
-    def __init__(self, orig, closing=False):
-        if type(closing) == types.ListType:
+    def __init__(self, orig, closing=None):
+        if not isinstance(closing, PhpArray):
             closing = orig
         self.orig = orig
         self.closing = closing
@@ -117,7 +139,7 @@ class DiffOpCopy(DiffOp):
 class DiffOpDelete(DiffOp):
     def __init__(self, lines):
         self.orig = lines
-        self.closing = False
+        self.closing = None
 
     def reverse(self):
         return DiffOpAdd(self.orig)
@@ -154,6 +176,9 @@ class DiffEngine(object):
         self.seq = PhpArray()
 
     def diff(self, from_lines, to_lines):
+        from_lines = PhpArray(from_lines)
+        to_lines = PhpArray(to_lines)
+
         xhash = PhpArray()
         yhash = PhpArray()
 
@@ -166,6 +191,9 @@ class DiffEngine(object):
         self.yv = PhpArray()
         self.xind = PhpArray()
         self.yind = PhpArray()
+        self.seq = None
+        self.in_seq = None
+        self.lcs = None
 
         # Skip leading common lines.
         skip = 0
@@ -194,15 +222,12 @@ class DiffEngine(object):
             xhash[self.line_hash(from_lines[xi])] = 1
             xi += 1
 
-        print "2", self.xchanged, self.ychanged
-
-        print "SKIP", skip
         yi = skip
         while yi < n_to - endskip:
             line = to_lines[yi]
             keyvalue = self.line_hash(line)
-            if xhash.has_key(keyvalue):
-                self.ychanged[yi] = len(xhash[keyvalue]) == 0 and 1 or 0
+            if xhash.has_key(keyvalue) and len(xhash[keyvalue]) == 0:
+                self.ychanged[yi] = 1
             else:
                 self.ychanged[yi] = 1
             if self.ychanged[yi]:
@@ -212,15 +237,14 @@ class DiffEngine(object):
             self.yv.append(line)
             self.yind.append(yi)
             yi += 1
-        print "3", self.xchanged, self.ychanged
         xi = skip
         while xi < n_from - endskip:
             line = from_lines[xi]
             keyvalue = self.line_hash(line)
-            if yhash.has_key(keyvalue):
-                self.xchanged[xi] = len(yhash[self.line_hash(line)]) == 0 and 1 or 0
+            if yhash.has_key(keyvalue) and len(yhash[keyvalue]) == 0:
+                self.xchanged[xi] = 1
             else:
-                self.xchanged[xi] = ''
+                self.xchanged[xi] = 1
             if self.xchanged[xi]:
                 xi += 1 # This is in the for loop in the PHP code.
                 continue
@@ -235,13 +259,11 @@ class DiffEngine(object):
         self.shift_boundries(from_lines, self.xchanged, self.ychanged)
         self.shift_boundries(to_lines, self.ychanged, self.xchanged)
 
-        print self.xchanged, self.ychanged
 
         # Compute the edit operations.
         edits = PhpArray()
         xi, yi = 0, 0
         while xi < n_from or yi < n_to:
-            print "beg", xi, n_from, yi, n_to
             assert yi < n_to or self.xchanged[xi]
             assert xi < n_from or self.ychanged[yi]
 
@@ -254,7 +276,6 @@ class DiffEngine(object):
             if copy:
                 edits.append(DiffOpCopy(copy))
 
-            print "mid1", xi, n_from, yi, n_to
 
             # Find deletes and adds.
             delete = PhpArray()
@@ -267,16 +288,14 @@ class DiffEngine(object):
                 add.append(to_lines[yi])
                 yi += 1
 
-            print "mid2", xi, n_from, yi, n_to
 
             if delete and add:
                 edits.append(DiffOpChange(delete, add))
             elif delete:
-                edits.append(delete)
+                edits.append(DiffOpDelete(delete))
             elif add:
-                edits.append(add)
+                edits.append(DiffOpAdd(add))
 
-            print "end", xi, n_from, yi, n_to
 
         return edits
 
@@ -358,15 +377,15 @@ class DiffEngine(object):
                 x += 1
             chunk += 1
 
-        seps = flip and PhpArray(yoff, xoff) or PhpArray(xoff, yoff)
+        seps = flip and PhpArray([yoff, xoff]) or PhpArray([xoff, yoff])
         ymid = ymids[self.lcs]
         for n in xrange(nchunks - 1):
             x1 = xoff + int((number + (xlim - xoff) * n) / nchunks)
             y1 = ymid[n] + 1
-            seps = flip and PhpArray(y1, x1) or PhpArray(x1, y1)
-        seps = flip and PhpArray(ylim, xlim) or PhpArray(xlim, ylim)
+            seps = flip and PhpArray([y1, x1]) or PhpArray([x1, y1])
+        seps = flip and PhpArray([ylim, xlim]) or PhpArray([xlim, ylim])
 
-        return PhpArray(self.lcs, seps)
+        return PhpArray([self.lcs, seps])
 
     def lcs_pos(ypos):
         end = self.lcs
@@ -537,7 +556,11 @@ class Diff(object):
                 array_splice(lines, len(lines), 0, edit.closing)
         return lines
 
-e = DiffEngine()
-r = e.diff(PhpArray("foooo", "bar", "foooo"), PhpArray("fooooaa", "fooo"))
-for l in r: print l
+#
+# TEST CODE
+#
+#e = DiffEngine()
+#r = e.diff(["I saw a man", "walking down the steet", "yesterday"], ["I saw a man", "walking down the street", "yesterday"])
+#for l in r:
+#    print l
 

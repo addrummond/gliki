@@ -10,7 +10,7 @@
  */
 
 // My utility for printing arrays.
-function strarray($a) {
+function strarray(&$a) {
     $s = '[';
     foreach ($a as $e) {
         $s .= "$e ";
@@ -175,6 +175,8 @@ class _DiffEngine
 		// Skip trailing common lines.
 		$xi = $n_from; $yi = $n_to;
 		for ($endskip = 0; --$xi > $skip && --$yi > $skip; $endskip++) {
+                        echo "ILOOP $endskip $xi $yi $skip\n";
+                        echo $from_lines[$xi], " ", $to_lines[$yi], "\n";
 			if ($from_lines[$xi] !== $to_lines[$yi])
 				break;
 			$this->xchanged[$xi] = $this->ychanged[$yi] = false;
@@ -186,9 +188,10 @@ class _DiffEngine
 		}
 
                 echo "2", strarray($this->xchanged), " ", strarray($this->ychanged), "\n";
-                echo "SKIP $skip";
 
+                echo "B4LOOP $yi $n_to $endskip\n";
 		for ($yi = $skip; $yi < $n_to - $endskip; $yi++) {
+                        echo "LOOP\n";
 			$line = $to_lines[$yi];
                         //echo $xhash[$this->_line_hash($line)]);
 			if ( ($this->ychanged[$yi] = empty($xhash[$this->_line_hash($line)])) )
@@ -213,13 +216,15 @@ class _DiffEngine
 		$this->_shift_boundaries($from_lines, $this->xchanged, $this->ychanged);
 		$this->_shift_boundaries($to_lines, $this->ychanged, $this->xchanged);
 
-                echo strarray($this->xchanged), "\n", strarray($this->ychanged);
+                echo strarray($this->xchanged), "\n", strarray($this->ychanged), "\n";
 
 		// Compute the edit operations.
 		$edits = array();
 		$xi = $yi = 0;
+                echo "PRECOND ", strarray($this->xchanged), "\n", strarray($this->ychanged), "\n";
 		while ($xi < $n_from || $yi < $n_to) {
-                        echo "beg $xi $n_from $yi $n_to\n";
+                        echo "LOOP11\n";
+                        //echo "beg $xi $n_from $yi $n_to\n";
 			USE_ASSERTS && assert($yi < $n_to || $this->xchanged[$xi]);
 			USE_ASSERTS && assert($xi < $n_from || $this->ychanged[$yi]);
 
@@ -721,8 +726,9 @@ class Diff
 }
 
 $e = new _DiffEngine();
-$r = $e->diff(array("foooo", "bar", "fooo"), array("foooaa", "fooo"));
-foreach ($r as $l) { echo $l; }
+$r = $e->diff(array("I saw a man", "walking down the steet", "yesterday"), array("I saw a man", "walking down the street", "yesterday"));
+echo sizeof($r);
+foreach ($r as $l) { echo $l, "\n"; }
 
 ?>
 
