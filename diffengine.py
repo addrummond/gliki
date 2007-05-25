@@ -691,10 +691,10 @@ def pretty_diff(doc1, doc2, max_chars_per_line=80):
 #
 # TEST CODE
 #
-e = DiffEngine()
-r = e.diff(["I saw a man", "walking down the steet", "yesterday"], ["I saw a man", "walking down the street", "yesterday"])
-for l in r:
-    print l
+#e = DiffEngine()
+#r = e.diff(["I saw a man", "walking down the steet", "yesterday"], ["I saw a man", "walking down the street", "yesterday"])
+#for l in r:
+#    print l
 
 #print PhpArray([1,2,3,4,5]).to_python_array()
 
