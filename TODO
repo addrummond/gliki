@@ -13,7 +13,7 @@
 
 == Would be nice ==
 * Table of contents for articles.
-* Remove dependence on diff, and do diffs properly (not just line by line).
+* Do diffs properly (not just line by line).
 * Unicode audit (unicode seems to work fine, but only by a UTF-8 miracle)
 * Color links to existent/non-existent articles differently.
 * Orphaned, abandoned pages, etc.
