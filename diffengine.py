@@ -17,6 +17,7 @@
 
 #
 # Python conversion of the Wikimedia code in diff.php.
+# (This code is also licensed released under GPL >= 2.)
 #
 
 import types
@@ -28,10 +29,14 @@ from itertools import *
 # Some supporting utilities for mimicing various features of PHP.
 #
 
-class PhpArray(dict):
+class BasePhpArray(object):
+    def __init__(self):
+        self.default = 0 # Important that this is 0 and none None or False.
+
+class PhpArray(BasePhpArray, dict):
     """Implementation of a PHP-like array."""
     def __init__(self, elems=[]):
-        self.default = 0 # Important that this is 0 and none None or False.
+        super(PhpArray, self).__init__()
         for i, e in izip(count(0), elems):
             self[i] = e
 
@@ -52,6 +57,11 @@ class PhpArray(dict):
                 biggest_num = k
                 break
         self[biggest_num + 1] = elem
+
+    def reverse(self):
+        vals = self.values()
+        for k, v in izip(reversed(self.keys()), vals):
+            self[k] = v
 
     def to_python_array(self):
         last = None
@@ -77,6 +87,35 @@ class PhpArray(dict):
                 s += u', '
         s += u']'
         return s
+
+class SimplePhpArray(BasePhpArray, list):
+    """Implementation of a PHP array which only works in cases where a Python
+       list is sufficient. More efficient than a PhpArray when the restricted
+       functionality is not a problem.
+    """
+    def __init__(self, elems=[]):
+        super(SimplePhpArray, self).__init__()
+        self.elems = elems
+
+    def __setitem__(self, k, v):
+        if k == len(self):
+            self.append(v)
+        elif k < len(self):
+            list.__setitem__(self, k, v)
+        else:
+            assert False
+
+    def __getitem__(self, k):
+        try:
+            return self[k]
+        except IndexError:
+            return self.default
+        except TypeError:
+            # The index wasn't an integer.
+            assert False
+
+    def to_python_array(self):
+        return self
 
 # Won't work for negative offsets, but it's never used with them.
 def array_slice(array, offset, length=None, preserve_keys=None):
@@ -129,12 +168,12 @@ class DiffOp(object):
 
 class DiffOpCopy(DiffOp):
     def __init__(self, orig, closing=None):
-        if not isinstance(closing, PhpArray):
+        if not isinstance(closing, BasePhpArray):
             closing = orig
 
-        if isinstance(orig, PhpArray):
+        if isinstance(orig, BasePhpArray):
             orig = orig.to_python_array()
-        if isinstance(closing, PhpArray):
+        if isinstance(closing, BasePhpArray):
             closing = closing.to_python_array()
         self.orig = orig
         self.closing = closing
@@ -144,7 +183,7 @@ class DiffOpCopy(DiffOp):
 
 class DiffOpDelete(DiffOp):
     def __init__(self, lines):
-        if isinstance(lines, PhpArray):
+        if isinstance(lines, BasePhpArray):
             lines = lines.to_python_array()
         self.orig = lines
         self.closing = None
@@ -157,7 +196,7 @@ class DiffOpDelete(DiffOp):
 
 class DiffOpAdd(DiffOp):
     def __init__(self, lines):
-        if isinstance(lines, PhpArray):
+        if isinstance(lines, BasePhpArray):
             lines = lines.to_python_array()
         self.closing = lines
         self.orig = lines
@@ -170,9 +209,9 @@ class DiffOpAdd(DiffOp):
 
 class DiffOpChange(DiffOp):
     def __init__(self, orig, closing):
-        if isinstance(orig, PhpArray):
+        if isinstance(orig, BasePhpArray):
             orig = orig.to_python_array()
-        if isinstance(closing, PhpArray):
+        if isinstance(closing, BasePhpArray):
             closing = closing.to_python_array()
         self.orig = orig
         self.closing = closing
@@ -201,10 +240,10 @@ class DiffEngine(object):
 
         self.xchanged = PhpArray()
         self.ychanged = PhpArray()
-        self.xv = PhpArray()
-        self.yv = PhpArray()
-        self.xind = PhpArray()
-        self.yind = PhpArray()
+        self.xv = SimplePhpArray()
+        self.yv = SimplePhpArray()
+        self.xind = SimplePhpArray()
+        self.yind = SimplePhpArray()
         self.seq = None
         self.in_seq = None
         self.lcs = None
@@ -275,7 +314,7 @@ class DiffEngine(object):
 
 
         # Compute the edit operations.
-        edits = PhpArray()
+        edits = SimplePhpArray()
         xi, yi = 0, 0
         while xi < n_from or yi < n_to:
             assert yi < n_to or self.xchanged[xi]
@@ -292,12 +331,12 @@ class DiffEngine(object):
 
 
             # Find deletes and adds.
-            delete = PhpArray()
+            delete = SimplePhpArray()
             while xi < n_from and self.xchanged[xi]:
                 delete.append(from_lines[xi])
                 xi += 1
 
-            add = PhpArray()
+            add = SimplePhpArray()
             while yi < n_to and self.ychanged[yi]:
                 add.append(to_lines[yi])
                 yi += 1
@@ -309,7 +348,6 @@ class DiffEngine(object):
                 edits.append(DiffOpDelete(delete))
             elif add:
                 edits.append(DiffOpAdd(add))
-
 
         return edits
 
@@ -536,7 +574,7 @@ class Diff(object):
 
     def reverse(self):
         edits_copy = array_slice(self.edits, 0, None, True) # Copy the array.
-        self.edits = PhpArray()
+        self.edits = SimplePhpArray()
         for edit in edits_copy:
             redit = edit.reverse()
             self.edits.append(redit)
@@ -653,10 +691,14 @@ def pretty_diff(doc1, doc2, max_chars_per_line=80):
 #
 # TEST CODE
 #
-#e = DiffEngine()
-#r = e.diff(["I saw a man", "walking down the steet", "yesterday"], ["I saw a man", "walking down the street", "yesterday"])
-#for l in r:
-#    print l
+e = DiffEngine()
+r = e.diff(["I saw a man", "walking down the steet", "yesterday"], ["I saw a man", "walking down the street", "yesterday"])
+for l in r:
+    print l
 
 #print PhpArray([1,2,3,4,5]).to_python_array()
+
+#x = PhpArray([1,2,3,4,5,6])
+#x.reverse()
+#print x
 

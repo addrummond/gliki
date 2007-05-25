@@ -5,7 +5,7 @@
  * This has been translated in diffengine.py, so this PHP code is not actually
  * executed by Gliki.
  * 
- * The original GPL license applies to this file
+ * The original GPL license (version >=2) applies to this file
  * (see the LICENSE file included with Gliki).
  */
 
