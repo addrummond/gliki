@@ -52,9 +52,10 @@ import links
         </table>
     </form>
     <p>
-    If you give an email address, it may be used for correspondence in exceptional circumstances,
-    but it will not be published on the site,
-    and no regular emails will be sent to it.
+    If you give an email address, it may be used to send you a new password,
+    or for correspondence in exceptional circumstances.
+    It will not be published on the site
+    and no regular email will be sent to it.
     </p>
 </body>
 </html>
