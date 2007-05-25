@@ -186,8 +186,9 @@ p.comment-header + p {
 
 form.create-account th {
   text-align: left;
-  padding-right: 1em;
 }
+
+th { padding-right: 1em; }
 
 table {
   font-size: 1em;
@@ -430,5 +431,10 @@ div.left-indent {
 }
 div.right-indent {
   padding-right: INDENT_DISTANCE;
+}
+
+td.explanation {
+  font-style: italic;
+  padding-left: 1em;
 }
 

@@ -27,6 +27,9 @@ CREATE TABLE wikiusers
     email TEXT UNIQUE
 );
 
+-- Keeps a record of the last time each user viewed a page while logged in.
+-- This is used to give messages like "your user page has changed since you
+-- last logged in".
 CREATE TABLE last_seens
 (
     wikiusers_id INTEGER NOT NULL PRIMARY KEY,
@@ -60,15 +63,22 @@ CREATE TABLE category_specs
     PRIMARY KEY (threads_id, name)
 );
 
-CREATE TABLE wikiusers_prefs
+-- It seems virtually certain that we'll want to add new preferences in the
+-- future, so having a separate table for each preference should make this a
+-- lot easier to do without screwing up existing databases.
+CREATE TABLE wikiuser_time_zone_prefs
 (
     wikiusers_id INTEGER NOT NULL PRIMARY KEY,
-    -- Should we email changes on the user's watchlist to him?
-    email_changes BOOLEAN NOT NULL,
-    -- If so, should we email each change individually or do it in digest
-    -- form?
-    digest BOOLEAN NOT NULL
+    -- The offset in seconds from GMT (either positive or negative).
+    offset INTEGER NOT NULL,
+    FOREIGN KEY (wikiusers_id) REFERENCES wikiusers(id)
 );
+CREATE TABLE wikiuser_add_pages_i_create_to_watchlist_prefs
+(
+    wikiusers_id INTEGER NOT NULL PRIMARY KEY,
+    yesno BOOLEAN NOT NULL,
+    FOREIGN KEY (wikiusers_id) REFERENCES wikiusers(id)
+)
 
 CREATE TABLE watchlist_items
 (

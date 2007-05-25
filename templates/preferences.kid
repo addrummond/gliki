@@ -45,19 +45,19 @@ import links
         <input type="hidden" name="username" value="${username}"></input>
         <table class="preferences">
             <tr>
-                <th>Send watchlist updates by email</th>
+                <th>Time zone offset from UTC</th>
                 <td>
-                    <input type="checkbox" name="email_changes" py:attrs="(email_changes and (dict(checked=''),) or ({ },))[0]"></input>
+                    <input type="text" size="3" name="time_offset" value="${time_offset}"></input>
+                </td>
+                <td class="explanation">
+                    (for example, enter &lsquo;-5&rsquo; for Eastern Standard Time)
                 </td>
             </tr>
             <tr>
-                <th>Send updates in a daily digest</th>
-                <td>
-                    <input type="checkbox" name="digest" py:attrs="(digest and (dict(checked=''),) or ({ },))[0]"></input>
+                <th>Add pages I create to my watchlist</th>
+                <td colspan="2">
+                    <input type="checkbox" py:attrs="add_pages_i_create_to_watchlist and dict(checked='') or { }"></input>
                 </td>
-            </tr>
-            <tr>
-                <td><input type="submit" value="Change my preferences"></input></td>
             </tr>
         </table>
     </form>
