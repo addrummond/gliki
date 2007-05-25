@@ -1430,7 +1430,7 @@ class MakeNewAccount(object):
 
             dbcon.commit()
 
-            raise control.Redirect(links.login_link(), 'text/html; charset=UTF-8', 'see_other')
+            raise control.Redirect(links.login_new_account_link(), 'text/html; charset=UTF-8', 'see_other')
         except sqlite.Error, e:
             dberror(e)
 make_new_account = MakeNewAccount()
@@ -1502,14 +1502,16 @@ class DeleteAccount(object):
 delete_account = DeleteAccount()
 
 class Login(object):
-    uris = [Abs(links.LOGIN)]
+    uris = [Abs(links.LOGIN), Abs(links.LOGIN_NEW_ACCOUNT, dict(new_account=True))]
 
     @ok_html
     def GET(self, parms, extras):
         d = { }
         # Updating the last seen thingy will happen when they're redirected to
-        # their user page.
-        dbcon_merge_login(extras, d, dont_update_last_seen=True)
+        # their user page. However, if this is a new account, we'll update
+        # the last seen field now, because we don't want the user page updated
+        # message to be displayed the first time they log in.
+        dbcon_merge_login(extras, d, dont_update_last_seen=(not parms.has_key('new_account')))
         # They might be logged in already.
         if d.has_key('username'):
             raise control.Redirect(links.article_link(links.USER_PAGE_PREFIX + extras.auth.username),

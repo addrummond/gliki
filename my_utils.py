@@ -61,8 +61,8 @@ def get_ymdhms_tuple():
 def merge_dicts(into, from_):
     """Merge values from one dictionary into another, returning the 'into'
        argument."""
-    for k in from_.keys():
-        into[k] = from_[k]
+    for k, v in from_.iteritems():
+        into[k] = v
     return into
 
 def diff_lists(old, new):

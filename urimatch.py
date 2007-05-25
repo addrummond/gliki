@@ -23,10 +23,13 @@
 
 
 import itertools
+import my_utils
+
 
 #
 # Classes representing the different kinds of parser.
 #
+
 class Seqable(object):
     """A parser which can be sequenced with another parser.
        This abstract superclass exists only to define the >> operator as a
@@ -39,8 +42,9 @@ class Abs(Seqable):
        parser, it will succeed if only an initial subpart of the URI is
        matched.
     """
-    def __init__(self, uri):
+    def __init__(self, uri, dict={}):
         self.uri = uri
+        self.dict = dict
 class Parm(Seqable):
     """Matches PARM/VALUE sections of URIs, with an optional default value
        if the URI terminates in PARM(/).
@@ -87,6 +91,7 @@ class OptDir(Seqable):
 #
 # Some utility functions.
 #
+
 def strip_initial_slash(str): return str.lstrip('/')
 
 def strict_lstrip(str, s):
@@ -98,17 +103,16 @@ def strict_lstrip(str, s):
     else:
         return str
 
-def dictmerge(into, from_):
-    """Merges all k/v pairs from one dictionary into another."""
-    for k, v in from_.iteritems():
-        into[k] = v
-
 def ijoin(s, l):
     if len(l) >= 1:
         return s + s.join(l)
     else:
         return ''
 
+
+#
+# The pattern parser
+#
 
 def test_pattern_helper(pattern, uri, base=True):
     """The parsing algorithm."""
@@ -119,7 +123,7 @@ def test_pattern_helper(pattern, uri, base=True):
             r = strict_lstrip(uri2, puri2)
             if base and r != '':
                 return False
-            return ({ }, r)
+            return (pattern.dict, r)
         else: return False
     elif pattern.__class__ is Parm:
         uri2 = strip_initial_slash(uri)
@@ -161,7 +165,7 @@ def test_pattern_helper(pattern, uri, base=True):
             if not res:
                 return False
             d, current_uri = res
-            dictmerge(into=uberdict, from_=d)
+            my_utils.merge_dicts(into=uberdict, from_=d)
 
             if pattern.slash                  and \
                i != len(pattern.patterns) - 1 and \

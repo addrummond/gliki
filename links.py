@@ -60,6 +60,7 @@ LINKS_HERE_SUFFIX = 'links-here'
 MAKE_NEW_ACCOUNT = 'make-new-account'
 CREATE_ACCOUNT = 'create-account'
 LOGIN = 'login'
+LOGIN_NEW_ACCOUNT = 'login-new'
 DELETE_ACCOUNT_CONFIRM = 'delete-account-confirm'
 DELETE_ACCOUNT = 'delete-account'
 PREFERENCES = 'preferences'
@@ -127,6 +128,9 @@ def links_here_link(title):
 
 def login_link():
     return '/' + LOGIN
+
+def login_new_account_link():
+    return '/' + LOGIN_NEW_ACCOUNT
 
 def make_new_account_link():
     return '/' + MAKE_NEW_ACCOUNT
