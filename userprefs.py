@@ -32,9 +32,15 @@ else:
 
 def boolize(v):
     return v and True or False
+def oktimeoffset(offset):
+    try:
+        offset = int(offset)
+        return offset >= -12 and offset <= 12
+    except ValueError:
+        return False
 
 USER_PREFS = dict(
-    time_zone = dict(default="0", simple="True"),
+    time_zone = dict(default="0", simple="True", validate=oktimeoffset),
     add_pages_i_create_to_watchlist = dict(default=False, simple="True", to_python=boolize)
 )
 
@@ -50,6 +56,9 @@ def field_name(prefname):
 
 def set_user_preference(dbcon, cur, user_id, prefname, value):
     assert USER_PREFS.has_key(prefname)
+
+    if USER_PREFS[prefname].has_key('validate') and not USER_PREFS[prefname]['validate'](value):
+        return False
 
     # Do we need to create a new table?
     res = cur.execute(
@@ -84,6 +93,8 @@ def set_user_preference(dbcon, cur, user_id, prefname, value):
             % (table_name(prefname), field_name(prefname)),
             (value, user_id)
         )
+
+    return True
 
 def get_user_preference(dbcon, cur, user_id, prefname):
     assert USER_PREFS.has_key(prefname)
