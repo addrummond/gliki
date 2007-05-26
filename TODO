@@ -6,7 +6,7 @@
 * Tree drawing (bugs in sizing trees, but 90% complete).
 * Fix bad line/column numbers in parser.
 * Get cursor placement working in IE and other non-Firefox browsers.
-* Preferences page -- either get rid of it or implement email feature.
+* CLient-side validation for preferences. Actually use preferences!
 * Allow list of articles, list of categories and page history to be split
   over multiple pages when it gets too big.
 * Edit conflict support.
