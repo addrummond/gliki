@@ -1546,14 +1546,16 @@ class UpdatePreferences(object):
 
     def POST(self, parms, extras, start_response):
         try:
+            print parms
             # TODO: Lots of unnecessary duplication here, but unless we add
             # a lot more preferences, I'm not sure if it's worth the effort
             # required to create a nice abstraction for setting/getting prefs.
             dbcon = get_dbcon()
             cur = dbcon.cursor()
 
-            merge_login(dbcon, cur, extras, parms)
-            if not parms.has_key('user_id'):
+            d = { }
+            merge_login(dbcon, cur, extras, d)
+            if not d.has_key('user_id'):
                 # We'll redirect back to the preferences page, which in turn
                 # will give a "you must be logged in" error.
                 # Note that this is a very unlikely code path, since the
@@ -1563,12 +1565,13 @@ class UpdatePreferences(object):
                                        'text/html; charset=UTF-8',
                                        'see_other')
 
-            if parms.has_key('time_zone'):
-                userprefs.set_user_preference(dbcon, cur, parms['user_id'], 'time_zone', parms['time_zone'])
-            print "VAL", parms['add_pages_i_create_to_watchlist']
-            userprefs.set_user_preference(dbcon, cur, parms['user_id'], 'add_pages_i_create_to_watchlist', parms.has_key('add_pages_i_create_to_watchlist'))
+            if d.has_key('time_zone'):
+                userprefs.set_user_preference(dbcon, cur, d['user_id'], 'time_zone', parms['time_zone'])
+            userprefs.set_user_preference(dbcon, cur, d['user_id'], 'add_pages_i_create_to_watchlist', parms.has_key('add_pages_i_create_to_watchlist'))
 
             dbcon.commit()
+
+            parms['foo'] = 33
 
             # Redirect to the preferences view.
             raise control.Redirect(links.preferences_link(),
