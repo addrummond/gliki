@@ -42,22 +42,26 @@ import links
         <b>Your preferences have been updated:</b>
     </p>
     <form py:if="found" method="POST" action="${links.update_preferences_link()}">
-        <input type="hidden" name="username" value="${username}"></input>
         <table class="preferences">
             <tr>
-                <th>Send watchlist updates by email</th>
+                <th>Time zone offset from UTC</th>
                 <td>
-                    <input type="checkbox" name="email_changes" py:attrs="(email_changes and (dict(checked=''),) or ({ },))[0]"></input>
+                    <input type="text" size="3" name="time_zone" value="${preferences['time_zone']}"></input>
+                </td>
+                <td class="explanation">
+                    (for example, enter &lsquo;-5&rsquo; for Eastern Standard Time)
                 </td>
             </tr>
             <tr>
-                <th>Send updates in a daily digest</th>
-                <td>
-                    <input type="checkbox" name="digest" py:attrs="(digest and (dict(checked=''),) or ({ },))[0]"></input>
+                <th>Add pages I create to my watchlist</th>
+                <td colspan="2">
+                    <input type="checkbox" name="add_pages_i_create_to_watchlist" py:attrs="preferences['add_pages_i_create_to_watchlist'] and dict(checked='') or { }"></input>
                 </td>
             </tr>
             <tr>
-                <td><input type="submit" value="Change my preferences"></input></td>
+                <td colspan="3">
+                    <input type="submit" value="Update preferences"></input>
+                </td>
             </tr>
         </table>
     </form>

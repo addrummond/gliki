@@ -198,7 +198,10 @@ def test_pattern(pattern, uri):
     if not res:
         return False
     d, _ = res
-    return d
+    # TODO: Find out WTF is going on.
+    # Fix totally mysterious bug where test_pattern_helper keeps returning the
+    # same dictionary.
+    return d.copy()
 
 # TEST CODE
 #pat = Abs("foo/bar/amp") >> Abs("goo") >> Opt(Parm("foo", "oh")) >> Abs("lalala") >> Selector('gah') >> Parm("gg", "def")
