@@ -17,6 +17,7 @@
 
 --
 -- This script creates all the tables in the database.
+-- It also creates an "Admin" user.
 --
 
 CREATE TABLE wikiusers
@@ -70,15 +71,15 @@ CREATE TABLE wikiuser_time_zone_prefs
 (
     wikiusers_id INTEGER NOT NULL PRIMARY KEY,
     -- The offset in seconds from GMT (either positive or negative).
-    offset INTEGER NOT NULL,
+    value INTEGER NOT NULL,
     FOREIGN KEY (wikiusers_id) REFERENCES wikiusers(id)
 );
 CREATE TABLE wikiuser_add_pages_i_create_to_watchlist_prefs
 (
     wikiusers_id INTEGER NOT NULL PRIMARY KEY,
-    yesno BOOLEAN NOT NULL,
+    value BOOLEAN NOT NULL,
     FOREIGN KEY (wikiusers_id) REFERENCES wikiusers(id)
-)
+);
 
 CREATE TABLE watchlist_items
 (

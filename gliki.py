@@ -46,6 +46,7 @@ import StringIO
 import links
 import logging
 import diffengine
+import userprefs
 from my_utils import *
 
 USER_AUTH_REALM = "Wikiuser"
@@ -167,7 +168,7 @@ def merge_login(dbcon, cur, extras, dict, dont_update_last_seen=False):
         else:
             authfunc = extras.auth.test
 
-        id = dbcon_check_bonafides(extras.auth.username, authfunc)
+        id = check_bonafides(dbcon, cur, extras.auth.username, authfunc)
         if not id:
             raise control.AuthenticationRequired(USER_AUTH_REALM, get_auth_method(extras))
 
@@ -179,6 +180,9 @@ def merge_login(dbcon, cur, extras, dict, dont_update_last_seen=False):
                 # Add a key to the dict indicating that a "your user page has been
                 # updated" message should be shown.
                 dict['user_page_updated'] = True
+
+        # Get the user's preferences.
+        dict['preferences'] = userprefs.get_user_preferences_dict(dbcon, cur, id)
 
         dict['username'] = extras.auth.username
         dict['user_id'] = id
@@ -1375,15 +1379,7 @@ class MakeNewAccount(object):
             wikiusers_id = cur.lastrowid
 
             # And the default preferences for the new account.
-            res2 = cur.execute(
-                """
-                INSERT INTO wikiusers_prefs
-                (wikiusers_id, email_changes, digest)
-                VALUES
-                (?, 0, 0)
-                """,
-                (wikiusers_id,)
-            )
+            userprefs.set_default_user_preferences(dbcon, cur, wikiusers_id)
 
             int_time = int(time.time())
 
@@ -1537,27 +1533,10 @@ class Preferences(object):
             if len(d) == 0:
                 return dict(found=False)
 
-            res = cur.execute(
-                """
-                SELECT wikiusers_prefs.email_changes, wikiusers_prefs.digest FROM wikiusers
-                INNER JOIN wikiusers_prefs
-                ON wikiusers_prefs.wikiusers_id = wikiusers.id
-                 WHERE wikiusers.username = ?
-                """,
-                (d['username'],)
-            )
-
-            for r in res:
-                if len(r) != 2: continue
-                email_changes = r[0]
-                digest = r[1]
-                return dict(found=True,
-                            updated=False,
-                            username=d['username'],
-                            email_changes=email_changes,
-                            digest=digest)
-            # If we get here we didn't find any preferences for this user.
-            return merge_login(dbcon, cur, extras, dict(found=False))
+            return dict(found=True,
+                        updated=False,
+                        username=d['username'],
+                        preferences=d['preferences'])
         except sqlite.Error, e:
             dberror(e)
 preferences = Preferences()
@@ -1566,26 +1545,28 @@ class UpdatePreferences(object):
     uris = [Abs(links.UPDATE_PREFERENCES)]
 
     def POST(self, parms, extras, start_response):
-        if not parms.has_key('username'):
-            raise control.BadRequestError()
-        username = parms['username']
-        email_changes = False
-        digest = False
-        if parms.has_key('email_changes'):
-            email_changes = True
-        if parms.has_key('digest'):
-            digest = True
-
         try:
+            # TODO: Lots of unnecessary duplication here, but unless we add
+            # a lot more preferences, I'm not sure if it's worth the effort
+            # required to create a nice abstraction for setting/getting prefs.
             dbcon = get_dbcon()
             cur = dbcon.cursor()
 
-            res = cur.execute(
-                """
-                UPDATE wikiusers_prefs SET email_changes = ?, digest = ? WHERE wikiusers_prefs.wikiusers_id IN (SELECT wikiusers_prefs.wikiusers_id FROM wikiusers_prefs INNER JOIN wikiusers ON wikiusers.id = wikiusers_prefs.wikiusers_id WHERE wikiusers.username = ? LIMIT 1);
-                """,
-                (email_changes and 1 or 0, digest and 1 or 0, username)
-            )
+            merge_login(dbcon, cur, extras, parms)
+            if not parms.has_key('user_id'):
+                # We'll redirect back to the preferences page, which in turn
+                # will give a "you must be logged in" error.
+                # Note that this is a very unlikely code path, since the
+                # user would somehow have to log out in between loading
+                # the prefs page and submitting the form.
+                raise control.Redirect(links.preferences_link(),
+                                       'text/html; charset=UTF-8',
+                                       'see_other')
+
+            if parms.has_key('time_zone'):
+                userprefs.set_user_preference(dbcon, cur, parms['user_id'], 'time_zone', parms['time_zone'])
+            print "VAL", parms['add_pages_i_create_to_watchlist']
+            userprefs.set_user_preference(dbcon, cur, parms['user_id'], 'add_pages_i_create_to_watchlist', parms.has_key('add_pages_i_create_to_watchlist'))
 
             dbcon.commit()
 
@@ -1595,6 +1576,8 @@ class UpdatePreferences(object):
                                    'see_other')
         except sqlite.Error, e:
             dberror(e)
+        except ValueError: # Use of int(...) above.
+            raise control.BadRequestError()
 update_preferences = UpdatePreferences()
 
 class Watch(object):
