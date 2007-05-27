@@ -44,8 +44,12 @@ USER_PREFS = dict(
     add_pages_i_create_to_watchlist = dict(default=False, simple="True", to_python=boolize)
 )
 
+__valid_table_name_regex = re.compile(r"\w+") # the isalnum method doesn't allow underscores, but \w does.
 def check_valid_table_name(s):
-    return s
+    if __valid_table_name_regex.match(s):
+        return s
+    else:
+        assert False
 
 def table_name(prefname):
     assert USER_PREFS.has_key(prefname)
