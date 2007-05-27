@@ -308,34 +308,18 @@ def delete_article(dbcon, cur, title):
     """Delete an article with a given title.
        Returns True if the article exists, or False if it doesn't.
     """
-    # TODO: The loop will be quite inefficient for articles with lots of
-    # revisions. The loop should really be moved inside the SQL query.
-    # Anyway, deleting articles shouldn't be a very common operation, so
-    # this shouldn't be too much of a problem.
+    rev = get_revision(dbcon, cur, title, -1)
+    if not rev:
+        return False
 
-    revs = get_ordered_revisions(dbcon, cur, title)
-    exists = False
-    first_iteration = True
-    for r in revs:
-        exists = True
-
-        cur.execute(
-            """
-            DELETE FROM articles WHERE id = ?
-            """,
-            (r['articles_id'],)
-        )
-
-        if first_iteration:
-            cur.execute(
-                """
-                DELETE FROM threads WHERE id = ?
-                """,
-                (r['threads_id'],))
-
-        first_iteration = False
-    dbcon.commit()
-    return exists
+    # The magic of triggers will delete all the other stuff.
+    cur.execute(
+        """
+        DELETE FROM threads WHERE id = ?
+        """,
+        (rev['threads_id'],)
+    )
+    return True
 
 def article_is_on_watchlist(dbcon, cur, username, title):
     """Checks whether an article is on a given user's watchlist.

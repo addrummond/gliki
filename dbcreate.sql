@@ -124,3 +124,19 @@ INSERT INTO wikiusers
     ('Admin', NULL, NULL)
 ;
 
+
+--
+-- Triggers, views, stored procs, etc.
+--
+
+-- Delete all the relevant tables when a threads table is deleted.
+CREATE TRIGGER cleanup_article
+AFTER DELETE ON threads
+BEGIN
+    DELETE FROM articles WHERE id = articles.threads_id = threads.id;
+    DELETE FROM revision_histories WHERE articles_id IN
+        (SELECT articles_id FROM revision_histories WHERE threads_id = threads.id);
+    DELETE FROM category_specs WHERE threads_id = threads.id;
+    DELETE FROM watchlist_items WHERE threads_id = threads.id;
+END;
+
