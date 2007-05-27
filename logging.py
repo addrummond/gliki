@@ -32,7 +32,7 @@ def log(logname, text):
     if LOGGING_ON:
         try:
             f = open(LOG_DIR + '/' + logname, "a")
-            f.write(my_utils.standard_date_format(time.gmtime()) + ': ' + text)
+            f.write(str(my_utils.ZonedDate(time.time(), 0)) + ': ' + text)
             if text[len(text) -1] != '\n':
                 f.write('\n')
             f.close()

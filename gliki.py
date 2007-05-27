@@ -198,6 +198,15 @@ def dbcon_merge_login(extras, dict, dont_update_last_seen=False):
     except sqlite.Error, e:
         dberror(e)
 
+def get_ZonedDate(d, time):
+    """Given a time (as given by time.time()) and a dictionary which may have
+       a 'preferences' field, return a suitable ZonedDate object.
+    """
+    tz = userprefs.USER_PREFS['time_zone']['default']
+    if d.has_key('preferences'):
+        tz = d['preferences']['time_zone']
+    return ZonedDate(time, tz)
+
 __qstring = \
     """
     SELECT articles.title, articles.source, articles.cached_xhtml, articles.id, revision_histories.threads_id, revision_histories.revision_date, revision_histories.user_comment, articles.redirect, wikiusers.username
@@ -695,6 +704,9 @@ class RecentChangesList(object):
             dbcon = get_dbcon()
             cur = dbcon.cursor()
 
+            d = { }
+            merge_login(dbcon, cur, extras, d)
+
             # Quite complex because we need to get the most recent title for
             # each thread (otherwise we get diff links with old article titles,
             # which don't work).
@@ -732,7 +744,7 @@ class RecentChangesList(object):
                               dict(article_title=r_and_n[0][0],
                                    newest_article_title=r_and_n[0][5],
                                    comment=r_and_n[0][1],
-                                   date=time.gmtime(int(r_and_n[0][2])),
+                                   date=get_ZonedDate(d, int(r_and_n[0][2])),
                                    username=r_and_n[0][4],
                                    diff_revno_pair=r_and_n[1]),
                           itertools.izip(most_recent_revisions, revnos))
@@ -1131,12 +1143,13 @@ class WikiArticleHistory(object):
             rows = get_ordered_revisions(dbcon, cur, title)
             if not rows:
                 raise control.NotFoundError()
-            return merge_login(dbcon, cur,
-                               extras,
+            d = { }
+            merge_login(dbcon, cur, extras, d)
+            return merge_dicts(d,
                                dict(article_title = title,
                                     revisions =
                                         [dict(article_title = row['title'],
-                                              revision_date = time.gmtime(int(row['revision_date'])),
+                                              revision_date = get_ZonedDate(d, int(row['revision_date'])),
                                               username      = row['username'],
                                               comment       = row['comment'],
                                               diff_revs_pair = row['diff_revs_pair'])
@@ -1757,7 +1770,7 @@ class TrackedChanges(object):
                 map(
                     lambda r_and_d:
                         dict(article_title = r_and_d[0][0],
-                             revision_date=time.gmtime(int(r_and_d[0][1])),
+                             revision_date=get_ZonedDate(d, int(r_and_d[0][1])),
                              username=r_and_d[0][3],
                              comment=r_and_d[0][4],
                              diff_revs_pair=r_and_d[1]),

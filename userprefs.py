@@ -22,6 +22,7 @@
 
 import sys
 import my_utils
+import logging
 # Python 2.5 has sqlite support built in, with a different module name.
 # String comparison for version numbers looks dodgy but it does actually
 # work.
@@ -32,6 +33,12 @@ else:
 
 def boolize(v):
     return v and True or False
+def safe_intize(n, default=0):
+    try:
+        return int(n)
+    except ValueError:
+        logging.log(logging.SERVER_LOG, "DATABASE CORRUPTION: Non-integer time preference")
+        return default
 def oktimeoffset(offset):
     try:
         offset = int(offset)
@@ -40,7 +47,7 @@ def oktimeoffset(offset):
         return False
 
 USER_PREFS = dict(
-    time_zone = dict(default="0", simple="True", validate=oktimeoffset),
+    time_zone = dict(default=0, simple="True", validate=oktimeoffset, to_python=safe_intize),
     add_pages_i_create_to_watchlist = dict(default=False, simple="True", to_python=boolize)
 )
 

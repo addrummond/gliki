@@ -34,11 +34,18 @@ def truncate(n, s):
     else:
         return s
 
-def standard_date_format(stime):
-    """Formats a time to a string given the return value of time.gmtime(...)
-       or the like.
-    """
-    return time.strftime("%Y-%m-%d %H:%M:%S UTC", stime)
+class ZonedDate(object):
+    def __init__(self, gmt, offset):
+        self.gmt = gmt
+        self.offset = offset
+
+    def __repr__(self):
+        ostring = ''
+        if self.offset > 0:
+            ostring = '+%i' % self.offset
+        elif self.offset < 0:
+            ostring = str(self.offset)
+        return time.strftime("%Y-%m-%d %H:%M:%S UTC" + ostring, time.gmtime(float(self.gmt) + (self.offset * 60.0 * 60.0)))
 
 def futz_article_title(title):
     return title.replace(' ', '-')
@@ -266,7 +273,4 @@ def mark_last(seq):
             break
         for p in previous: yield p, False
         previous = [r1]
-
-# TEST CODE.
-#print pretty_diff("  aa\nbb\n\n\nfoo", "aa\naa\n\n\nbar")
 

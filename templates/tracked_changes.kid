@@ -55,7 +55,7 @@ import links
                     <tr>
                         <td>
                             <a class="article_ref" href="${links.article_link(r['article_title'], r['diff_revs_pair'][0])}">
-                                ${my_utils.standard_date_format(r['revision_date'])}
+                                ${str(r['revision_date'])}
                             </a>
                         </td>
                         <td py:if="r['diff_revs_pair'][1] is not None">

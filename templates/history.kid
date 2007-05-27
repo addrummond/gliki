@@ -45,7 +45,7 @@ import links
                         <td>
                             <a class="article_ref"
                                href="${links.article_link(article_title, r['diff_revs_pair'][0])}">
-                                ${my_utils.standard_date_format(r['revision_date'])}
+                                ${str(r['revision_date'])}
                             </a>
                         </td>
                        <td py:if="r['diff_revs_pair'][0] and r['diff_revs_pair'][1]">

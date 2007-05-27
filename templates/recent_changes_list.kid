@@ -55,7 +55,7 @@ def lteq(a, b): return a <= b
                         <td>
                             <a class="article_ref"
                                href="${links.article_link(c['newest_article_title'], c['diff_revno_pair'][0])}">
-                                ${my_utils.standard_date_format(c['date'])}
+                                ${str(c['date'])}
                             </a>
                         </td>
                         <td py:if="c['diff_revno_pair'][1] is not None">
