@@ -23,13 +23,6 @@
 import sys
 import my_utils
 import logging
-# Python 2.5 has sqlite support built in, with a different module name.
-# String comparison for version numbers looks dodgy but it does actually
-# work.
-if (sys.version.split(' ')[0]) >= '2.5':
-    from sqlite3 import dbapi2 as sqlite
-else:
-    from pysqlite2 import dbapi2 as sqlite
 
 def boolize(v):
     return v and True or False

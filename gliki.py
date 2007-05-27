@@ -27,9 +27,9 @@ import difflib
 # String comparison for version numbers looks dodgy but it does actually
 # work.
 if (sys.version.split(' ')[0]) >= '2.5':
-    from sqlite3 import dbapi2 as sqlite
+    from sqlite3 import dbapi2 as db
 else:
-    from pysqlite2 import dbapi2 as sqlite
+    from pysqlite2 import dbapi2 as db
 import kid
 import time
 import htmlutils
@@ -138,7 +138,7 @@ def dbcon_update_last_seen(user_id):
         dbcon = get_dbcon()
         cur = dbcon.cursor()
         return update_last_seen(dbcon, cur, user_id)
-    except sqlite.Error, e:
+    except db.Error, e:
         dberror(e)
 
 def get_auth_method(extras):
@@ -195,7 +195,7 @@ def dbcon_merge_login(extras, dict, dont_update_last_seen=False):
         dbcon = get_dbcon()
         cur = dbcon.cursor()
         return merge_login(dbcon, cur, extras, dict, dont_update_last_seen)
-    except sqlite.Error, e:
+    except db.Error, e:
         dberror(e)
 
 def get_ZonedDate(d, time):
@@ -370,7 +370,7 @@ def dbcon_article_is_on_watchlist(username, title):
         dbcon = get_dbcon()
         cur = dbcon.cursor()
         return article_is_on_watchlist(username, title)
-    except sqlite.Error, e:
+    except db.Error, e:
         dberror(e)
 
 def get_list_of_categories_for_thread(dbcon, cur, thread):
@@ -449,7 +449,7 @@ def dbcon_check_bonafides(username, check_func):
         dbcon = get_dbcon()
         cur = dbcon.cursor()
         return check_bonafides(dbcon, cur, username, check_func)
-    except sqlite.Error, e:
+    except db.Error, e:
         dberror(e)
 
 class DatabaseError(object):
@@ -469,7 +469,7 @@ database_error = DatabaseError()
 def dberror(e): raise control.SwitchHandler(database_error, dict(exception=e), 'GET')
 
 def get_dbcon():
-    return sqlite.connect(DATABASE)
+    return db.connect(DATABASE)
 
 def get_anon_user_wikiuser_id(ipaddress):
     """Given an IP address, return the user ID for the anonymous user at this
@@ -503,7 +503,7 @@ def get_anon_user_wikiuser_id(ipaddress):
         id = cur.lastrowid
         dbcon.commit()
         return id
-    except sqlite.Error, e:
+    except db.Error, e:
         dberror(e)
 
 def unixify_text(source):
@@ -565,7 +565,7 @@ class EditWikiArticle(object):
                 cur = dbcon.cursor()
 
                 rev = get_revision(dbcon, cur, title, revision)
-            except sqlite.Error, e:
+            except db.Error, e:
                 dberror(e)
         source = ''
         if rev:
@@ -675,7 +675,7 @@ class ShowWikiArticle(object):
                 rdict['on_watchlist'] = article_is_on_watchlist(dbcon, cur, rdict['username'], ntitle)
 
             return rdict
-        except sqlite.Error, e:
+        except db.Error, e:
             dberror(e)
 show_wiki_article = ShowWikiArticle()
 
@@ -750,7 +750,7 @@ class RecentChangesList(object):
                           itertools.izip(most_recent_revisions, revnos))
 
             return merge_login(dbcon, cur, extras, dict(changes=changes, from_=from_, n=n))
-        except sqlite.Error, e:
+        except db.Error, e:
             dberror(e)
 recent_changes_list = RecentChangesList()
 
@@ -865,7 +865,7 @@ class ReviseWikiArticle(object):
                 sb = StringIO.StringIO()
                 sourceparser.translate_to_xhtml(r, sb) #, make_article_exists_pred(dbcon, cur))
                 xhtml_output = sb.getvalue() # TODO: Some unicode stuff?
-            except sqlite.Error, e:
+            except db.Error, e:
                 dberror(e)
 
         # Now, if it's a preview, we'll go straight to the preview page.
@@ -1064,7 +1064,7 @@ class ReviseWikiArticle(object):
                         int_time
                     )
                 )
-        except sqlite.Error, e:
+        except db.Error, e:
             dberror(e)
         raise control.Redirect(links.article_link(new_title),
                                'text/html; charset=UTF-8',
@@ -1102,7 +1102,7 @@ class Category(object):
             )
 
             return merge_login(dbcon, cur, extras, dict(category=category, article_titles=list(map(lambda x: x[0], res))))
-        except sqlite.Error, e:
+        except db.Error, e:
             dberror(e)
 category = Category()
 
@@ -1124,7 +1124,7 @@ class CategoryList(object):
             )
 
             return merge_login(dbcon, cur, extras, dict(categories=list(map(lambda x: x[0].lower(), res))))
-        except sqlite.Error, e:
+        except db.Error, e:
             raise dberror(e)
 category_list = CategoryList()
 
@@ -1156,7 +1156,7 @@ class WikiArticleHistory(object):
                                          for row in rows
                                         ]
                                ))
-        except sqlite.Error, e:
+        except db.Error, e:
             dberror(e)
         except ValueError:
             # The use of int(...) above could potentially raise an exception.
@@ -1204,7 +1204,7 @@ class WikiArticleList(object):
                                     starting_from=index + 1,
                                     going_to=index + len(titles),
                                     partial=len(titles) == 100))
-        except sqlite.Error, e:
+        except db.Error, e:
             dberror(e)
 wiki_article_list = WikiArticleList()
 
@@ -1237,7 +1237,7 @@ class LinksHere(object):
 
             titles = map(lambda x: x[0], list(rows))
             return merge_login(dbcon, cur, extras, dict(article_title=title, titles=titles))
-        except sqlite.Error, e:
+        except db.Error, e:
             dberror(e)
 links_here = LinksHere()
 
@@ -1293,7 +1293,7 @@ class Diff(object):
                                     newtitle=newtitle,
                                     oldtitle=oldtitle,
                                     revision_comment=revision_comment))
-        except sqlite.Error, e:
+        except db.Error, e:
             dberror(e)
 diff = Diff()
 
@@ -1440,7 +1440,7 @@ class MakeNewAccount(object):
             dbcon.commit()
 
             raise control.Redirect(links.login_new_account_link(), 'text/html; charset=UTF-8', 'see_other')
-        except sqlite.Error, e:
+        except db.Error, e:
             dberror(e)
 make_new_account = MakeNewAccount()
 
@@ -1506,7 +1506,7 @@ class DeleteAccount(object):
             # Should never get here -- it would mean that a non-existent user
             # was logged in.
             assert False
-        except sqlite.Error, e:
+        except db.Error, e:
             dberror(e)
 delete_account = DeleteAccount()
 
@@ -1550,7 +1550,7 @@ class Preferences(object):
                         updated=False,
                         username=d['username'],
                         preferences=d['preferences'])
-        except sqlite.Error, e:
+        except db.Error, e:
             dberror(e)
 preferences = Preferences()
 
@@ -1591,7 +1591,7 @@ class UpdatePreferences(object):
             raise control.Redirect(links.preferences_link(),
                                    'text/html; charset=UTF-8',
                                    'see_other')
-        except sqlite.Error, e:
+        except db.Error, e:
             dberror(e)
         except ValueError: # Use of int(...) above
             raise control.BadRequestError()
@@ -1642,7 +1642,7 @@ class Watch(object):
 
                 d['article_title'] = title
                 return d
-        except sqlite.Error, e:
+        except db.Error, e:
             dberror(e)
 watch = Watch()
 
@@ -1680,7 +1680,7 @@ class Unwatch(object):
 
             d['article_title'] = title
             return d
-        except sqlite.Error, e:
+        except db.Error, e:
             dberror(e)
 unwatch = Unwatch()
 
@@ -1716,7 +1716,7 @@ class Watchlist(object):
 
             d['article_titles'] = [r[0] for r in res if len(r) == 1]
             return d
-        except sqlite.Error, e:
+        except db.Error, e:
             dberror(e)
 watchlist = Watchlist()
 
@@ -1779,7 +1779,7 @@ class TrackedChanges(object):
                     
             d['revisions'] = revisions
             return d
-        except sqlite.Error, e:
+        except db.Error, e:
             dberror(e)
 tracked_changes = TrackedChanges()
 
