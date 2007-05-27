@@ -23,6 +23,7 @@
 import sys
 import my_utils
 import logging
+import re
 
 def boolize(v):
     return v and True or False
