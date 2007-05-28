@@ -25,6 +25,7 @@ CREATE TABLE wikiusers
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     username TEXT NOT NULL UNIQUE,
     password TEXT, -- Password is NULL for anon users.
+    encrypted_password BOOLEAN, -- May be NULL iff password is NULL.
     email TEXT UNIQUE
 );
 
@@ -133,16 +134,18 @@ INSERT INTO wikiusers
 
 -- I use this code occasionally to set up a test user quickly.
 -- THIS SHOULD BE COMMENTED OUT WHEN RUNNING THIS SCRIPT TO CREATE A GLIKI DB.
-INSERT INTO wikiusers
-    (id, username, password, email)
-    VALUES
-    (100, 'foo', 'bar', NULL)
-;
-INSERT INTO ADMINS
-    (wikiusers_id)
-    VALUES
-    (100)
-;
+--
+--INSERT INTO wikiusers
+--    (id, username, password, email)
+--    VALUES
+--    (100, 'foo', 'bar', NULL)
+--;
+--INSERT INTO ADMINS
+--    (wikiusers_id)
+--    VALUES
+--    (100)
+--;
+--
 -- END OF CODE THAT SHOULD BE COMMENTED OUT.
 
 
