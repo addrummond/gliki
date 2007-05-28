@@ -40,7 +40,10 @@ import links
     </p>
     <img class="logo" src="/logo.png" alt="Gliki - the generative linguistics wiki"/>
     <p class="login-message" py:if="locals().has_key('username') and username">
-        <i>You are logged in as <a class="article_ref" href="${links.user_page_link(username)}">${username}</a></i>
+        <i>You are logged in as
+           <a class="article_ref" href="${links.user_page_link(username)}">${username}</a>
+           <span py:strip="True" py:if="is_admin">with administrator privileges</span>.
+        </i>
         <div py:strip="True" py:if="locals().has_key('user_page_updated') and user_page_updated">
             <br />
             <b class="error">Your user page has been updated since the last time you logged in.</b>

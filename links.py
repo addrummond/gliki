@@ -71,6 +71,7 @@ WATCHLIST = 'watchlist'
 TRACKED_CHANGES = 'tracked-changes'
 RENDER_SYNTAX_TREE = 'render-tree'
 SYNTAX_TREE = 'syntax-tree'
+DELETE_SUFFIX = 'delete'
 
 USER_PAGE_PREFIX = 'user '
 CATEGORY_PAGE_PREFIX = 'category '

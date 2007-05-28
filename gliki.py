@@ -184,6 +184,23 @@ def merge_login(dbcon, cur, extras, dict, dont_update_last_seen=False):
         # Get the user's preferences.
         dict['preferences'] = userprefs.get_user_preferences_dict(dbcon, cur, id)
 
+        # Is the user an admin?
+        res = cur.execute(
+            """
+            SELECT * FROM admins WHERE wikiusers_id = ?
+            """,
+            (id,)
+        )
+        res = list(res)
+        assert len(res) == 0 or len(res) == 1
+        # Really really important that we explicitly set is_admin off, since
+        # otherwise anyone creating a POST request with an is_admin field could
+        # pose as an admin if this dict is merged into parms.
+        if len(res) == 1:
+            dict['is_admin'] = True
+        else:
+            dict['is_admin'] = False
+
         dict['username'] = extras.auth.username
         dict['user_id'] = id
         return dict
@@ -1020,17 +1037,23 @@ class ReviseWikiArticle(object):
                     (threads_id, articles_id, int_time, revision_user_id, comment)
                 )
 
-                # Update the links table.
-                revhisid = res.lastrowid
+                # Update the links table. First, delete all the old links.
+                cur.execute(
+                    """
+                    DELETE FROM links WHERE threads_id = ?
+                    """,
+                    (threads_id,)
+                )
+                # Now insert the new links.
                 linked_to = sourceparser_state['article_refs']
                 for lt in linked_to:
                     cur.execute(
                     """
-                    INSERT INTO links (from_revision_histories_id, to_title)
+                    INSERT INTO links (threads_id, to_title)
                     VALUES
                     (?, ?)
                     """,
-                    (revhisid, lt)
+                    (threads_id, lt)
                     )
 
                 # Update the categories for this article.
@@ -1208,12 +1231,12 @@ class LinksHere(object):
             """
             SELECT title FROM links
             INNER JOIN
-                (SELECT MAX(revision_date), id, title
+                (SELECT MAX(revision_date), threads_id, title
                  FROM revision_histories
                  INNER JOIN articles
                  ON articles.id = articles_id
                  GROUP BY revision_histories.threads_id) query1
-            ON query1.id = links.from_revision_histories_id
+            ON query1.threads_id = links.threads_id
             WHERE links.to_title = ?;
             """,
             (title,)
@@ -1813,6 +1836,35 @@ class SyntaxTree(object):
         return d
 syntax_tree = SyntaxTree()
 
+class DeleteArticle(object):
+    uris = [VParm(links.ARTICLE_LINK_PREFIX) >> Abs(links.DELETE_SUFFIX) >> OptDir()]
+
+    @showkid('templates/deleted.kid')
+    @ok_html
+    def GET(self, parms, extras):
+        try:
+            dbcon = get_dbcon()
+            cur = dbcon.cursor()
+
+            title = urllib.unquote(unfutz_article_title(parms[links.ARTICLE_LINK_PREFIX]))
+
+            d = { }
+            merge_login(dbcon, cur, extras, d)
+
+            if (not d.has_key('is_admin')) or (not d['is_admin']):
+                return merge_dicts(d, dict(title=title))
+
+            if delete_article(dbcon, cur, title):
+                # The article exists and was deleted.
+                dbcon.commit()
+                return merge_dicts(d, dict(title=title, exists_and_deleted=True))
+            else:
+                # Couldn't be deleted because it didn't exist in the first place.
+                return merge_dicts(d, dict(title=title, exists_and_deleted=False))
+        except db.Error, e:
+            dberror(e)
+delete_article_page = DeleteArticle() # Named so as not to conflict with delete_article function
+
 control.register_handlers([front_page,
                            show_wiki_article,
                            edit_wiki_article,
@@ -1836,6 +1888,7 @@ control.register_handlers([front_page,
                            delete_account_confirm,
                            category,
                            category_list,
-                           recent_changes_list])
+                           recent_changes_list,
+                           delete_article_page])
 control.start_server(SERVER_PORT)
 

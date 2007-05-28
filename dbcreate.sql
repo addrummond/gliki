@@ -38,6 +38,13 @@ CREATE TABLE last_seens
     FOREIGN KEY (wikiusers_id) REFERENCES wikiusers(id)
 );
 
+-- Which users have admin permissions?
+CREATE TABLE admins
+(
+    wikiusers_id INTEGER NOT NULL PRIMARY KEY,
+    FOREIGN KEY (wikiusers_id) REFERENCES wikiusers(id)
+);
+
 CREATE TABLE articles
 (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
@@ -110,11 +117,11 @@ CREATE TABLE revision_histories
 -- Represents a link between one article and another.
 CREATE TABLE links
 (
-    from_revision_histories_id INTEGER NOT NULL,
+    threads_id INTEGER NOT NULL,
     to_title TEXT NOT NULL,
-    FOREIGN KEY (from_revision_histories_id)
-        REFERENCES revision_histories(id),
-    PRIMARY KEY (from_revision_histories_id, to_title)
+    FOREIGN KEY (threads_id)
+        REFERENCES threads(id),
+    PRIMARY KEY (threads_id, to_title)
 );
 
 -- The "Admin" user (who owns various automatic edits) has user ID 1.
@@ -123,6 +130,20 @@ INSERT INTO wikiusers
     VALUES
     ('Admin', NULL, NULL)
 ;
+
+-- I use this code occasionally to set up a test user quickly.
+-- THIS SHOULD BE COMMENTED OUT WHEN RUNNING THIS SCRIPT TO CREATE A GLIKI DB.
+INSERT INTO wikiusers
+    (id, username, password, email)
+    VALUES
+    (100, 'foo', 'bar', NULL)
+;
+INSERT INTO ADMINS
+    (wikiusers_id)
+    VALUES
+    (100)
+;
+-- END OF CODE THAT SHOULD BE COMMENTED OUT.
 
 
 --
@@ -133,10 +154,10 @@ INSERT INTO wikiusers
 CREATE TRIGGER cleanup_article
 AFTER DELETE ON threads
 BEGIN
-    DELETE FROM articles WHERE id = articles.threads_id = threads.id;
-    DELETE FROM revision_histories WHERE articles_id IN
-        (SELECT articles_id FROM revision_histories WHERE threads_id = threads.id);
-    DELETE FROM category_specs WHERE threads_id = threads.id;
-    DELETE FROM watchlist_items WHERE threads_id = threads.id;
+    DELETE FROM articles WHERE id IN
+        (SELECT articles_id FROM revision_histories WHERE threads_id = old.id);
+    DELETE FROM category_specs WHERE threads_id = old.id;
+    DELETE FROM watchlist_items WHERE threads_id = old.id;
+    DELETE FROM revision_histories WHERE threads_id = old.id;
 END;
 
