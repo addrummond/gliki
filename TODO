@@ -10,6 +10,7 @@
 * Allow list of articles, list of categories and page history to be split
   over multiple pages when it gets too big.
 * Edit conflict support.
+* List of a user's contributions (add some generic list code first).
 
 == Would be nice ==
 * Table of contents for articles.
