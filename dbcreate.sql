@@ -32,6 +32,9 @@ CREATE TABLE wikiusers
     -- length a multiple of 16. The first 16 characters of the password are used
     -- as IV; if the password has fewer than 16 characters it is padded at the
     -- end with ':' characters.
+    --
+    -- For obvious reasons, the key for the AES-32 encryption is not stored in
+    -- the DB.
     encrypted_password BOOLEAN,
     email TEXT UNIQUE
 );
