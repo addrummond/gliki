@@ -482,7 +482,7 @@ def dbcon_check_bonafides(username, check_func):
         dberror(e)
 
 class DatabaseError(object):
-    @ok_html
+    @ok_html()
     def GET(self, dict, extras):
         r = ''
         if dict['exception']:
@@ -542,7 +542,7 @@ def unixify_text(source):
     return source
 
 class GenericInternalError(object):
-    @ok_html
+    @ok_html()
     def GET(self, dict, extras):
         return ['<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">',
                 '<html><head><title>Server error - Gliki</title></head>',
@@ -575,7 +575,7 @@ class EditWikiArticle(object):
 
     uris = [VParm(links.ARTICLE_LINK_PREFIX) >> Opt(VParm(links.REVISIONS_SUFFIX), { links.REVISIONS_SUFFIX: '-1' }) >> Abs(links.EDIT_SUFFIX) >> OptDir()]
 
-    @ok_html
+    @ok_html()
     @showkid('templates/edit.kid')
     def GET(self, parms, extras):
         title = urllib.unquote(unfutz_article_title(parms[links.ARTICLE_LINK_PREFIX]))
@@ -618,7 +618,7 @@ class NoSuchRevision(object):
         self.kind = kind
         self.title=title
 
-    @ok_html
+    @ok_html()
     @showkid('templates/no_such_revision.kid')
     def GET(self, parms, extras):
         return dict(kind=self.kind, article_title=self.title)
@@ -629,7 +629,7 @@ class ShowWikiArticle(object):
     def __init__(self, redirect_path=[]):
         self.redirect_path = redirect_path
 
-    @ok_html
+    @ok_html()
     @showkid('templates/article.kid')
     def GET(self, d, extras):
         try:
@@ -715,7 +715,7 @@ class RecentChangesList(object):
     # /recent-changes/from/65/100  List of 100 most recent changes with offset 65
     uris = [Abs(links.RECENT_CHANGES) >> Opt(VParm(links.FROM_SUFFIX), {'from' : 0}) >> Opt(Selector('n'), {'n' : 50}) >> OptDir()]
 
-    @ok_html
+    @ok_html()
     @showkid('templates/recent_changes_list.kid')
     def GET(self, parms, extras):
         from_, n = None, None
@@ -792,7 +792,7 @@ class ReviseWikiArticle(object):
         VParm(links.REVISE_PREFIX) >> OptDir()
     ]
 
-    @ok_html
+    @ok_html()
     @showkid('templates/edit.kid')
     def POST(self, parms, extras):
         int_time = int(time.time())
@@ -1109,7 +1109,7 @@ revise_wiki_article = ReviseWikiArticle()
 class Category(object):
     uris = [VParm(links.CATEGORIES_PREFIX) >> OptDir()]
 
-    @ok_html
+    @ok_html()
     @showkid('templates/articles_matching_category.kid')
     def GET(self, parms, extras):
         # NOTE THAT CATEGORIES ARE CASE INSENSITIVE, SO THERE ARE SOME
@@ -1145,7 +1145,7 @@ class CategoryList(object):
     uris = [Abs(links.CATEGORIES_PREFIX) >> OptDir(),
             Abs(links.CATEGORY_LIST) >> OptDir()]
 
-    @ok_html
+    @ok_html()
     @showkid('templates/category_list.kid')
     def GET(self, parms, extras):
         try:
@@ -1166,7 +1166,7 @@ category_list = CategoryList()
 class WikiArticleHistory(object):
     uris = [VParm(links.ARTICLE_LINK_PREFIX) >> Abs(links.HISTORY_SUFFIX) >> OptDir()]
 
-    @ok_html
+    @ok_html()
     @showkid('templates/history.kid')
     def GET(self, parms, extras):
         title = urllib.unquote(unfutz_article_title(parms[links.ARTICLE_LINK_PREFIX]))
@@ -1203,8 +1203,8 @@ class WikiArticleList(object):
     uris = [Abs(links.ARTICLE_LINK_PREFIX) >> OptDir(),
             Abs(links.ARTICLE_LIST) >> Opt(VParm(links.FROM_SUFFIX), {'from' : '0'}) >> OptDir()]
 
+    @ok_html()
     @showkid('templates/article_list.kid')
-    @ok_html
     def GET(self, parms, extras):
         index = None
         if parms.has_key('from'):
@@ -1246,8 +1246,8 @@ wiki_article_list = WikiArticleList()
 class LinksHere(object):
     uris = [VParm(links.ARTICLE_LINK_PREFIX) >> Abs(links.LINKS_HERE_SUFFIX) >> OptDir()]
 
+    @ok_html()
     @showkid('templates/links-here.kid')
-    @ok_html
     def GET(self, parms, extras):
         title = urllib.unquote(unfutz_article_title(parms[links.ARTICLE_LINK_PREFIX]))
 
@@ -1279,8 +1279,8 @@ links_here = LinksHere()
 class Diff(object):
     uris = [VParm(links.ARTICLE_LINK_PREFIX) >> VParm(links.DIFF_SUFFIX) >> Selector('with') >> OptDir()]
 
+    @ok_html()
     @showkid('templates/diff.kid')
-    @ok_html
     def GET(self, parms, extras):
         title = urllib.unquote(unfutz_article_title(parms[links.ARTICLE_LINK_PREFIX]))
         rev1 = parms[links.DIFF_SUFFIX]
@@ -1335,8 +1335,8 @@ diff = Diff()
 class FrontPage(object):
     uris = [Abs("")]
 
+    @ok_html()
     @showkid('templates/frontpage.kid')
-    @ok_html
     def GET(self, parms, extras):
         return dbcon_merge_login(extras, { })
 front_page = FrontPage()
@@ -1344,8 +1344,8 @@ front_page = FrontPage()
 class CreateAccount(object):
     uris = [Abs(links.CREATE_ACCOUNT) >> OptDir()]
 
+    @ok_html()
     @showkid('templates/create_account.kid')
-    @ok_html
     def GET(self, parms, extras):
         return dbcon_merge_login(extras, { })
 create_account = CreateAccount()
@@ -1356,7 +1356,7 @@ class MakeNewAccount(object):
     ip_addy_regex_string = r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
     ip_addy_regex = re.compile(ip_addy_regex_string)
 
-    @ok_html
+    @ok_html()
     @showkid('templates/create_account.kid') # Go here if there's an error.
     def POST(self, parms, extras):
         if not (parms.has_key('username') and
@@ -1482,7 +1482,7 @@ make_new_account = MakeNewAccount()
 class DeleteAccountConfirm(object):
     uris = [Abs(links.DELETE_ACCOUNT_CONFIRM)]
 
-    @ok_html
+    @ok_html()
     @showkid('templates/delete_account_confirm.kid')
     def GET(self, parms, extras):
         d = { }
@@ -1497,7 +1497,7 @@ delete_account_confirm = DeleteAccountConfirm()
 class DeleteAccount(object):
     uris = [Abs(links.DELETE_ACCOUNT)]
 
-    @ok_html
+    @ok_html()
     @showkid('templates/delete_account.kid')
     def POST(self, parms, extras):
         try:
@@ -1548,7 +1548,7 @@ delete_account = DeleteAccount()
 class Login(object):
     uris = [Abs(links.LOGIN), Abs(links.LOGIN_NEW_ACCOUNT, dict(new_account=True))]
 
-    @ok_html
+    @ok_html()
     def GET(self, parms, extras):
         d = { }
         # Updating the last seen thingy will happen when they're redirected to
@@ -1568,8 +1568,8 @@ login = Login()
 class Preferences(object):
     uris = [Abs(links.PREFERENCES)]
 
+    @ok_html()
     @showkid('templates/preferences.kid')
-    @ok_html
     def GET(self, parms, extras):
         # Get the preferences for this user.
         try:
@@ -1635,9 +1635,11 @@ update_preferences = UpdatePreferences()
 class Watch(object):
     uris = [VParm(links.ARTICLE_LINK_PREFIX) >> Abs(links.WATCH_SUFFIX) >> OptDir()]
 
-    @ok_html
+    # Unfortunately we can't use a POST here because of inconsistent display of
+    # the form across browsers. Using a GET with Pragma: no-cache instead.
+    @ok_html(cache=False)
     @showkid('templates/watch.kid')
-    def POST(self, parms, extras):
+    def GET(self, parms, extras):
         title = urllib.unquote(unfutz_article_title(parms[links.ARTICLE_LINK_PREFIX]))
 
         try:
@@ -1684,9 +1686,11 @@ watch = Watch()
 class Unwatch(object):
     uris = [VParm(links.ARTICLE_LINK_PREFIX) >> Abs(links.UNWATCH_SUFFIX) >> OptDir()]
 
-    @ok_html
+    # Unfortunately we can't use a POST here because of inconsistent display of
+    # the form across browsers. Using a GET with Pragma: no-cache instead.
+    @ok_html(cached=False)
     @showkid('templates/unwatch.kid')
-    def POST(self, parms, extras):
+    def GET(self, parms, extras):
         title = urllib.unquote(unfutz_article_title(parms[links.ARTICLE_LINK_PREFIX]))
 
         try:
@@ -1722,7 +1726,7 @@ unwatch = Unwatch()
 class Watchlist(object):
     uris = [Abs(links.WATCHLIST)]
 
-    @ok_html
+    @ok_html()
     @showkid('templates/watchlist.kid')
     def GET(self, parms, extras):
         try:
@@ -1758,7 +1762,7 @@ watchlist = Watchlist()
 class TrackedChanges(object):
     uris = [Abs(links.TRACKED_CHANGES)]
 
-    @ok_html
+    @ok_html()
     @showkid('templates/tracked_changes.kid')
     def GET(self, parms, extras):
         try:
@@ -1856,7 +1860,7 @@ render_tree = RenderTree()
 class SyntaxTree(object):
     uris = [Abs(links.SYNTAX_TREE)]
 
-    @ok_html
+    @ok_html()
     @showkid('templates/syntax_tree.kid')
     def GET(self, parms, extras):
         d = { }
@@ -1867,8 +1871,8 @@ syntax_tree = SyntaxTree()
 class DeleteArticle(object):
     uris = [VParm(links.ARTICLE_LINK_PREFIX) >> Abs(links.DELETE_SUFFIX) >> OptDir()]
 
+    @ok_html()
     @showkid('templates/deleted.kid')
-    @ok_html
     def GET(self, parms, extras):
         try:
             dbcon = get_dbcon()

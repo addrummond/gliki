@@ -214,30 +214,23 @@ __message_handlers = MessageHandlers()
 def set_default_error_handlers(h):
     __message_handlers = h
 
-# Helpers for commonly used responses.
-def ok_response(start_response, content_type):
-    return start_response('200 OK', [('Content-Type', content_type)])
-def ok_text_response(start_response):
-    return ok_response(start_response, 'text')
-def ok_html_response(start_response):
-    return ok_response(start_response, 'html')
-def ok_xhtml_response(start_response):
-    return ok_response(start_response, 'xhtml')
-
 # Decorators for making it easier to do simple '200 OK' responses.
 # These work with normal handler methods but NOT (necessarily) with the methods
 # of MessageHandlers.
-def ok(content_type):
+def ok(content_type, **args):
+    lst = [('Content-Type', content_type)]
+    if args.has_key('cached') and args['cached']:
+        lst.append([('Pragma', 'no-cache')])
     def decorator(f):
         def r(self, d, extras, start_response):
             out = f(self, d, extras)
-            start_response('200 OK', [('Content-Type', content_type)])
+            start_response('200 OK', lst)
             return out
         return r
     return decorator
-ok_text = ok('text/plain; charset=UTF-8')
-ok_html = ok('text/html; charset=UTF-8')
-ok_xhtml = ok('text/xhtml; charset=UTF-8')
+def ok_text(**args): return ok('text/plain; charset=UTF-8', **args)
+def ok_html(**args): return ok('text/html; charset=UTF-8', **args)
+def ok_xhtml(**args): return ok('text/xhtml; charset=UTF-8', **args)
 
 def make_cookie_headers(*cookies):
     """'cookies' arguemt is list of dict(var=*, value=*, expires=*, path=*)"""

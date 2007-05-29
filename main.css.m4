@@ -239,8 +239,8 @@ form.comment-form table th {
   text-align: left;
 }
 
-define(`FANCY_BUTTON_PROPERTIES',
-`color: black;
+a {
+  color: black;
   font-size: TEXT_BASE(0);
   text-decoration: none;
   padding-left: 0.2em;
@@ -248,10 +248,7 @@ define(`FANCY_BUTTON_PROPERTIES',
   padding-top: 0.1em;
   padding-bottom: 0.1em;
   margin: 0;
-  line-height: 25px;')
-
-a {
-  FANCY_BUTTON_PROPERTIES
+  line-height: 25px;
   border-bottom: 1px dashed UNDERLINE_GREY;
 }
 
@@ -261,19 +258,6 @@ a.action {
 
 a.button {
   border: 1px dashed UNDERLINE_GREY;
-}
-
-form.watch-submit-form input {
-  FANCY_BUTTON_PROPERTIES
-  background-color: LINK_BACKGROUND_COLOR;  
-  border: 1px dashed UNDERLINE_GREY;
-}
-
-form.watch-submit-form { margin: 0; padding: 0; }
-
-form.watch-submit-form input:hover {
-  border-style: solid;
-  cursor: pointer;
 }
 
 a.footnote-link {

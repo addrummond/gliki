@@ -42,15 +42,13 @@ rarr = ' &rarr; '
         <li><a class="button" href="${links.edit_article_link(newest_article_title, revision)}">Edit this article</a></li>
         <li><a class="button" href="${links.article_history_link(newest_article_title)}">View history</a></li>
         <li><a class="button" href="${links.links_here_link(newest_article_title)}">What links here?</a></li>
-        <li py:if="locals().has_key('on_watchlist') and not on_watchlist">
-            <form class="watch-submit-form" method="POST" action="${links.watch_article_link(newest_article_title)}">
-                <input type="submit" value="Watch this article"></input>
-            </form>
+        <li>
+            <a py:if="locals().has_key('on_watchlist') and (not on_watchlist)"
+               class="button" href="${links.watch_article_link(newest_article_title)}">Watch this article</a>
         </li>
-        <li py:if="locals().has_key('on_watchlist') and on_watchlist">
-            <form class="watch-submit-form" method="POST" action="${links.unwatch_article_link(newest_article_title)}">
-                <input type="submit" value="Unwatch this article"></input>
-            </form>
+        <li>
+            <a py:if="locals().has_key('on_watchlist') and on_watchlist"
+               class="button" href="${links.unwatch_article_link(newest_article_title)}">Unwatch this article</a>
         </li>
     </ul>
     <p class="categories">
