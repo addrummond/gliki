@@ -21,7 +21,6 @@
 * Correct positioning of example numbers.
 * Automatically find the dimensions of images + check that the link isn't broken.
 * Bibliography features. (Could this ever be worth the trouble?)
-* Don't store plaintext passwords?
 
 == Fixing parser error messages ==
 Make sure we get good errors for the following specific cases:
