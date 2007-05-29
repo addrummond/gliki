@@ -1581,10 +1581,13 @@ class Preferences(object):
             if len(d) == 0:
                 return dict(found=False)
 
-            return dict(found=True,
-                        updated=False,
-                        username=d['username'],
-                        preferences=d['preferences'])
+            return merge_dicts(
+                d,
+                dict(found=True,
+                     updated=False,
+                     username=d['username'],
+                     preferences=d['preferences'])
+            )
         except db.Error, e:
             dberror(e)
 preferences = Preferences()
