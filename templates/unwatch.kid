@@ -33,7 +33,7 @@ import links
         ${error}
     </p>
     <p py:if="not locals().has_key('error')">
-        <a href="${links.article_link(article_title)}">${article_title}</a>
+        <a class="article_ref" href="${links.article_link(article_title)}">${article_title}</a>
         has been removed from your <a href="${links.watchlist_link()}">watchlist</a>.
     </p>
 </body>

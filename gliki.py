@@ -1652,33 +1652,33 @@ class Watch(object):
                 return dict(error="You must be logged in to add an item to your watchlist.")
 
             if article_is_on_watchlist(dbcon, cur, d['username'], title):
-                return dict(error="The article is already on your watchlist.")
-            else:
-                res = cur.execute(
-                    """
-                    INSERT INTO watchlist_items
-                    (wikiusers_id, threads_id)
-                    VALUES
-                    (
-                        (SELECT id FROM wikiusers WHERE wikiusers.username = ? LIMIT 1)
-                        ,
-                        (SELECT q1.threads_id FROM
-                             (SELECT MAX(revision_date), threads_id, articles_id
-                              FROM revision_histories
-                              GROUP BY revision_histories.threads_id) q1
-                         INNER JOIN articles ON
-                             articles.title = ? AND
-                             articles.id = q1.articles_id
-                         LIMIT 1)
-                    )
-                    """,
-                    (d['username'], title)
+                return merge_dicts(d, dict(error="The article is already on your watchlist."))
+
+            res = cur.execute(
+                """
+                INSERT INTO watchlist_items
+                (wikiusers_id, threads_id)
+                VALUES
+                (
+                    (SELECT id FROM wikiusers WHERE wikiusers.username = ? LIMIT 1)
+                    ,
+                    (SELECT q1.threads_id FROM
+                         (SELECT MAX(revision_date), threads_id, articles_id
+                          FROM revision_histories
+                          GROUP BY revision_histories.threads_id) q1
+                     INNER JOIN articles ON
+                         articles.title = ? AND
+                         articles.id = q1.articles_id
+                     LIMIT 1)
                 )
+                """,
+                (d['username'], title)
+            )
 
-                dbcon.commit()
+            dbcon.commit()
 
-                d['article_title'] = title
-                return d
+            d['article_title'] = title
+            return d
         except db.Error, e:
             dberror(e)
 watch = Watch()
@@ -1699,6 +1699,11 @@ class Unwatch(object):
 
             d = { }
             merge_login(dbcon, cur, extras, d)
+            if len(d) == 0:
+                return dict(error="You must be logged in to remove an item from your watchlist.")
+
+            if not article_is_on_watchlist(dbcon, cur, d['username'], title):
+                return merge_dicts(d, dict(error="The article is not on your watchlist."))
 
             res = cur.execute(
                 """

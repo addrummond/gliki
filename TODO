@@ -13,6 +13,7 @@
 * List of a user's contributions (add some generic list code first).
 
 == Would be nice ==
+* Remove all error messages from gliki.py and shift them to templates.
 * Table of contents for articles.
 * Do diffs properly (not just line by line).
 * Unicode audit (unicode seems to work fine, but only by a UTF-8 miracle)
