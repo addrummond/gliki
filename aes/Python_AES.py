@@ -7,13 +7,14 @@
 
 from cryptomath import *
 
-#from AES import * # GLIKI: Just contains an abstract base class.
+from AES import *
 from rijndael import rijndael
 
-def new(key, mode, IV):
-    return Python_AES(key, mode, IV)
+# GLIKI: Not much use to us.
+#def new(key, mode, IV):
+#    return Python_AES(key, mode, IV)
 
-class Python_AES(object): # GLIKI: Formerly inherited from AES class.
+class Python_AES(AES): # GLIKI: Formerly inherited from AES class.
     def __init__(self, key, mode, IV):
         AES.__init__(self, key, mode, IV, "python")
         self.rijndael = rijndael(key, 16)

@@ -47,6 +47,8 @@ import links
 import logging
 import diffengine
 import userprefs
+import aes.Python_AES as pyaes
+import base64
 from my_utils import *
 
 USER_AUTH_REALM = "Wikiuser"
@@ -55,6 +57,27 @@ USER_AUTH_METHOD = 'digest'
 DATABASE = "main.db"
 
 SERVER_PORT = 3000
+
+AES_PASSWORD_KEY = "%$GHnfgh;['*(12SDvZ\\dfgt><?@:{!!"
+AES_MODE = 2 # Must be 2, don't ask me why...
+def pad_string(s):
+    r = len(s) % 16
+    return s + (':' * (16 - r))
+def unpad_string(s):
+    return s.rstrip(':')
+def make_len16(s):
+    if len(s) > 16:
+        return s[:16]
+    else:
+        rem = len(s) % 16
+        return s + (':' * (16 - rem))
+def encrypt_password(iv, plaintext):
+    a = pyaes.Python_AES(AES_PASSWORD_KEY, AES_MODE, make_len16(iv))
+    return base64.b64encode(a.encrypt(pad_string(plaintext)))
+def decrypt_password(iv, ciphertext):
+    a = pyaes.Python_AES(AES_PASSWORD_KEY, AES_MODE, make_len16(iv))
+    dec = base64.b64decode(ciphertext)
+    return unpad_string(a.decrypt(dec).decode(config.USERNAME_AND_PASSWORD_ENCODING))
 
 def showkid(file, serializer=kid.HTMLSerializer(encoding=config.ARTICLE_XHTML_ENCODING)):
     """Decorator for handler methods which passes the return value of the method
@@ -432,7 +455,7 @@ def update_categories_for_thread(dbcon, cur, parse_result, thread):
 def check_bonafides(dbcon, cur, username, check_func):
     res = cur.execute(
         """
-        SELECT wikiusers.id, wikiusers.password FROM wikiusers
+        SELECT wikiusers.id, wikiusers.password, wikiusers.encrypted_password FROM wikiusers
         WHERE wikiusers.username = ?
         """,
         (username,)
@@ -440,7 +463,12 @@ def check_bonafides(dbcon, cur, username, check_func):
     rlist = list(res)
     if len(rlist) == 0:
         return False
-    elif check_func(rlist[0][1]):
+
+    password = rlist[0][1]
+    if rlist[0][2]:
+        password = decrypt_password(username, password)
+
+    if check_func(password):
         return rlist[0][0] # The user ID.
     else:
         return False
@@ -494,9 +522,9 @@ def get_anon_user_wikiuser_id(ipaddress):
         # We need to create the user.
         cur.execute(
         """
-        INSERT INTO wikiusers (id, username, email, password)
+        INSERT INTO wikiusers (id, username, email, password, encrypted_password)
         VALUES
-        (NULL, ?, NULL, NULL)
+        (NULL, ?, NULL, NULL, NULL)
         """,
         (ipaddress,)
         )
@@ -1390,11 +1418,11 @@ class MakeNewAccount(object):
             res = cur.execute(
                 """
                 INSERT INTO wikiusers
-                (id, email, username, password)
+                (id, email, username, password, encrypted_password)
                 VALUES
-                (NULL, ?, ?, ?)
+                (NULL, ?, ?, ?, ?)
                 """,
-                (email, username, password)
+                (email, username, encrypt_password(username, password), True)
             )
             wikiusers_id = cur.lastrowid
 
