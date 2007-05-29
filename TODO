@@ -6,7 +6,7 @@
 * Tree drawing (bugs in sizing trees, but 90% complete).
 * Fix bad line/column numbers in parser.
 * Get cursor placement working in IE and other non-Firefox browsers.
-* CLient-side validation for preferences. Use watchlist preference.
+* Client-side validation for preferences. Use watchlist preference.
 * Allow list of articles, list of categories and page history to be split
   over multiple pages when it gets too big.
 * Edit conflict support.
