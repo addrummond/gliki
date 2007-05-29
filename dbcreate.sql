@@ -25,7 +25,14 @@ CREATE TABLE wikiusers
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     username TEXT NOT NULL UNIQUE,
     password TEXT, -- Password is NULL for anon users.
-    encrypted_password BOOLEAN, -- May be NULL iff password is NULL.
+    -- encrypted_password may be NULL iff password is NULL.
+    -- If encrypted_password is true, then the password is stored as the base64
+    -- digest of the AES-32 encryption of the password, using the username as
+    -- IV. The password is padded at the end with ':' characters to make its
+    -- length a multiple of 16. The first 16 characters of the password are used
+    -- as IV; if the password has fewer than 16 characters it is padded at the
+    -- end with ':' characters.
+    encrypted_password BOOLEAN,
     email TEXT UNIQUE
 );
 
@@ -136,9 +143,9 @@ INSERT INTO wikiusers
 -- THIS SHOULD BE COMMENTED OUT WHEN RUNNING THIS SCRIPT TO CREATE A GLIKI DB.
 --
 --INSERT INTO wikiusers
---    (id, username, password, email)
+--    (id, username, password, email, encrypted_password)
 --    VALUES
---    (100, 'foo', 'bar', NULL)
+--    (100, 'foo', 'bar', NULL, 0)
 --;
 --INSERT INTO ADMINS
 --    (wikiusers_id)
