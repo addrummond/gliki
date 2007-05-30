@@ -59,7 +59,10 @@ import links
     <p>
     Gliki uses custom software which is currently in the early stages of development,
     so there are a few missing features, and probably some bugs.
-    If something needs fixing, email <a href="mailto:webmaster@gliki.whsites.net" class="external_link">webmaster@gliki.whsites.net</a>.
+    If something needs fixing,
+    add a note to the
+    <a class="article_ref" href="${links.article_link('Bugs')}">bugs</a>
+    page.
     </p>
     <p>
     For those who care about such things, Gliki is written in
