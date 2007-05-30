@@ -21,7 +21,6 @@
 
 # These don't yet work! Setting them to anything other than utf-8 will have
 # strange consequences.
-USERNAME_AND_PASSWORD_ENCODING = 'utf-8'
 ARTICLE_SOURCE_ENCODING = 'utf-8'
 ARTICLE_XHTML_ENCODING  = 'utf-8'
 

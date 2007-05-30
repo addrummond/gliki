@@ -77,7 +77,7 @@ def encrypt_password(iv, plaintext):
 def decrypt_password(iv, ciphertext):
     a = pyaes.Python_AES(AES_PASSWORD_KEY, AES_MODE, make_len16(iv))
     dec = base64.b64decode(ciphertext)
-    return unpad_string(a.decrypt(dec).decode(config.USERNAME_AND_PASSWORD_ENCODING))
+    return unpad_string(a.decrypt(dec).decode('utf-8')
 
 def showkid(file, serializer=kid.HTMLSerializer(encoding=config.ARTICLE_XHTML_ENCODING)):
     """Decorator for handler methods which passes the return value of the method
@@ -819,7 +819,7 @@ class ReviseWikiArticle(object):
         # back.
         redundant_title = None
         if parms.has_key('redundant_title'):
-            redundant_title = parms['redundant_title']
+            redundant_title = urllib.unquote(parms['redundant_title'])
         def get_title_for_user():
             # Oh dear.
             if title:
@@ -1358,13 +1358,21 @@ class MakeNewAccount(object):
     def POST(self, parms, extras):
         if not (parms.has_key('username') and
                 parms.has_key('password')):
-            return dict(default_email=(parms.has_key('email') and parms['email'] or ''),
-                        default_username=(parms.has_key('username') and parms['username'] or ''),
+            return dict(default_email=(parms.has_key('email') and urllib.unquote(parms['email']) or ''),
+                        default_username=(parms.has_key('username') and urllib.unquote(parms['username']) or ''),
                         error="You must give a username and a password (email address is optional).")
-        username, password = parms['username'], parms['password']
+        username, password = urllib.unquote(parms['username']), urllib.unquote(parms['password'])
         email = None
         if parms.has_key('email') and parms['email'] != '':
-            email = parms['email']
+            email = urllib.unquote(parms['email'])
+
+        # Usernames and passwords must be ASCII since (so far as I know) there's
+        # no standard way of dealing with unicode in the HTTP digest protocol.
+        try:
+            username = username.decode('ascii')
+            password = password.decode('ascii')
+        except UnicodeError:
+            return dict(error="Usernames and passwords must be ASCII only (but the rest of the site supports unicode).")
 
         # Usernames and passwords can't contain the ':' character because that
         # interferes with the HTTP AUTH mechanism.
@@ -1620,8 +1628,6 @@ class UpdatePreferences(object):
 
             dbcon.commit()
 
-            parms['foo'] = 33
-
             # Redirect to the preferences view.
             raise control.Redirect(links.preferences_link(),
                                    'text/html; charset=UTF-8',
@@ -1835,8 +1841,15 @@ class RenderTree(object):
 
         if not parms.has_key('tree'):
             raise control.BadRequestError()
+        tree_source = urllib.unquote(parms['tree'])
+        font_size = 20
+        if parms.has_key('font_size'):
+            try:
+                font_size = int(parms['font_size'])
+            except ValueError:
+                raise control.BadRequestError()
         
-        r = sourceparser.run_parser(sourceparser.tree, parms['tree'], { })
+        r = sourceparser.run_parser(sourceparser.tree, tree_source, { })
         if isinstance(r, parcombs.ParserError):
             raise control.BadRequestError()
         tree, movements = r
@@ -1846,13 +1859,13 @@ class RenderTree(object):
         # the tree will be, we'll create the real surface.
         surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, 1, 1)
         context = cairo.Context(surface)
-        cs = treedraw.CairoState(surface, (parms.has_key('font_size') and (parms['font_size'],) or (20,))[0])
+        cs = treedraw.CairoState(surface, font_size)
         tree.size(cs, root=True)
         # Found the size of the (image containing the) tree, so create a
         # surface to draw it on.
         surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, int(tree.dimensions[0]) + 5, int(tree.dimensions[1]) + 5)
         context = cairo.Context(surface)
-        cs = treedraw.CairoState(surface, (parms.has_key('font_size') and (parms['font_size'],) or (20,))[0])        
+        cs = treedraw.CairoState(surface, font_size)        
         treedraw.draw_tree(tree, movements, cs)
 
         buffer = StringIO.StringIO()

@@ -35,6 +35,7 @@ import my_utils
 import time
 import md5
 import logging
+import config
 
 __http_methods = ["OPTIONS", "GET", "HEAD", "POST", "PUT", "DELETE", "TRACE", "CONNECT"]
 
@@ -371,6 +372,10 @@ def control(env, start_response):
             # USERNAME AND PASSWORD ARE CORRECT.
 
             def test(password):
+                # Redundant test to ensure password is ASCII.
+                try: password = password.encode('ascii')
+                except UnicodeError: assert False
+
                 ha1 = md5.md5("%s:%s:%s" % (options['username'], options['realm'], password)).hexdigest()
                 ha2 = md5.md5("%s:%s" % (env['REQUEST_METHOD'], options['uri'])).hexdigest()
 
