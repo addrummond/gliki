@@ -216,9 +216,6 @@ def merge_login(dbcon, cur, extras, dict, dont_update_last_seen=False):
         )
         res = list(res)
         assert len(res) == 0 or len(res) == 1
-        # Really really important that we explicitly set is_admin off, since
-        # otherwise anyone creating a POST request with an is_admin field could
-        # pose as an admin if this dict is merged into parms.
         if len(res) == 1:
             dict['is_admin'] = True
         else:
