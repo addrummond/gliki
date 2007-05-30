@@ -482,7 +482,8 @@ def paste_server_static_wrapper(path, control_func):
               "jpg"  : ("image/jpeg", None),
               "jpeg" : ("image/jpeg", None),
               "gif"  : ("image/gif", None),
-              "css"  : ("text/css", "UTF-8") }
+              "css"  : ("text/css", "UTF-8"),
+              "ico"  : ("image/ico", None )}
     def control(env, start_response):
         local_path = path + '/' + get_uri(env)
         if not (os.path.exists(local_path) and os.path.isfile(local_path)):

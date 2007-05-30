@@ -30,6 +30,7 @@ import links
     </title>
     <span py:replace="[x for x in item[:] if x.tag != '{http://www.w3.org/1999/xhtml}title}']"></span>
     <link href="/main.css" rel="stylesheet" type="text/css" />
+    <link rel="shortcut icon" href="/favicon.ico" />
 </head>
 
 <body py:match="item.tag=='{http://www.w3.org/1999/xhtml}body'" py:attrs="item.items()">
