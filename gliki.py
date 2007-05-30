@@ -77,7 +77,7 @@ def encrypt_password(iv, plaintext):
 def decrypt_password(iv, ciphertext):
     a = pyaes.Python_AES(AES_PASSWORD_KEY, AES_MODE, make_len16(iv))
     dec = base64.b64decode(ciphertext)
-    return unpad_string(a.decrypt(dec).decode('utf-8')
+    return unpad_string(a.decrypt(dec).decode('utf-8'))
 
 def showkid(file, serializer=kid.HTMLSerializer(encoding=config.ARTICLE_XHTML_ENCODING)):
     """Decorator for handler methods which passes the return value of the method
