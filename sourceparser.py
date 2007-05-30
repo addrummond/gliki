@@ -311,7 +311,7 @@ class MDash(object): pass
 # (e.g. "**//foo//**") using a straightforward recursive parser. However,
 # this made it difficult to sufficiently restrict the grammar. For example,
 # there was no easy way of ruling out "**//**foo**//**", with bold nested
-# within bold, but in practice the string "**//**" would surely indicate an
+# within bold; but in practice the string "**//**" would surely indicate an
 # error which ought to be reported.
 #
 # The strategy now used is to first parse formatted text as a sequence of
