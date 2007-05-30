@@ -161,6 +161,10 @@ tree = \
 # THE PARSER FOR THE MAIN MARKUP LANGUAGE.
 #
 
+skip_blank_lines = (
+    CMany0(CMany0(NoNLWhitespace) >> Chr("\n"))
+)
+
 section = ErrorPoint(
     CMany(2, Chr('=')) >> \
     (lambda n:
@@ -169,7 +173,7 @@ section = ErrorPoint(
     Fatalize(CMany(n, Chr('='))) >>
     (lambda closing_eq_count:
     closing_eq_count == n      and
-        CMany0(Whitespace) >>
+        skip_blank_lines >>
         Return((n - 1, title)) or
         RFatalError("Too many '=' characters at the end of the section title")
     ))))
@@ -654,6 +658,15 @@ numbered_list = (
 )
 
 docelement = ((CMany(4, Chr(" ")) * Chr("\t")) >> LimitedFOr(3, bullet_list, numbered_list, example_group)) * paragraph
+docelement_after_section_title = (
+    # Blank lines after section heading have been skipped.
+    # Try for an example/list, then skip all whitespace if it fails.
+    ((CMany(4, Chr(" ")) * Chr("\t")) >> LimitedFOr(3, bullet_list, numbered_list, example_group)) *
+    (
+        CMany0(Whitespace) >>
+        paragraph
+    )
+)
 
 def check_section_list(sections):
     """Check that each section is a subsection of the previous one."""
@@ -664,7 +677,7 @@ def check_section_list(sections):
         last = num
     return Return(True)
     
-def document_(can_be_empty=True):
+def document_(can_be_empty=True, after_section_title=False):
     return \
     FOr(
         EOF >>
@@ -677,9 +690,9 @@ def document_(can_be_empty=True):
         (lambda ss:
         check_section_list(ss) >>
         DoWithState('section_tree', lambda st: map(lambda s: st.add_section(s[0], s[1]), ss)) >>
-        document_(can_be_empty=False))
+        document_(can_be_empty=False, after_section_title=True))
         ,
-        docelement >>
+        (after_section_title and docelement_after_section_title or docelement) >>
         (lambda p:
         DoWithState('section_tree', lambda st: st.add_elem(p)) >>
         document_())
@@ -715,10 +728,6 @@ class Document(object):
 
     def __repr__(self):
         return "DOC(" + str(self.root) + ")"
-
-skip_blank_lines = (
-    CMany0(CMany0(NoNLWhitespace) >> Chr("\n"))
-)
 
 document = (
     skip_blank_lines >>

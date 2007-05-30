@@ -456,12 +456,15 @@ def CMany(n, p):
     """Like Many, but returns a count instead of a list of results."""
     def parser(parms, state):
         for count in itertools.count(0):
+            saved = ParserState(state.index, state.line, state.col, None)
             r = p(parms, state)
             if isinstance(r, ParserError):
+                oldline, oldcol = state.line, state.col
+                restore_state(state, saved)
                 if count >= n:
                     return count
                 else:
-                    return estack(state, ParserError(state.line, state.col,
+                    return estack(state, ParserError(oldline, oldcol,
                                                 "Expecting %s %s" % (parser_name(p), str(p.__doc__))))
     return Parser(parser, CMany.__doc__)
 def CMany0(p): return CMany(0, p)
@@ -475,12 +478,15 @@ def SMany(n, p):
     def parser(parms, state):
         buf = StringIO.StringIO()
         for i in itertools.count(0):
+            saved = ParserState(state.index, state.line, state.col, None)
             r = p(parms, state)
             if isinstance(r, ParserError):
+                oldline, oldcol = state.line, state.col
+                restore_state(state, saved)
                 if i >= n:
                     return buf.getvalue()
                 else:
-                    return estack(state, ParserError(state.line, state.col,
+                    return estack(state, ParserError(oldline, oldcol,
                                                 "Expecting %s" % parser_name(p)))
             else:
                 buf.write(r)
@@ -687,7 +693,7 @@ def debug_print_user_state(parms, state):
 DebugPrintUserState = Parser(debug_print_user_state)
 
 def debug_print_input(parms, state):
-    print ("INP: %i --" % len(parms.input[state.index:])), parms.input[state.index:], "--"
+    print ("INP: %i --" % len(parms.input[state.index])), parms.input[state.index:50], "--"
     return None
 DebugPrintInput = Parser(debug_print_input)
 
