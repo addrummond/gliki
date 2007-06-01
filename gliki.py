@@ -1498,7 +1498,7 @@ class DeleteAccountConfirm(object):
         dbcon_merge_login(extras, d)
 
         if not d.has_key('username'):
-            return dict(error="You cannot delete your account because you are not logged in.")
+            return dict(error=u"You cannot delete your account because you are not logged in.")
         else:
             return d
 delete_account_confirm = DeleteAccountConfirm()
