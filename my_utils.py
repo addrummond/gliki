@@ -35,7 +35,7 @@ def uu_decode(s, on_fail=u''):
        result as a UTF-8 formatted string. By default, returns u'' on failure.
     """
     try:
-        return urllib.unquote(s).decode(s, config.WEB_ENCODING)
+        return urllib.unquote(s).decode(config.WEB_ENCODING, s)
     except UnicodeDecodeError:
         return on_fail
 
