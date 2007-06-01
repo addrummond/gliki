@@ -52,7 +52,7 @@ import links
     <hr />
     <p>
         You might want to read about
-        <a href="${links.article_link('Gliki-revision-numbering')}" class="article_ref">
+        <a href="${links.article_link(u'Gliki-revision-numbering')}" class="article_ref">
         Gliki's revision numbering system
         </a>.
     </p>

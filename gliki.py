@@ -199,7 +199,7 @@ def merge_login(dbcon, cur, extras, dict, dont_update_last_seen=False):
         # Has the user's userpage been edited since they last logged on?
         if not dont_update_last_seen:
             previously_seen = update_last_seen(dbcon, cur, id)
-            rev = get_revision(dbcon, cur, links.USER_PAGE_PREFIX + extras.auth.username, -1)
+            rev = get_revision(dbcon, cur, unicode(links.USER_PAGE_PREFIX + extras.auth.username), -1)
             if rev and rev['revision_date'] != 0 and rev['revision_date'] > previously_seen:
                 # Add a key to the dict indicating that a "your user page has been
                 # updated" message should be shown.

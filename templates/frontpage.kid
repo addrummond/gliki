@@ -48,8 +48,8 @@ import links
     </p>
     <p>
     <b>For more detailed information about the site,
-    see the <a href="${links.article_link('Gliki')}" class="article_ref">Gliki</a> article and
-    the list of <a href="${links.article_link('Useful-links')}" class="article_ref">useful links</a>.</b>
+    see the <a href="${links.article_link(u'Gliki')}" class="article_ref">Gliki</a> article and
+    the list of <a href="${links.article_link(u'Useful-links')}" class="article_ref">useful links</a>.</b>
     </p>
     <p>
     If you're new to wikis in general, you might want to read the
@@ -61,7 +61,7 @@ import links
     so there are a few missing features, and probably some bugs.
     If something needs fixing,
     add a note to the
-    <a class="article_ref" href="${links.article_link('Bugs')}">bugs</a>
+    <a class="article_ref" href="${links.article_link(u'Bugs')}">bugs</a>
     page.
     </p>
     <p>

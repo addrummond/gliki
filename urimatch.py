@@ -128,7 +128,6 @@ def test_pattern_helper(pattern, uri, base=True):
     elif isinstance(pattern, Parm):
         uri2 = strip_initial_slash(uri)
         dirs = uri2.split('/')
-        print "DIRS", dirs, map(type, dirs)
         if dirs[0] == pattern.parm_name:
             if len(dirs) > 1 and len(dirs[1]) > 0:
                 r = ijoin('/', dirs[2:])

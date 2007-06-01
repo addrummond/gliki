@@ -80,8 +80,8 @@ USER_PAGE_PREFIX = 'user '
 CATEGORY_PAGE_PREFIX = 'category '
 
 # NOTE: All of the functions below MUST be given unicode strings as arguments,
-# with the exception of user_page_link, which MUST be given a plain Python
-# string.
+# with the exception of user_page_link, which musr be given either a plain Python
+# string or a unicode string which contains only ASCII characters.
 # They return plain Python strings (since AFAIK URIs are ASCII,
 # strictly speaking).
 
@@ -92,7 +92,11 @@ def article_link(title, revision=None):
            (revision and "/revisions/%i" % revision or '')
 
 def user_page_link(name):
-    assert type(name) == types.StringType
+    if type(name) != types.StringType:
+        try:
+            name = name.encode('ascii')
+        except UnicodeEncodeError:
+            assert False
     return '/' + ARTICLE_LINK_PREFIX + '/' + qaf(USER_PAGE_PREFIX + name)
 
 def category_page_link(name):
