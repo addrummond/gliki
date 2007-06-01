@@ -15,9 +15,10 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor,
 # Boston, MA  02110-1301, USA.
 
-#
-# Some random functions which don't fit anywhere in particular.
-#
+"""
+This module contains some random functions which don't fit anywhere
+in particular.
+"""
 
 import time
 import itertools

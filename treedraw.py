@@ -15,9 +15,10 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor,
 # Boston, MA  02110-1301, USA.
 
-#
-# Module for rendering labelled bracketings + movements as images.
-#
+"""
+This module contains code for rendering labelled bracketings + movements
+as images.
+"""
 
 import cairo
 import md5

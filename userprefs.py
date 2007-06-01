@@ -15,10 +15,10 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor,
 # Boston, MA  02110-1301, USA.
 
-#
-# This module provides some abstractions over the DB for dealing with user
-# preferences. Who needs ORM when you can have a nasty hack?
-#
+"""
+This module provides some abstractions over the DB for dealing with user
+preferences. Who needs ORM when you can use a nasty hack instead?
+"""
 
 import sys
 import my_utils
@@ -47,6 +47,7 @@ USER_PREFS = dict(
 
 __valid_table_name_regex = re.compile(r"\w+") # the isalnum method doesn't allow underscores, but \w does.
 def check_valid_table_name(s):
+    """Check that a table name doesn't contain any funky characters."""
     if __valid_table_name_regex.match(s):
         return s
     else:

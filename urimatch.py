@@ -15,12 +15,11 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor,
 # Boston, MA  02110-1301, USA.
 
-#
-# This module provides a simple parser for URIs, allowing URLs like:
-#     www.foo.com/forum/thread/silly%20thread/posts/22
-# to be easily matched.
-#
-
+"""
+This module provides a simple parser for URIs, allowing URLs like:
+    www.foo.com/forum/thread/silly%20thread/posts/22
+to be easily matched.
+"""
 
 import itertools
 import my_utils

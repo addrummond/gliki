@@ -15,6 +15,10 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor,
 # Boston, MA  02110-1301, USA.
 
+"""
+This module directs HTTP requests to the correct handlers.
+"""
+
 # ADVANCED CONFIGURATION SYSTEM.
 SERVER = "paste" # OR "lighttpd"
 

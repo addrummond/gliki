@@ -15,11 +15,11 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor,
 # Boston, MA  02110-1301, USA.
 
-#
-# This module contains a parser for the Gliki markup language written using
-# a parser combinator library (see parcombs.py) and a translator from the
-# markup language to XHTML.
-#
+"""
+This module contains a parser for the Gliki markup language written using
+a parser combinator library (see parcombs.py) and a translator from the
+markup language to XHTML.
+"""
 
 from parcombs import *
 import htmlutils

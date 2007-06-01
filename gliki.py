@@ -15,6 +15,11 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor,
 # Boston, MA  02110-1301, USA.
 
+"""
+This module contains some code for accessing the DB, and all of the HTTP request
+handlers registered with control.py.
+"""
+
 import config
 import sys
 import re

@@ -15,6 +15,10 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor,
 # Boston, MA  02110-1301, USA.
 
+"""
+Utilities for dealing with HTML (or actually, just one of them at the moment).
+"""
+
 def htmlencode(text):
     """Use HTML entities to encode special characters in the given text."""
     text = text.replace('&', '&amp;')

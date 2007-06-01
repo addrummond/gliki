@@ -15,11 +15,11 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor,
 # Boston, MA  02110-1301, USA.
 
-#
-# This module provides functions for generating links,
-# allowing the format of both to be changed with relatively minor revisions
-# to the code base.
-#
+"""
+This module provides functions for generating links,
+allowing their format of to be changed with relatively minor revisions
+to the code base.
+"""
 
 import my_utils
 import urllib

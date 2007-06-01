@@ -15,10 +15,10 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor,
 # Boston, MA  02110-1301, USA.
 
-#
-# Python conversion of the Wikimedia code in diff.php.
-# (This code is also licensed released under GPL >= 2.)
-#
+"""
+Python conversion of the Wikimedia code in diff.php
+(this code is also licensed under GPL >= 2).
+"""
 
 import types
 import md5

@@ -15,9 +15,9 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor,
 # Boston, MA  02110-1301, USA.
 
-#
-# A parser combinator library.
-#
+"""
+This module contains a parser combinator library.
+"""
 
 import sys
 import inspect

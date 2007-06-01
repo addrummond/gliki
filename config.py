@@ -15,9 +15,9 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor,
 # Boston, MA  02110-1301, USA.
 
-#
-# This contains various global configuration options.
-#
+"""
+This module contains various global configuration options.
+"""
 
 # These don't yet work! Setting them to anything other than utf-8 will have
 # strange consequences.
