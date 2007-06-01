@@ -1702,7 +1702,7 @@ class Unwatch(object):
     @ok_html(cached=False)
     @showkid('templates/unwatch.kid')
     def GET(self, parms, extras):
-        title = urllib.unquote(unfutz_article_title(parms[links.ARTICLE_LINK_PREFIX]))
+        title = unfutz_article_title(uu_decode(parms[links.ARTICLE_LINK_PREFIX]))
 
         try:
             dbcon = get_dbcon()
@@ -1711,10 +1711,10 @@ class Unwatch(object):
             d = { }
             merge_login(dbcon, cur, extras, d)
             if len(d) == 0:
-                return dict(error="You must be logged in to remove an item from your watchlist.")
+                return dict(error=u"You must be logged in to remove an item from your watchlist.")
 
             if not article_is_on_watchlist(dbcon, cur, d['username'], title):
-                return merge_dicts(d, dict(error="The article is not on your watchlist."))
+                return merge_dicts(d, dict(error=u"The article is not on your watchlist."))
 
             res = cur.execute(
                 """
