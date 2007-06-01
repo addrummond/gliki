@@ -1846,11 +1846,11 @@ class RenderTree(object):
 
         if not parms.has_key('tree'):
             raise control.BadRequestError()
-        tree_source = urllib.unquote(parms['tree'])
+        tree_source = uu_decode(parms['tree'])
         font_size = 20
         if parms.has_key('font_size'):
             try:
-                font_size = int(parms['font_size'])
+                font_size = int(uu_decode(parms['font_size']))
             except ValueError:
                 raise control.BadRequestError()
         
