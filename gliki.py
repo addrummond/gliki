@@ -576,7 +576,7 @@ class EditWikiArticle(object):
     @ok_html()
     @showkid('templates/edit.kid')
     def GET(self, parms, extras):
-        title = urllib.unquote(unfutz_article_title(parms[links.ARTICLE_LINK_PREFIX]))
+        title = urllib.unquote(unfutz_article_title(parms[links.ARTICLE_LINK_PREFIX])).decode('utf-8')
         text = ''
         revision = None
         try:

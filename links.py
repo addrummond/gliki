@@ -76,15 +76,24 @@ DELETE_SUFFIX = 'delete'
 USER_PAGE_PREFIX = 'user '
 CATEGORY_PAGE_PREFIX = 'category '
 
+# NOTE: All of the functions below MUST be given unicode strings as arguments,
+# with the exception of user_page_link, which MUST be given a plain Python
+# string.
+# They return plain Python strings (since AFAIK URIs are ASCII,
+# strictly speaking).
+
 def article_link(title, revision=None):
+    title = my_utils.webencode(title)
     assert_is_int_or_none(revision)
     return '/' + ARTICLE_LINK_PREFIX + '/' + qaf(title) + \
            (revision and "/revisions/%i" % revision or '')
 
 def user_page_link(name):
+    assert type(name) == types.StringType
     return '/' + ARTICLE_LINK_PREFIX + '/' + qaf(USER_PAGE_PREFIX + name)
 
 def category_page_link(name):
+    name = my_utils.webencode(name)
     return '/' + ARTICLE_LINK_PREFIX + '/' + qaf(CATEGORY_PAGE_PREFIX + name)
 
 def article_list_link():
@@ -102,9 +111,11 @@ def revise_link_by_threads_id(threads_id):
     return '/' + REVISE_PREFIX + '/' + str(threads_id)
 
 def comment_on_wiki_article(title):
+    title = my_utils.webencode(title)
     return '/' + ARTICLE_LINK_PREFIX + '/' + qaf(title)
 
 def diff_link(title, rev1, rev2):
+    title = my_utils.webencode(title)
     return '/' + ARTICLE_LINK_PREFIX + '/' + qaf(title) + '/' + \
            DIFF_SUFFIX + '/' + str(rev1) + '/' + str(rev2)
 
@@ -116,15 +127,18 @@ def recent_changes_link(from_, n):
            (n and str(n) or '')
 
 def category_link(name):
+    name = my_utils.webencode(name)
     return '/' + CATEGORIES_PREFIX + '/' + qaf(name.lower())
 
 def category_list_link():
     return '/' + CATEGORY_LIST
 
 def article_history_link(title):
+    title = my_utils.webencode(title)
     return '/' + ARTICLE_LINK_PREFIX + '/' + qaf(title) + '/' + HISTORY_SUFFIX
 
 def links_here_link(title):
+    title = my_utils.webencode(title)
     return '/' + ARTICLE_LINK_PREFIX + '/' + qaf(title) + '/' + LINKS_HERE_SUFFIX
 
 def login_link():
@@ -152,9 +166,11 @@ def update_preferences_link():
     return '/' + UPDATE_PREFERENCES
 
 def watch_article_link(title):
+    title = my_utils.webencode(title)
     return '/' + ARTICLE_LINK_PREFIX + '/' + qaf(title) + '/' + WATCH_SUFFIX
 
 def unwatch_article_link(title):
+    title = my_utils.webencode(title)
     return '/' + ARTICLE_LINK_PREFIX + '/' + qaf(title) + '/' + UNWATCH_SUFFIX
 
 def watchlist_link():

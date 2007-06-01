@@ -22,6 +22,22 @@
 import time
 import itertools
 import StringIO
+import config
+import types
+import urllib
+
+def webencode(s):
+    assert type(s) == types.UnicodeType
+    return s.encode(config.WEB_ENCODING)
+
+def uu_decode(s, on_fail=u''):
+    """Decodes (portions of) a URI. Removes %XX sequences and interprets the
+       result as a UTF-8 formatted string. By default, returns u'' on failure.
+    """
+    try:
+        return urllib.unquote(s).decode(s, config.WEB_ENCODING)
+    except UnicodeDecodeError:
+        return on_fail
 
 def truncate(n, s):
     """Truncates a string s to at most n chars,

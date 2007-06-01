@@ -28,8 +28,35 @@ import links
 </head>
 
 <body>
-    <p py:if="locals().has_key('error')">
-        <b class="error">${error}</b>
+    <p class="error" py:if="locals().has_key('error')">
+        <span py:strip="True" py:if="error == 'missing_fields'">
+            You must give both a username and a password (email address is optional).
+        </span>
+        <span py:strip="True" py:if="error == 'contains_non_ascii'">
+            Usernames and passwords must contain only ASCII characters (but
+            the rest of the site supports unicode).
+        </span>
+        <span py:strip="True" py:if="error == 'contains_colon'">
+            Usernames and passwords cannot contain the &lsquo;:&rsquo; character.
+        </span>
+        <span py:strip="True" py:if="error == 'email_exists'">
+            An account using that email address already exists.
+        </span>
+        <span py:strip="True" py:if="error == 'username_exists'">
+            An account using that username already exists.
+        </span>
+        <span py:strip="True" py:if="error == 'username_is_ip_address'">
+            A username cannot be an IP address, since these usernames are used
+            for anonymous editors.
+        </span>
+        <span py:strip="True" py:if="error == 'userpage_exists'">
+            The userpage
+            <a class="article_ref" href="${links.user_page_link(default_username)}">links.qaf(${links.USER_PAGE_PREFIX + default_username})</a>
+            already exists,
+            but no such user exists.
+            If you move this page somewhere else,
+            you can create an account with this name.
+        </span>
     </p>
     <form class="create-account" method="POST" action="${links.make_new_account_link()}">
         <table>
