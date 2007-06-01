@@ -718,8 +718,8 @@ class RecentChangesList(object):
     def GET(self, parms, extras):
         from_, n = None, None
         try:
-            from_ = int(parms['from'])
-            n = int(parms['n'])
+            from_ = int(uu_decode(parms['from']))
+            n = int(uu_decode(parms['n']))
         except ValueError:
             raise control.BadRequestError()
 
@@ -803,24 +803,24 @@ class ReviseWikiArticle(object):
 
         try:
             if parms.has_key(links.ARTICLE_LINK_PREFIX):
-                title = urllib.unquote(unfutz_article_title(parms[links.ARTICLE_LINK_PREFIX]))
+                title = unfutz_article_title(uu_decode(parms[links.ARTICLE_LINK_PREFIX]))
             else:
-                threads_id = int(parms[links.REVISE_SUFFIX])
+                threads_id = int(uu_decode(parms[links.REVISE_SUFFIX]))
             source = urllib.unquote(parms['source']).decode(config.ARTICLE_SOURCE_ENCODING)
         except (KeyError, ValueError), e:
             raise control.BadRequestError()
         new_title = title
         if parms.has_key('new_title'):
-            new_title = urllib.unquote(parms['new_title'])
+            new_title = uu_decode(parms['new_title'])
         comment = ''
         if parms.has_key('comment'):
-            comment = urllib.unquote(parms['comment'])
+            comment = uu_decode(parms['comment'])
         # This should be specified if editing by thread_id so that we can
         # include the title of the page being edited in any pages we send
         # back.
         redundant_title = None
         if parms.has_key('redundant_title'):
-            redundant_title = urllib.unquote(parms['redundant_title'])
+            redundant_title = uu_decode(parms['redundant_title'])
         def get_title_for_user():
             # Oh dear.
             if title:
@@ -844,7 +844,10 @@ class ReviseWikiArticle(object):
             # a DB error.
             revision_user_id = get_anon_user_wikiuser_id(extras.remote_ip)
         else:
-            revision_user_id = d['user_id']
+            try:
+                revision_user_id = d['user_id'])
+            except ValueError:
+                raise control.BadRequestError()
 
         # Cant' have '-' or '_' in the title.
         tfu = get_title_for_user()
@@ -856,7 +859,7 @@ class ReviseWikiArticle(object):
                     article_title = get_title_for_user(),
                     threads_id = threads_id,
                     comment = comment,
-                    error_message = "Article titles cannot contain '-' or '_'.",
+                    error_message = u"Article titles cannot contain '-' or '_'.",
                     line = 1,
                     column = 1
                 )
@@ -906,7 +909,7 @@ class ReviseWikiArticle(object):
                         article_title = get_title_for_user(),
                         threads_id = threads_id,
                         comment = comment,
-                        error_message = "You cannot preview a redirect.",
+                        error_message = u"You cannot preview a redirect.",
                         line = 1,
                         column = 1
                     )
@@ -963,7 +966,7 @@ class ReviseWikiArticle(object):
                 # Check for circular redirects.
                 is_circular, path = get_redirect_path(dbcon, cur, new_title, r.title)
                 if is_circular:
-                    path_string = ' -> '.join(map(lambda s: '"' + s + '"', path))
+                    path_string = u' -> '.join(map(lambda s: u'"' + s + u'"', path))
                     return my_utils.merge_dicts(
                         d,
                         dict(
@@ -971,7 +974,7 @@ class ReviseWikiArticle(object):
                             article_title = get_title_for_user(),
                             threads_id = threads_id,
                             comment = comment,
-                            error_message = "This redirect would lead to a circularity: %s" % path_string,
+                            error_message = u"This redirect would lead to a circularity: %s" % path_string,
                             line = 1,
                             column = 1
                         )
@@ -1006,9 +1009,9 @@ class ReviseWikiArticle(object):
 
                 logging.log(
                     logging.EDITS_LOG,
-                    '%s,%s,%s,redirect,"%s",%i\n' % (
+                    u'%s,%s,%s,redirect,"%s",%i\n' % (
                         extras.remote_ip,
-                        d.has_key('username') and d['username'] or '',
+                        d.has_key('username') and d['username'] or u'',
                         threads_id,
                         htmlutils.htmlencode(comment),
                         int_time
@@ -1030,7 +1033,7 @@ class ReviseWikiArticle(object):
                                 article_title = get_title_for_user(),
                                 threads_id = threads_id,
                                 comment = comment,
-                                error_message = "You cannot rename %s to %s because an article with this title already exists." % (get_title_for_user(), new_title),
+                                error_message = u"You cannot rename %s to %s because an article with this title already exists." % (get_title_for_user(), new_title),
                                 line = 1,
                                 column = 1
                             )
@@ -1089,7 +1092,7 @@ class ReviseWikiArticle(object):
 
                 logging.log(
                     logging.EDITS_LOG,
-                    '%s,%s,%s,edit,"%s",%i\n' % (
+                    u'%s,%s,%s,edit,"%s",%i\n' % (
                         extras.remote_ip,
                         d.has_key('username') and d['username'] or '',
                         threads_id,
