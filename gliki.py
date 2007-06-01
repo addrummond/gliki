@@ -1752,7 +1752,7 @@ class Watchlist(object):
             d = { }
             merge_login(dbcon, cur, extras, d)
             if len(d) == 0:
-                return dict(error="You must be logged in to view your watchlist.")
+                return dict(error=u"You must be logged in to view your watchlist.")
 
             res = cur.execute(
                 # Don't actually need a subquery here, but putting the second
