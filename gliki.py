@@ -58,6 +58,7 @@ DATABASE = "main.db"
 
 SERVER_PORT = 3000
 
+# Code for the AES-32/base64 encryption scheme used for user account passwords.
 AES_PASSWORD_KEY = "%$GHnfgh;['*(12SDvZ\\dfgt><?@:{!!"
 AES_MODE = 2 # Must be 2, don't ask me why...
 def pad_string(s):
@@ -1360,7 +1361,7 @@ class MakeNewAccount(object):
                 parms.has_key('password')):
             return dict(default_email=(parms.has_key('email') and urllib.unquote(parms['email']) or ''),
                         default_username=(parms.has_key('username') and urllib.unquote(parms['username']) or ''),
-                        error="You must give a username and a password (email address is optional).")
+                        error="missing_fields")
         username, password = urllib.unquote(parms['username']), urllib.unquote(parms['password'])
         email = None
         if parms.has_key('email') and parms['email'] != '':
@@ -1372,14 +1373,14 @@ class MakeNewAccount(object):
             username = username.decode('ascii')
             password = password.decode('ascii')
         except UnicodeError:
-            return dict(error="Usernames and passwords must be ASCII only (but the rest of the site supports unicode).")
+            return dict(error="contains_non_ascii")
 
         # Usernames and passwords can't contain the ':' character because that
         # interferes with the HTTP AUTH mechanism.
         if ':' in username or ':' in password:
             return dict(default_email=email,
                         default_username=username,
-                        error="Usernames and passwords cannot contain a colon.")
+                        error="contains_colon")
 
         try:
             dbcon = get_dbcon()
@@ -1399,17 +1400,17 @@ class MakeNewAccount(object):
                 if res[0][0] is not None and res[0][0] == email:
                     return dict(default_email=email,
                                 default_username=username,
-                                error="An account with that email address already exists.")
+                                error="email_exists")
                 else:
                     return dict(default_email=email,
                                 default_username=username,
-                                error="An account with that username already exists.")
+                                error="username_exists")
             # Also, you can't create an account with an IP address name, since
             # they're reserved for anon users.
             if self.ip_addy_regex.match(username):
                 return dict(default_email=email,
                             default_username=username,
-                            error="You cannot create an account with a username which is an IP address.")
+                            error="username_is_ip_address")
 
             # User's need a user page. Perhaps someone has mischeivously created
             # a user-$USERNAME page already.
@@ -1417,7 +1418,7 @@ class MakeNewAccount(object):
             if rev:
                 return dict(default_email=email,
                             default_username=username,
-                            error="The page 'user-%s' already exists. However, no such user exists, so if you move this page somewhere else you can create an account with this username." % username)
+                            error="userpage_exists" % username)
 
             # All clear: we can go ahead and create a new account.
             res = cur.execute(
