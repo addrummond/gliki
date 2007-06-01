@@ -1651,7 +1651,7 @@ class Watch(object):
     @ok_html(cache=False)
     @showkid('templates/watch.kid')
     def GET(self, parms, extras):
-        title = urllib.unquote(unfutz_article_title(parms[links.ARTICLE_LINK_PREFIX]))
+        title = unfutz_article_title(uu_decode(parms[links.ARTICLE_LINK_PREFIX]))
 
         try:
             dbcon = get_dbcon()
@@ -1660,10 +1660,10 @@ class Watch(object):
             d = { }
             merge_login(dbcon, cur, extras, d)
             if len(d) == 0:
-                return dict(error="You must be logged in to add an item to your watchlist.")
+                return dict(error=u"You must be logged in to add an item to your watchlist.")
 
             if article_is_on_watchlist(dbcon, cur, d['username'], title):
-                return merge_dicts(d, dict(error="The article is already on your watchlist."))
+                return merge_dicts(d, dict(error=u"The article is already on your watchlist."))
 
             res = cur.execute(
                 """
