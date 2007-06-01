@@ -1788,7 +1788,7 @@ class TrackedChanges(object):
             d = { }
             merge_login(dbcon, cur, extras, d)
             if len(d) == 0:
-                return dict(error="You must be logged in to view your recent changes list.")
+                return dict(error=u"You must be logged in to view your recent changes list.")
 
             # Select the 50 items on the watchlist with the most recent changes.
             res = cur.execute(
