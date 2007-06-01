@@ -1283,9 +1283,9 @@ class Diff(object):
     @ok_html()
     @showkid('templates/diff.kid')
     def GET(self, parms, extras):
-        title = urllib.unquote(unfutz_article_title(parms[links.ARTICLE_LINK_PREFIX]))
-        rev1 = parms[links.DIFF_SUFFIX]
-        rev2 = parms['with']
+        title = unfutz_article_title(uu_decode(parms[links.ARTICLE_LINK_PREFIX]))
+        rev1 = uu_decode(parms[links.DIFF_SUFFIX])
+        rev2 = uu_decode(parms['with'])
         try:
             rev1 = int(rev1)
             rev2 = int(rev2)
