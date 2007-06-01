@@ -1250,7 +1250,7 @@ class LinksHere(object):
     @ok_html()
     @showkid('templates/links-here.kid')
     def GET(self, parms, extras):
-        title = urllib.unquote(unfutz_article_title(parms[links.ARTICLE_LINK_PREFIX]))
+        title = unfutz_article_title(uu_decode(parms[links.ARTICLE_LINK_PREFIX]))
 
         try:
             dbcon = get_dbcon()
