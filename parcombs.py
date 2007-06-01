@@ -295,13 +295,16 @@ SkipNoNLWhitespace = skip_whitespace(False)
 def Str(s, case_sensitive=True):
     """Recognizes a string of characters."""
     def parser(parms, state):
+        saved = ParserState(state.index, state.line, state.col, None)
         for c in s:
             if state.index == parms.input_length:
+                restore_state(state, saved)
                 return estack(state, ParserError(state.line, state.col,
                                             "Expecting \"%s\", found end of input" % s))
             ic = parms.input[state.index]
             __advanceilc(state, ic)
             if (case_sensitive and ic != c) or ((not case_sensitive) and ic.upper() != c.upper()):
+                restore_state(state, saved)
                 return estack(state, ParserError(state.line, state.col,
                                             "Expecting \"%s\"" %s))
         return s
@@ -318,8 +321,10 @@ def Strs(*strings):
     def parser(parms, state):
         forbidden = sets.Set([])
         l = len(strings)
+        saved = ParserState(state.index, state.line, state.col, None)
         for i in itertools.count(0):
             if state.index == parms.input_length:
+                restore_state(state, saved)
                 return estack(state, ParserError(state.line, state.col,
                                             "Expecting one of %s; found end of input" % one_of()))
             ic = parms.input[state.index]
@@ -331,18 +336,21 @@ def Strs(*strings):
                     elif len(strings[j]) == i + 1:
                         return strings[j]
             if l - len(forbidden) == 0:
+                restore_state(state, saved)
                 return estack(state, ParserError(state.line, state.col,
                                             "Expecting one of %s" % one_of()))
         return estack(state, ParserError(state.line, state.col, "Expecting one of %s" % one_of()))
     return Parser(parser, Str.__doc__)
 
 def Seq(*parsers):
-    """Recognizes two parsers in sequence."""
+    """Recognizes a number of parsers in sequence."""
     def parser(parms, state):
+        saved = ParserState(state.index, state.line, state.col, None)
         r = None
         for p in parsers:
             r = p(parms, state)
             if isinstance(r, ParserError):
+                restore_state(state, saved)
                 return r
         return r
     return Parser(parser, Seq.__doc__)
