@@ -272,6 +272,26 @@ Digit = ChrRanges('number', ('0', '9'))
 Whitespace = Chrs(" \r\n\f\t")
 NoNLWhitespace = Chrs(" \t")
 
+# Since skipping multiple whitespace characters is common,
+# writing this out longhand can speed things up a bit.
+def skip_whitespace(include_newlines=True):
+    def parser(parms, state):
+        # Note that the timing of __advanceilc makes saving and restoring the
+        # parser state unnecessary here.
+        while True:
+            if state.index == parms.input_length:
+                return None
+            ic = parms.input[state.index]
+            if ic.isspace() and (include_newlines or (ic != '\r' and ic != '\n')):
+                pass
+            else:
+                return None
+
+            __advanceilc(state, ic)
+    return Parser(parser, skip_whitespace.__doc__)
+SkipWhitespace = skip_whitespace()
+SkipNoNLWhitespace = skip_whitespace(False)
+
 def Str(s, case_sensitive=True):
     """Recognizes a string of characters."""
     def parser(parms, state):

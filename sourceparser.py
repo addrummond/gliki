@@ -83,7 +83,7 @@ def tree_():
     return LimitedFOr(2,
         (Chr("[") >> Fatalize(
          DoWithState('current_path', add1_to_last_elem_of_list) >>
-         CMany0(Whitespace) >>
+         SkipWhitespace >>
          # Optional label (for connecting with traces).
          Option(None,
                 Str("->") >>
@@ -95,7 +95,7 @@ def tree_():
              DoWithState('landing_sites', lambda ls: set_hash(ls, trace_label, current_path[0:]))
                       or \
              Return(None)) >>
-         CMany0(Whitespace) >>
+         SkipWhitespace >>
          SUntil1(escchr, Whitespace * Chrs("'[]")) >>
          (lambda label:
          CMany0(Chr("'")) >>
@@ -127,7 +127,7 @@ def tree_():
          DoWithState('current_path', add1_to_last_elem_of_list) >>
          CMany0(Chr("'")) >>
          (lambda bars:
-         CMany0(Whitespace) >>
+         SkipWhitespace >>
          Return(treedraw.TreeNode(treedraw.Label(label, bars), [])))))
     )
 def find_movements(landing_sites, traces):
@@ -162,7 +162,7 @@ tree = \
 #
 
 skip_blank_lines = (
-    CMany0(CMany0(NoNLWhitespace) >> Chr("\n"))
+    CMany0(SkipNoNLWhitespace >> Chr("\n"))
 )
 
 section = ErrorPoint(
@@ -431,7 +431,7 @@ def formatted_(stop_with_single_newline, stop_with_gt, stop_with_bullet):
             (lambda lc:
             Fatalize(
                 StrCI("category") >>
-                CMany0(Whitespace) >>
+                SkipWhitespace >>
                 Str("[[") >>
                 SUntilNRW0(escchr, Str("]]")) >>
                 (lambda cat:
@@ -580,10 +580,10 @@ class ExampleGroup(object):
 example = (
     Option(None, label) >>
     (lambda l:
-    CMany0(Whitespace) >>
+    SkipWhitespace >>
     acceptability >>
     (lambda a:
-    CMany0(Whitespace) >>
+    SkipWhitespace >>
     # Is this a glossed example?
     Option(None, Chr('<')) >>
     (lambda c:
@@ -610,13 +610,13 @@ def glossed_example(l, a):
         Until0(formatted_in_gloss, Chr(">")) >>
         (lambda first_elt:
         Chr(">") >>
-        CMany0(NoNLWhitespace) >>
-        Many0(Chr("<") >> Until0(formatted_in_gloss, Chr(">")) >> (lambda elt: Chr(">") >> CMany0(NoNLWhitespace) >> Return(elt))) >>
+        SkipNoNLWhitespace >>
+        Many0(Chr("<") >> Until0(formatted_in_gloss, Chr(">")) >> (lambda elt: Chr(">") >> SkipNoNLWhitespace >> Return(elt))) >>
         (lambda native_elts:
-        Chr("\n") >> CMany0(Whitespace) >>
-Many0(Chr("<") >> Until0(formatted_in_gloss, Chr(">")) >> (lambda elt: Chr(">") >> CMany0(NoNLWhitespace) >> Return(elt))) >>
+        Chr("\n") >> SkipWhitespace >>
+Many0(Chr("<") >> Until0(formatted_in_gloss, Chr(">")) >> (lambda elt: Chr(">") >> SkipNoNLWhitespace >> Return(elt))) >>
         (lambda lit_elts:
-        Chr("\n") >> CMany0(NoNLWhitespace) >>
+        Chr("\n") >> SkipNoNLWhitespace >>
         (Many1(formatted_snl) * Return(None)) >>
         (lambda gloss:
         Chr("\n") * EOF >>
@@ -627,10 +627,10 @@ example_group = (
     FOr(
         Option(None, label) >>
         (lambda label:
-        CMany0(Whitespace) >>
+        SkipWhitespace >>
         Str("(+)") >>
-        CMany0(NoNLWhitespace) >>
-        SepBy1(example, CMany0(NoNLWhitespace) >> Str("(+)") >> CMany0(NoNLWhitespace)) >>
+        SkipNoNLWhitespace >>
+        SepBy1(example, SkipNoNLWhitespace >> Str("(+)") >> SkipNoNLWhitespace) >>
         (lambda lst:
         Return(ExampleGroup(label, lst))))
         ,
@@ -647,12 +647,12 @@ class BulletList(object):
         return "bullets" + str(self.bullets)
 
 bullet_list = (
-    UntilNRW1(Str("(*)") >> Many0(formatted_in_bullets), Str("\n\n") * (CMany0(Whitespace) >> EOF)) >>
+    UntilNRW1(Str("(*)") >> Many0(formatted_in_bullets), Str("\n\n") * (SkipWhitespace >> EOF)) >>
     (lambda bl:
     Return(BulletList(bl)))
 )
 numbered_list = (
-    UntilNRW1(Str("(#)") >> Many0(formatted_in_bullets), Str("\n\n") * (CMany0(Whitespace) >> EOF)) >>
+    UntilNRW1(Str("(#)") >> Many0(formatted_in_bullets), Str("\n\n") * (SkipWhitespace >> EOF)) >>
     (lambda bl:
     Return(BulletList(bl, numbered=True)))
 )
@@ -663,7 +663,7 @@ docelement_after_section_title = (
     # Try for an example/list, then skip all whitespace if it fails.
     ((CMany(4, Chr(" ")) * Chr("\t")) >> LimitedFOr(3, bullet_list, numbered_list, example_group)) *
     (
-        CMany0(Whitespace) >>
+        SkipWhitespace >>
         paragraph
     )
 )
@@ -697,7 +697,7 @@ def document_(can_be_empty=True, after_section_title=False):
         DoWithState('section_tree', lambda st: st.add_elem(p)) >>
         document_())
         ,
-        CMany1(Whitespace) >>
+        SkipWhitespace >>
         EOF >>
         (can_be_empty and \
             Apply(lambda st: st.get_tree(), GetState('section_tree'))
@@ -710,14 +710,14 @@ class Redirect(object):
         self.title = title
 
 redirect = (
-    CMany0(Whitespace) >>
+    SkipWhitespace >>
     Chr('#') >>
     StrCI('redirect') >>
-    CMany0(Whitespace) >>
+    SkipWhitespace >>
     Str("[[") >>
     SUntilNRW0(escchr, Str("]]")) >>
     (lambda name:
-    CMany0(Whitespace) >>
+    SkipWhitespace >>
     EOF >>
     Return(Redirect(name))))
 
