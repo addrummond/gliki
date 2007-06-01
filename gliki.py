@@ -1901,7 +1901,7 @@ class DeleteArticle(object):
             dbcon = get_dbcon()
             cur = dbcon.cursor()
 
-            title = urllib.unquote(unfutz_article_title(parms[links.ARTICLE_LINK_PREFIX]))
+            title = unfutz_article_title(uu_decode(parms[links.ARTICLE_LINK_PREFIX]))
 
             d = { }
             merge_login(dbcon, cur, extras, d)
