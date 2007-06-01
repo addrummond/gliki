@@ -845,7 +845,7 @@ class ReviseWikiArticle(object):
             revision_user_id = get_anon_user_wikiuser_id(extras.remote_ip)
         else:
             try:
-                revision_user_id = d['user_id'])
+                revision_user_id = d['user_id']
             except ValueError:
                 raise control.BadRequestError()
 
