@@ -1362,20 +1362,20 @@ class MakeNewAccount(object):
     def POST(self, parms, extras):
         if not (parms.has_key('username') and
                 parms.has_key('password')):
-            return dict(default_email=(parms.has_key('email') and urllib.unquote(parms['email']) or ''),
-                        default_username=(parms.has_key('username') and urllib.unquote(parms['username']) or ''),
+            return dict(default_email=(parms.has_key('email') and uu_decode(parms['email']) or ''),
+                        default_username=(parms.has_key('username') and uu_decode(parms['username']) or ''),
                         error="missing_fields")
-        username, password = urllib.unquote(parms['username']), urllib.unquote(parms['password'])
+        username, password = uu_decode(parms['username']), uu_decode(parms['password'])
         email = None
         if parms.has_key('email') and parms['email'] != '':
-            email = urllib.unquote(parms['email'])
+            email = uu_decode(parms['email'])
 
         # Usernames and passwords must be ASCII since (so far as I know) there's
         # no standard way of dealing with unicode in the HTTP digest protocol.
         try:
-            username = username.decode('ascii')
-            password = password.decode('ascii')
-        except UnicodeError:
+            username = username.encode('ascii')
+            password = password.encode('ascii')
+        except UnicodeEncodeError:
             return dict(error="contains_non_ascii")
 
         # Usernames and passwords can't contain the ':' character because that
