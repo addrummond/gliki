@@ -714,7 +714,7 @@ class RecentChangesList(object):
     # /recent-changes/100          List of 100 most recent changes
     # /recent-changes/from/65      List of 50 most recent changes with offset 65
     # /recent-changes/from/65/100  List of 100 most recent changes with offset 65
-    uris = [Abs(links.RECENT_CHANGES) >> Opt(VParm(links.FROM_SUFFIX), {'from' : 0}) >> Opt(Selector('n'), {'n' : 50}) >> OptDir()]
+    uris = [Abs(links.RECENT_CHANGES) >> Opt(VParm(links.FROM_SUFFIX), {'from' : '0'}) >> Opt(Selector('n'), {'n' : '50'}) >> OptDir()]
 
     @ok_html()
     @showkid('templates/recent_changes_list.kid')
