@@ -1116,7 +1116,7 @@ class Category(object):
         # NOTE THAT CATEGORIES ARE CASE INSENSITIVE, SO THERE ARE SOME
         # CASE INSENSITIVE SQL STRING COMPARISONS HERE.
 
-        category = my_utils.unfutz_article_title(urllib.unquote(parms[links.CATEGORIES_PREFIX])).lower()
+        category = unfutz_article_title(uu_decode(parms[links.CATEGORIES_PREFIX])).lower()
 
         try:
             dbcon = get_dbcon()
