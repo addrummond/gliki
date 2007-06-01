@@ -1516,7 +1516,8 @@ class DeleteAccount(object):
             d = { }
             merge_login(dbcon, cur, extras, d)
             if not d.has_key('username'):
-                return dict(error="You cannot delete your account because you are not logged in.")
+                return dict(error=u"You cannot delete your account because you are not logged in.")
+            username = uu_decode(d['username'])
 
             # Check this user exists.
             res = cur.execute(
@@ -1524,7 +1525,7 @@ class DeleteAccount(object):
                 SELECT id FROM wikiusers WHERE
                 username = ?
                 """,
-                (d['username'],)
+                (username,)
             )
 
             for r in res:
@@ -1541,11 +1542,11 @@ class DeleteAccount(object):
 
                 # Delete the user's userpage (this function will just do nothing
                 # if the page doesn't exist).
-                delete_article(dbcon, cur, links.USER_PAGE_PREFIX + d['username'])
+                delete_article(dbcon, cur, unicode(links.USER_PAGE_PREFIX) + username)
 
                 # We don't merge login info, since if we do the user will be
                 # informed that they're logged in as the user we've just deleted.
-                return dict(username_=d['username'])
+                return dict(username_=username)
 
             # Should never get here -- it would mean that a non-existent user
             # was logged in.
