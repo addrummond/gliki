@@ -24,7 +24,7 @@
 
 import itertools
 import my_utils
-
+import types
 
 #
 # Classes representing the different kinds of parser.
@@ -116,7 +116,7 @@ def ijoin(s, l):
 
 def test_pattern_helper(pattern, uri, base=True):
     """The parsing algorithm."""
-    if pattern.__class__ is Abs:
+    if isinstance(pattern, Abs):
         uri2 = strip_initial_slash(uri)
         puri2 = strip_initial_slash(pattern.uri)
         if uri2.startswith(puri2):
@@ -125,9 +125,10 @@ def test_pattern_helper(pattern, uri, base=True):
                 return False
             return (pattern.dict, r)
         else: return False
-    elif pattern.__class__ is Parm:
+    elif isinstance(pattern, Parm):
         uri2 = strip_initial_slash(uri)
         dirs = uri2.split('/')
+        print "DIRS", dirs, map(type, dirs)
         if dirs[0] == pattern.parm_name:
             if len(dirs) > 1 and len(dirs[1]) > 0:
                 r = ijoin('/', dirs[2:])
@@ -146,7 +147,7 @@ def test_pattern_helper(pattern, uri, base=True):
                     return ({ pattern.parm_name : pattern.default },
                               r )
         else: return False
-    elif pattern.__class__ is Selector:
+    elif isinstance(pattern, Selector):
         uri2 = strip_initial_slash(uri)
         dirs = uri2.split('/')
         r = ijoin('/', dirs[1:])
@@ -157,7 +158,7 @@ def test_pattern_helper(pattern, uri, base=True):
         else:
             return ({ pattern.parm_name : dirs[0] },
                     r )
-    elif pattern.__class__ is Seq:
+    elif isinstance(pattern, Seq):
         uberdict = { }
         current_uri = uri
         for pat, i in zip(pattern.patterns, itertools.count()):
@@ -176,7 +177,7 @@ def test_pattern_helper(pattern, uri, base=True):
             return False
         else:
             return (uberdict, current_uri)
-    elif pattern.__class__ is Opt:
+    elif isinstance(pattern, Opt):
         res = test_pattern_helper(pattern.parser, uri, False)
         if not res:
             if base and uri != '':
@@ -187,7 +188,7 @@ def test_pattern_helper(pattern, uri, base=True):
             if base and r != '':
                 return False
             return res
-    elif pattern.__class__ is OptDir:
+    elif isinstance(pattern, OptDir):
         if uri.lstrip('/') == '':
             return ({ }, '')
         else:
@@ -201,7 +202,10 @@ def test_pattern(pattern, uri):
     # TODO: Find out WTF is going on.
     # Fix totally mysterious bug where test_pattern_helper keeps returning the
     # same dictionary.
-    return d.copy()
+    c = d.copy()
+    c['foo'] = 5
+    print c
+    return c
 
 # TEST CODE
 #pat = Abs("foo/bar/amp") >> Abs("goo") >> Opt(Parm("foo", "oh")) >> Abs("lalala") >> Selector('gah') >> Parm("gg", "def")

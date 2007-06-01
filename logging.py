@@ -17,6 +17,9 @@
 
 import my_utils
 import time
+import types
+import codecs
+import config
 
 LOG_DIR = 'logs'
 
@@ -28,14 +31,26 @@ SERVER_LOG = 'server'
 LOGGING_ON = True
 
 def log(logname, text):
+    # Check everything is OK w.r.t unicode.
+    if config.LOG_ENCODING.lower() != 'ascii':
+        assert type(text) == types.UnicodeType
+    else:
+        if not type(text) == types.StringType:
+            try:
+                text = text.encode('ascii')
+            except UnicodeEncodeError:
+                assert False
+
     assert not ('/' in logname)
     if LOGGING_ON:
         try:
-            f = open(LOG_DIR + '/' + logname, "a")
+            f = codecs.open(LOG_DIR + '/' + logname, "a", config.LOG_ENCODING)
             f.write(str(my_utils.ZonedDate(time.time(), 0)) + ': ' + text)
             if text[len(text) -1] != '\n':
                 f.write('\n')
             f.close()
         except IOError:
             pass
+
+log("test", u'\u65e5\u672c')
 

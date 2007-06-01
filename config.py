@@ -28,3 +28,6 @@ ARTICLE_XHTML_ENCODING  = 'utf-8'
 # in URLs, etc.
 WEB_ENCODING = 'utf-8'
 
+# Encoding used for the logs in the logs/dir.
+LOG_ENCODING = 'utf-8'
+

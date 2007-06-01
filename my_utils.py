@@ -34,8 +34,10 @@ def uu_decode(s, on_fail=u''):
     """Decodes (portions of) a URI. Removes %XX sequences and interprets the
        result as a UTF-8 formatted string. By default, returns u'' on failure.
     """
+    assert type(s) == types.StringType
+    print "STRING", s, type(s)
     try:
-        return urllib.unquote(s).decode(config.WEB_ENCODING, s)
+        return urllib.unquote(s.decode(config.WEB_ENCODING))
     except UnicodeDecodeError:
         return on_fail
 

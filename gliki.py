@@ -651,8 +651,10 @@ class ShowWikiArticle(object):
                     raise control.SwitchHandler(NoSuchRevision('show', title), { }, 'GET')
                 else:
                     # The article doesn't exist at all.
+                    newd = d.copy()
+                    d[links.REVISIONS_SUFFIX] = '-1'
                     raise control.SwitchHandler(
-                        EditWikiArticle(exists=False), { links.ARTICLE_LINK_PREFIX: title, links.REVISIONS_SUFFIX: '-1' }, 'GET')
+                        EditWikiArticle(exists=False), newd, 'GET')
 
             # Is this a redirect?
             if row['redirect']:
@@ -664,8 +666,9 @@ class ShowWikiArticle(object):
                     raise control.SwitchHandler(generic_internal_error, { }, 'GET')
                 # We use a temporary redirect because the redirect could go
                 # away at any time, and we don't want any weird cash issues.
-                d[links.ARTICLE_LINK_PREFIX] = webencode(path[len(path) -1])
-                raise control.SwitchHandler(ShowWikiArticle(path), d, 'GET')
+                newd = d.copy()
+                newd[links.ARTICLE_LINK_PREFIX] = webencode(path[len(path) -1])
+                raise control.SwitchHandler(ShowWikiArticle(path), newd, 'GET')
 
             ntitle = row['title']
             cached_xhtml = row['cached_xhtml']
