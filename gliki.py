@@ -576,11 +576,11 @@ class EditWikiArticle(object):
     @ok_html()
     @showkid('templates/edit.kid')
     def GET(self, parms, extras):
-        title = urllib.unquote(unfutz_article_title(parms[links.ARTICLE_LINK_PREFIX])).decode('utf-8')
+        title = unfutz_article_title(uu_decode(parms[links.ARTICLE_LINK_PREFIX]))
         text = ''
         revision = None
         try:
-            revision = int(parms[links.REVISIONS_SUFFIX])
+            revision = int(uu_decode(parms[links.REVISIONS_SUFFIX]))
             if revision == 0: raise ValueError()
         except (KeyError, ValueError):
             raise control.BadRequestError()
@@ -614,7 +614,7 @@ class NoSuchRevision(object):
     def __init__(self, kind, title):
         assert kind == 'show' or kind == 'diff'
         self.kind = kind
-        self.title=title
+        self.title = title
 
     @ok_html()
     @showkid('templates/no_such_revision.kid')
@@ -631,10 +631,10 @@ class ShowWikiArticle(object):
     @showkid('templates/article.kid')
     def GET(self, d, extras):
         try:
-            title = urllib.unquote(unfutz_article_title(d[links.ARTICLE_LINK_PREFIX]))
+            title = unfutz_article_title(uu_decode(d[links.ARTICLE_LINK_PREFIX]))
             revision = None
             try:
-                revision = int(d[links.REVISIONS_SUFFIX])
+                revision = int(uu_decode(d[links.REVISIONS_SUFFIX]))
                 if revision == 0: raise ValueError()
             except (KeyError, ValueError):
                 raise control.BadRequestError()
@@ -664,7 +664,7 @@ class ShowWikiArticle(object):
                     raise control.SwitchHandler(generic_internal_error, { }, 'GET')
                 # We use a temporary redirect because the redirect could go
                 # away at any time, and we don't want any weird cash issues.
-                d[links.ARTICLE_LINK_PREFIX] = path[len(path) -1]
+                d[links.ARTICLE_LINK_PREFIX] = webencode(path[len(path) -1])
                 raise control.SwitchHandler(ShowWikiArticle(path), d, 'GET')
 
             ntitle = row['title']
