@@ -1379,7 +1379,8 @@ class MakeNewAccount(object):
             username = username.encode('ascii')
             password = password.encode('ascii')
         except UnicodeEncodeError:
-            return dict(error="contains_non_ascii")
+            return dict(error="contains_non_ascii",
+                        default_username=username)
 
         # Usernames and passwords can't contain the ':' character because that
         # interferes with the HTTP AUTH mechanism.
