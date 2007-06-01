@@ -202,10 +202,7 @@ def test_pattern(pattern, uri):
     # TODO: Find out WTF is going on.
     # Fix totally mysterious bug where test_pattern_helper keeps returning the
     # same dictionary.
-    c = d.copy()
-    c['foo'] = 5
-    print c
-    return c
+    return d.copy()
 
 # TEST CODE
 #pat = Abs("foo/bar/amp") >> Abs("goo") >> Opt(Parm("foo", "oh")) >> Abs("lalala") >> Selector('gah') >> Parm("gg", "def")
