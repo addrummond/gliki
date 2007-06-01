@@ -52,5 +52,3 @@ def log(logname, text):
         except IOError:
             pass
 
-log("test", u'\u65e5\u672c')
-
