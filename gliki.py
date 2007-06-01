@@ -1568,7 +1568,7 @@ class Login(object):
         dbcon_merge_login(extras, d, dont_update_last_seen=(not parms.has_key('new_account')))
         # They might be logged in already.
         if d.has_key('username'):
-            raise control.Redirect(links.article_link(links.USER_PAGE_PREFIX + extras.auth.username),
+            raise control.Redirect(links.user_page_link(extras.auth.username),
                                    'text/html; charset=UTF-8',
                                    'see_other')
         else:

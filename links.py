@@ -43,6 +43,9 @@ def assert_is_int_or_none(i):
 #
 # Code for generating links.
 #
+
+# NOTE: Using unicode strings for any of these will break things.
+# (This could be fixed with a bit of effort, but it doesn't seem worth it.)
 ARTICLE_LINK_PREFIX = 'articles'
 ARTICLE_LIST = 'article-list'
 REVISIONS_SUFFIX = 'revisions' 
