@@ -1025,7 +1025,7 @@ class ReviseWikiArticle(object):
                         int_time
                     )
                 )
-            else:
+            else: # if it's not a redirect.
                 # Check that they're not renaming the article to the title of an
                 # existing article (you cunning bastard, Mue).
                 # Some nasty logic here because we're dealing with two cases:

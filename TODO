@@ -11,6 +11,7 @@
   over multiple pages when it gets too big.
 * Edit conflict support.
 * List of a user's contributions (add some generic list code first).
+* Sign comments with ~~~~.
 
 == Would be nice ==
 * Remove all error messages from gliki.py and shift them to templates.
