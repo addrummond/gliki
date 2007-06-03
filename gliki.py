@@ -581,6 +581,8 @@ class EditWikiArticle(object):
     @ok_html()
     @showkid('templates/edit.kid')
     def GET(self, parms, extras):
+        int_time = int(time.time()) # For edit_time key for template dict.
+
         title = unfutz_article_title(uu_decode(parms[links.ARTICLE_LINK_PREFIX]))
         text = ''
         revision = None
@@ -612,7 +614,8 @@ class EditWikiArticle(object):
                                  # the user is editing it.
                                  threads_id=(rev and rev['threads_id'] or None),
                                  comment=comment,
-                                 error_message=None))
+                                 error_message=None,
+                                 edit_time=int_time))
 edit_wiki_article = EditWikiArticle(True)
 
 class NoSuchRevision(object):
@@ -793,9 +796,11 @@ class ReviseWikiArticle(object):
     # We allow the article to be specified either by the threads_id or the title.
     uris = [
         # By title.
-        VParm(links.ARTICLE_LINK_PREFIX) >> Abs(links.REVISE_SUFFIX) >> OptDir(),
+        VParm(links.ARTICLE_LINK_PREFIX) >> Abs(links.REVISE_SUFFIX) >> OptDir() >>
+        SetDict(by_title=True),
         # By threads_id.
-        VParm(links.REVISE_PREFIX) >> OptDir()
+        VParm(links.REVISE_PREFIX) >> OptDir() >>
+        SetDict(by_threads_id=True)
     ]
 
     @ok_html()
@@ -806,7 +811,7 @@ class ReviseWikiArticle(object):
         title, source, threads_id = None, None, None
         
         # Can't specify both title and threads_id.
-        if parms.has_key(links.REVISE_SUFFIX) and parms.has_key(links.ARTICLE_LINK_PREFIX):
+        if parms.has_key('by_title') and parms.has_key('by_threads_id'):
             raise control.BadRequestError()
 
         try:
@@ -843,10 +848,17 @@ class ReviseWikiArticle(object):
             else:
                 return '[unknown title]'
 
+        dbcon,cur = None,None
+        try:
+            dbcon = get_dbcon()
+            cur = dbcon.cursor()
+        except db.Error, e:
+            dberror(e)
+
         # Find out who's making the revision.
         revision_user_id = None
         d = { }
-        dbcon_merge_login(extras, d)
+        merge_login(dbcon, cur, extras, d)
         if not d.has_key('username'):
             # Note that get_anon_wikiuser_id(...) raises an exception if there's
             # a DB error.
@@ -856,6 +868,47 @@ class ReviseWikiArticle(object):
                 revision_user_id = d['user_id']
             except ValueError:
                 raise control.BadRequestError()
+
+        # Check for an edit conflict if an edit time is specified.
+        if parms.has_key('edit_time'):
+            try:
+                et = int(parms['edit_time'])
+            except ValueError:
+                raise control.BadRequestError()
+
+            def edit_conflict(new_source):
+                return dict(
+                    article_source = source,
+                    article_title = get_title_for_user(),
+                    threads_id = threads_id, # If there's an edit conflict, the article must exist, so there will be a threads_id.
+                    comment = comment,
+                    error_message = u"Edit conflict",
+                    line = 1,
+                    column = 1,
+                    new_source = new_source,
+                    edit_time = int_time
+                )
+
+            if parms.has_key('by_title'):
+                rev = get_revision(dbcon, cur, title, -1)
+                if rev['revision_date'] >= et:
+                    # EDIT CONFLICT!
+                    return edit_conflict(rev['source'])
+            elif parms.has_key('by_threads_id'):
+                # Article was specified by threads_id.
+                res = cur.execute(
+                    """
+                    SELECT MAX(revision_date), source FROM revision_histories
+                    INNER JOIN articles ON id = articles_id
+                    WHERE threads_id = ?
+                    """,
+                    (threads_id,)
+                )
+                res = list(res)
+                assert len(res) == 0 or len(res) == 1
+                if len(res) == 1 and res[0][0] >= et:
+                    # EDIT CONFLICT!
+                    return edit_conflict(res[0][1])
 
         # Cant' have '-' or '_' in the title.
         tfu = get_title_for_user()
@@ -869,7 +922,8 @@ class ReviseWikiArticle(object):
                     comment = comment,
                     error_message = u"Article titles cannot contain '-' or '_'.",
                     line = 1,
-                    column = 1
+                    column = 1,
+                    edit_time = int_time
                 )
             )
 
@@ -888,7 +942,8 @@ class ReviseWikiArticle(object):
                     comment=comment,
                     error_message=result.message,
                     line=result.line,
-                    column=result.col
+                    column=result.col,
+                    edit_time = int_time
                 )
             )
         r, sourceparser_state = result
@@ -919,7 +974,8 @@ class ReviseWikiArticle(object):
                         comment = comment,
                         error_message = u"You cannot preview a redirect.",
                         line = 1,
-                        column = 1
+                        column = 1,
+                        edit_time = int_time,
                     )
                 )
             return my_utils.merge_dicts(
@@ -929,15 +985,13 @@ class ReviseWikiArticle(object):
                     article_title=get_title_for_user(),
                     threads_id = threads_id,
                     comment=comment,
-                    preview=xhtml_output
+                    preview=xhtml_output,
+                    edit_time = int_time
                 )
             )
 
         # If it's not a preview, we'd better update the DB.
         try:
-            dbcon = get_dbcon()
-            cur = dbcon.cursor()
-
             # If threads_id is set make sure it is valid.
             if threads_id:
                 res = cur.execute(
@@ -984,7 +1038,8 @@ class ReviseWikiArticle(object):
                             comment = comment,
                             error_message = u"This redirect would lead to a circularity: %s" % path_string,
                             line = 1,
-                            column = 1
+                            column = 1,
+                            edit_time = int_time
                         )
                     )
 
@@ -1043,7 +1098,8 @@ class ReviseWikiArticle(object):
                                 comment = comment,
                                 error_message = u"You cannot rename %s to %s because an article with this title already exists." % (get_title_for_user(), new_title),
                                 line = 1,
-                                column = 1
+                                column = 1,
+                                edit_time = int_time
                             )
                         )
 

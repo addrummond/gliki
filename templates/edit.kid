@@ -61,6 +61,7 @@ ${XML(preview)}
           py:attrs="dict(action = (locals().has_key('threads_id') and threads_id) and links.revise_link_by_threads_id(threads_id) or links.revise_link_by_title(article_title))">
         <input py:if="locals().has_key('threads_id') and threads_id and locals().has_key('article_title') and article_title"
                type="hidden" name="redundant_title" value="${article_title}"></input>
+        <input type="hidden" name="edit_time" value="${edit_time}"></input>
 
         <label class="f-title" id="____title_label" for="____title">Title</label>
         <input class="f-title" id="____title" type="text" name="new_title" value="${article_title}" size="70"></input>

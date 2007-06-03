@@ -85,6 +85,9 @@ class OptDir(Seqable):
        trailing slash on a URI.
     """
     pass
+class SetDict(Seqable):
+    def __init__(self, **dict):
+        self.dict = dict
 
 
 #
@@ -191,6 +194,8 @@ def test_pattern_helper(pattern, uri, base=True):
             return ({ }, '')
         else:
             return False
+    elif isinstance(pattern, SetDict):
+        return (pattern.dict, uri)
 
 def test_pattern(pattern, uri):
     res = test_pattern_helper(pattern, uri)
