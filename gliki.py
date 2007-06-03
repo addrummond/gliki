@@ -609,6 +609,7 @@ class EditWikiArticle(object):
         return dbcon_merge_login(extras,
                                  dict(article_source=source,
                                  article_title=title,
+                                 old_article_title=title,
                                  # This allows the edit form to edit the correct
                                  # article even if the article is renamed while
                                  # the user is editing it.
@@ -847,6 +848,11 @@ class ReviseWikiArticle(object):
                     return redundant_title
             else:
                 return '[unknown title]'
+        def get_old_title():
+            if title:
+                return title
+            else:
+                return redundant_title
 
         dbcon,cur = None,None
         try:
@@ -880,9 +886,10 @@ class ReviseWikiArticle(object):
                 return dict(
                     article_source = source,
                     article_title = get_title_for_user(),
+                    old_article_title = get_old_title(),
                     threads_id = threads_id, # If there's an edit conflict, the article must exist, so there will be a threads_id.
                     comment = comment,
-                    error_message = u"Edit conflict",
+                    error = "edit_conflict",
                     line = None,
                     column = None,
                     new_source = new_source,
@@ -891,7 +898,7 @@ class ReviseWikiArticle(object):
 
             if parms.has_key('by_title'):
                 rev = get_revision(dbcon, cur, title, -1)
-                if rev['revision_date'] >= et:
+                if rev and rev['revision_date'] >= et:
                     # EDIT CONFLICT!
                     return edit_conflict(rev['source'])
             elif parms.has_key('by_threads_id'):
@@ -918,9 +925,10 @@ class ReviseWikiArticle(object):
                 dict(
                     article_source = source,
                     article_title = get_title_for_user(),
+                    old_article_title = get_old_title(),
                     threads_id = threads_id,
                     comment = comment,
-                    error_message = u"Article titles cannot contain '-' or '_'.",
+                    error = "bad_title_char",
                     line = None,
                     column = None,
                     edit_time = int_time
@@ -938,9 +946,11 @@ class ReviseWikiArticle(object):
                 dict(
                     article_source=source,
                     article_title=get_title_for_user(),
+                    old_article_title=get_old_title(),
                     threads_id = threads_id,
                     comment=comment,
-                    error_message=result.message,
+                    error = "parse_error",
+                    parse_error = result.message,
                     line=result.line,
                     column=result.col,
                     edit_time = int_time
@@ -970,9 +980,10 @@ class ReviseWikiArticle(object):
                     dict(
                         article_source = source,
                         article_title = get_title_for_user(),
+                        old_article_title = get_old_title(),
                         threads_id = threads_id,
                         comment = comment,
-                        error_message = u"You cannot preview a redirect.",
+                        error = "preview_redirect",
                         line = None,
                         column = None,
                         edit_time = int_time,
@@ -981,11 +992,12 @@ class ReviseWikiArticle(object):
             return my_utils.merge_dicts(
                 d,
                 dict(
-                    article_source=source,
-                    article_title=get_title_for_user(),
+                    article_source = source,
+                    article_title = get_title_for_user(),
+                    old_article_title = get_old_title(),
                     threads_id = threads_id,
-                    comment=comment,
-                    preview=xhtml_output,
+                    comment = comment,
+                    preview = xhtml_output,
                     edit_time = int_time
                 )
             )
@@ -1028,15 +1040,16 @@ class ReviseWikiArticle(object):
                 # Check for circular redirects.
                 is_circular, path = get_redirect_path(dbcon, cur, new_title, r.title)
                 if is_circular:
-                    path_string = u' -> '.join(map(lambda s: u'"' + s + u'"', path))
                     return my_utils.merge_dicts(
                         d,
                         dict(
                             article_source = source,
                             article_title = get_title_for_user(),
+                            old_article_title = get_old_title(),
                             threads_id = threads_id,
                             comment = comment,
-                            error_message = u"This redirect would lead to a circularity: %s" % path_string,
+                            error = "circular_redirect",
+                            redirects = path,
                             line = None,
                             column = None,
                             edit_time = int_time
@@ -1094,9 +1107,10 @@ class ReviseWikiArticle(object):
                             dict(
                                 article_source = source,
                                 article_title = get_title_for_user(),
+                                old_article_title = get_old_title(),
                                 threads_id = threads_id,
                                 comment = comment,
-                                error_message = u"You cannot rename %s to %s because an article with this title already exists." % (get_title_for_user(), new_title),
+                                error = "rename_to_existing",
                                 line = None,
                                 column = None,
                                 edit_time = int_time

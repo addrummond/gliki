@@ -63,7 +63,7 @@ rarr = ' &rarr; '
     </p>
     <h1 class="article-title">${article_title}</h1>
     <p py:if="locals().has_key('redirects') and redirects" class="redirects">
-        Redirects:
+        Redirect:
         ${XML(rarr.join(map(htmlutils.htmlencode, redirects)))}
     </p>
     <div class="article-text">

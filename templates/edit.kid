@@ -22,6 +22,9 @@
 import urllib
 import my_utils
 import links
+import htmlutils
+
+rarr = "&rarr;"
 ?>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:py="http://purl.org/kid/ns#" py:extends="base.kid, license_boilerplate.kid">
 <head>
@@ -29,25 +32,40 @@ import links
 </head>
 
 <body>
-    <div class="edit_error" py:if="locals().has_key('error_message') and error_message">
-        <p> 
-            <b class="error">The change was not committed due to the following error:</b>
+    <div py:strip="True" py:if="locals().has_key('error') and error">
+        <p class="error" py:if="error == 'edit_conflict'">
+            Edit conflict.
         </p>
-        <p class="error">
-            <span py:strip="True" py:if="locals().has_key('line') and line">
-                At line ${line}, column ${column}:
-            </span>
-            ${error_message}
+        <p class="error" py:if="error == 'bad_title_char'">
+            Titles cannot contain &lsquo;-&rsquo; or &lsquo;_&rsquo;
+            because these characters are used in place of spaces in wiki URLs.
         </p>
-        <p>
-            If you are using a reasonably modern browser
-            and have Javacript turned on,
-            the region in the text box near the error
-            will have been highlighted.
+        <div py:strip="True" py:if="error == 'parse_error'">
+            <p class="error">
+                At line ${line}, column ${column}: ${parse_error}.
+            </p>
+            <p class="error">
+                If you are using a reasonably modern browser
+                and have Javacript turned on,
+                the region in the text box near the error
+                will have been highlighted.
+           </p>
+        </div>
+        <p class="error" py:if="error == 'preview_redirect'">
+            You cannot preview a redirect.
+        </p>
+        <p class="error" py:if="error == 'circular_redirect'">
+            Committing this revision would lead to a circular redirect:
+             ${XML((' ' + rarr + ' ').join(map(htmlutils.htmlencode, redirects)))}
+        </p>
+        <p class="error" py:if="error == 'rename_to_existing'">
+            You cannot rename &lsquo;${old_article_title}&rsquo; to
+            <a class="article_ref" href="${links.article_link(article_title)}">${article_title}</a>
+            because an article of that name already exists.
         </p>
     </div>
 
-    <div py:if="locals().has_key('preview') and preview" py:strip="True">
+    <div py:strip="True" py:if="locals().has_key('preview') and preview">
         <p>
             <b class="error">This is a preview. Changes have not yet been saved.</b>
         </p>
@@ -63,7 +81,7 @@ ${XML(preview)}
     <form style="width:100%;" class="edit" id="____edit" method="POST"
           py:attrs="dict(action = (locals().has_key('threads_id') and threads_id) and links.revise_link_by_threads_id(threads_id) or links.revise_link_by_title(article_title))">
         <input py:if="locals().has_key('threads_id') and threads_id and locals().has_key('article_title') and article_title"
-               type="hidden" name="redundant_title" value="${article_title}"></input>
+               type="hidden" name="redundant_title" value="${old_article_title}"></input>
         <input type="hidden" name="edit_time" value="${edit_time}"></input>
 
         <label class="f-title" id="____title_label" for="____title">Title</label>
