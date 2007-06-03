@@ -34,7 +34,10 @@ import links
             <b class="error">The change was not committed due to the following error:</b>
         </p>
         <p class="error">
-            At line ${line}, column ${column}: ${error_message}
+            <span py:strip="True" py:if="locals().has_key('line') and line">
+                At line ${line}, column ${column}:
+            </span>
+            ${error_message}
         </p>
         <p>
             If you are using a reasonably modern browser

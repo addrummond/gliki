@@ -883,8 +883,8 @@ class ReviseWikiArticle(object):
                     threads_id = threads_id, # If there's an edit conflict, the article must exist, so there will be a threads_id.
                     comment = comment,
                     error_message = u"Edit conflict",
-                    line = 1,
-                    column = 1,
+                    line = None,
+                    column = None,
                     new_source = new_source,
                     edit_time = int_time
                 )
@@ -921,8 +921,8 @@ class ReviseWikiArticle(object):
                     threads_id = threads_id,
                     comment = comment,
                     error_message = u"Article titles cannot contain '-' or '_'.",
-                    line = 1,
-                    column = 1,
+                    line = None,
+                    column = None,
                     edit_time = int_time
                 )
             )
@@ -973,8 +973,8 @@ class ReviseWikiArticle(object):
                         threads_id = threads_id,
                         comment = comment,
                         error_message = u"You cannot preview a redirect.",
-                        line = 1,
-                        column = 1,
+                        line = None,
+                        column = None,
                         edit_time = int_time,
                     )
                 )
@@ -1037,8 +1037,8 @@ class ReviseWikiArticle(object):
                             threads_id = threads_id,
                             comment = comment,
                             error_message = u"This redirect would lead to a circularity: %s" % path_string,
-                            line = 1,
-                            column = 1,
+                            line = None,
+                            column = None,
                             edit_time = int_time
                         )
                     )
@@ -1097,8 +1097,8 @@ class ReviseWikiArticle(object):
                                 threads_id = threads_id,
                                 comment = comment,
                                 error_message = u"You cannot rename %s to %s because an article with this title already exists." % (get_title_for_user(), new_title),
-                                line = 1,
-                                column = 1,
+                                line = None,
+                                column = None,
                                 edit_time = int_time
                             )
                         )
