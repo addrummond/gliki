@@ -284,6 +284,7 @@ footnote = (
     SetState('in_footnote', True) >>
     # The parser state has an option where footnotes are just treated as
     # plain text (this is used when parsing comments.)
+    # NOTE: Except it isn't now that comment have been removed!
     GetState('no_footnotes') >>
     (lambda nf:
     Apply(
