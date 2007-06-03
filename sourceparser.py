@@ -170,12 +170,12 @@ section = ErrorPoint(
     (lambda n:
     SUntil1(escchr, Chr('=')) >>
     (lambda title:
-    Fatalize(CMany(n, Chr('='))) >>
+    Fatalize(CMany1(Chr('='))) >>
     (lambda closing_eq_count:
     closing_eq_count == n      and
         skip_blank_lines >>
         Return((n - 1, title)) or
-        RFatalError("Too many '=' characters at the end of the section title")
+        RFatalError("Wrong number of '=' characters at the end of the section title")
     ))))
 
 class ArticleRef(object):
