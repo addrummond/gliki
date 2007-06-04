@@ -65,7 +65,7 @@ import links
     page.
     </p>
     <p>
-    For those who care about such things, Gliki is written in
+    Gliki is written in
     <a href="http://www.python.org" class="external_link">Python</a>,
     using
     <a href="http://www.sqlite.org" class="external_link">SQLite</a> for the database.
