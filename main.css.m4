@@ -422,3 +422,7 @@ td.explanation {
   padding-left: 1em;
 }
 
+div.diff-box {
+  margin-bottom: 2em;
+}
+

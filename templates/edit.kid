@@ -28,16 +28,27 @@ rarr = "&rarr;"
 ?>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:py="http://purl.org/kid/ns#" py:extends="base.kid, license_boilerplate.kid">
 <head>
-  <title>Editing - ${article_title}</title>
+  <!--! Edit conflicts have a special title -->
+  <title py:if="not (locals().has_key('error') and error == 'edit_conflict')">Editing - ${article_title}</title>
+  <title py:if="locals().has_key('error') and error == 'edit_conflict'">Edit conflict - ${article_title}</title>
 </head>
 
 <body>
     <div py:strip="True" py:if="locals().has_key('error') and error">
-        <p class="error" py:if="error == 'edit_conflict'">
-            Edit conflict.
-        </p>
+        <div py:strip="True" py:if="error == 'edit_conflict'">
+            <p class="error">
+                Another user has revised the page since you started editing it.
+            </p>
+            <p>
+                The diff of this user's edits with the current revision
+                of the article is as follows:
+            </p>
+            <div class="diff-box">
+                ${XML(diff_xhtml)}
+            </div>
+        </div>
         <p class="error" py:if="error == 'bad_title_char'">
-            Titles cannot contain &lsquo;-&rsquo; or &lsquo;_&rsquo;
+            Titles cannot contain dashes or underscores
             because these characters are used in place of spaces in wiki URLs.
         </p>
         <div py:strip="True" py:if="error == 'parse_error'">

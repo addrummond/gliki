@@ -27,7 +27,6 @@ from urimatch import *
 import control
 from control import ok_text, ok_html, ok_xhtml
 import urllib
-import difflib
 # Python 2.5 has sqlite support built in, with a different module name.
 # String comparison for version numbers looks dodgy but it does actually
 # work.
@@ -62,6 +61,8 @@ USER_AUTH_METHOD = 'digest'
 DATABASE = "main.db"
 
 SERVER_PORT = 3000
+
+DIFF_LINE_LENGTH = 60
 
 # Code for the AES-32/base64 encryption scheme used for user account passwords.
 AES_PASSWORD_KEY = "%$GHnfgh;['*(12SDvZ\\dfgt><?@:{!!"
@@ -882,7 +883,10 @@ class ReviseWikiArticle(object):
             except ValueError:
                 raise control.BadRequestError()
 
-            def edit_conflict(new_source):
+            def edit_conflict(old_source, new_source):
+                """old_source is the source before either user edited it.
+                   new_source is the source of the edit made by the user who
+                   created the edit conflict."""
                 return dict(
                     article_source = source,
                     article_title = get_title_for_user(),
@@ -892,7 +896,7 @@ class ReviseWikiArticle(object):
                     error = "edit_conflict",
                     line = None,
                     column = None,
-                    new_source = new_source,
+                    diff_xhtml = diffengine.pretty_diff(new_source, old_source or '', DIFF_LINE_LENGTH),
                     edit_time = int_time
                 )
 
@@ -900,22 +904,31 @@ class ReviseWikiArticle(object):
                 rev = get_revision(dbcon, cur, title, -1)
                 if rev and rev['revision_date'] >= et:
                     # EDIT CONFLICT!
-                    return edit_conflict(rev['source'])
+                    old_source = None
+                    orev = get_revision(dbcon, cur, title, -2)
+                    if orev:
+                        old_source = orev['source']
+                    return edit_conflict(old_source, rev['source'])
             elif parms.has_key('by_threads_id'):
                 # Article was specified by threads_id.
                 res = cur.execute(
                     """
-                    SELECT MAX(revision_date), source FROM revision_histories
+                    SELECT revision_date, source FROM revision_histories
                     INNER JOIN articles ON id = articles_id
                     WHERE threads_id = ?
+                    ORDER BY revision_date DESC
+                    LIMIT 2
                     """,
                     (threads_id,)
                 )
                 res = list(res)
-                assert len(res) == 0 or len(res) == 1
-                if len(res) == 1 and res[0][0] >= et:
+                assert len(res) == 0 or len(res) == 1 or len(res) == 2
+                if len(res) > 0 and res[0][0] >= et:
                     # EDIT CONFLICT!
-                    return edit_conflict(res[0][1])
+                    old_source = None
+                    if len(res) == 2:
+                        old_source = res[1][1]
+                    return edit_conflict(old_source, res[0][1])
 
         # Cant' have '-' or '_' in the title.
         tfu = get_title_for_user()
@@ -1400,7 +1413,7 @@ class Diff(object):
             return merge_login(dbcon, cur,
                                extras,
                                dict(article_title=title,
-                                    diff_html=diffengine.pretty_diff(rev1src, rev2src, 60),
+                                    diff_html=diffengine.pretty_diff(rev1src, rev2src, DIFF_LINE_LENGTH),
                                     rev1=rev1,
                                     rev2=rev2,
                                     formertitle=formertitle,
