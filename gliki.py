@@ -951,7 +951,9 @@ class ReviseWikiArticle(object):
         year,month,hour,day,minute,second = my_utils.get_ymdhms_tuple()
 
         # Parse the wiki markup.
-        result = sourceparser.parse_wiki_document(unixify_text(source))
+        uname = d.has_key('username') and d['username'] or extras.remote_ip
+        sinfo = sourceparser.Siginfo(uname, ZonedDate(int_time, 0))
+        result = sourceparser.parse_wiki_document(unixify_text(source), sinfo)
         if isinstance(result, sourceparser.ParserError):
             # This goes to the edit.kid template.
             return my_utils.merge_dicts(
@@ -969,7 +971,8 @@ class ReviseWikiArticle(object):
                     edit_time = int_time
                 )
             )
-        r, sourceparser_state = result
+        # sig_source is the source with signatures replaced.
+        r, sourceparser_state, sig_source = result
 
         # If it was parsed successfully AND it's not a redirect,
         # convert the source to XHTML.
@@ -991,7 +994,7 @@ class ReviseWikiArticle(object):
                 return my_utils.merge_dicts(
                     d,
                     dict(
-                        article_source = source,
+                        article_source = sig_source,
                         article_title = get_title_for_user(),
                         old_article_title = get_old_title(),
                         threads_id = threads_id,
@@ -1005,7 +1008,7 @@ class ReviseWikiArticle(object):
             return my_utils.merge_dicts(
                 d,
                 dict(
-                    article_source = source,
+                    article_source = sig_source,
                     article_title = get_title_for_user(),
                     old_article_title = get_old_title(),
                     threads_id = threads_id,
@@ -1056,7 +1059,7 @@ class ReviseWikiArticle(object):
                     return my_utils.merge_dicts(
                         d,
                         dict(
-                            article_source = source,
+                            article_source = sig_source,
                             article_title = get_title_for_user(),
                             old_article_title = get_old_title(),
                             threads_id = threads_id,
@@ -1076,7 +1079,7 @@ class ReviseWikiArticle(object):
                     VALUES
                     (NULL, ?, ?, NULL, ?)
                     """,
-                    (source, r.title, new_title)
+                    (sig_source, r.title, new_title)
                 )
                 articles_id = cur.lastrowid
 
@@ -1118,7 +1121,7 @@ class ReviseWikiArticle(object):
                         return my_utils.merge_dicts(
                             d,
                             dict(
-                                article_source = source,
+                                article_source = sig_source,
                                 article_title = get_title_for_user(),
                                 old_article_title = get_old_title(),
                                 threads_id = threads_id,
@@ -1138,7 +1141,7 @@ class ReviseWikiArticle(object):
                         VALUES
                         (NULL, ?, NULL, ?, ?)
                     """,
-                    (source, xhtml_output, new_title)
+                    (sig_source, xhtml_output, new_title)
                 )
                 articles_id = cur.lastrowid
 
@@ -1535,9 +1538,9 @@ class MakeNewAccount(object):
             # Now create the user's user page.
             userpage_source = "#CATEGORY [[user pages]]\n\nThis is the user page for %s." % username
             userpage_title = links.USER_PAGE_PREFIX + username
-            result = sourceparser.parse_wiki_document(userpage_source)
+            result = sourceparser.parse_wiki_document(userpage_source, siginfo=None)
             assert not isinstance(result, sourceparser.ParserError)
-            r, sourceparser_state = result
+            r, sourceparser_state, _ = result
             import StringIO
             sb = StringIO.StringIO()
             sourceparser.translate_to_xhtml(r, sb) #, make_article_exists_pred(dbcon, cur))

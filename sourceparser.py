@@ -27,6 +27,8 @@ import urllib
 import re
 import itertools
 import my_utils
+import types
+import links
 
 # Work around Python's hobbled lambda.
 def add1_to_last_elem_of_list(l):
@@ -305,6 +307,7 @@ class Formatted(object):
 
     def __repr__(self):
         return "{%s : %s : %s}" % (self.kind, self.text, str(self.children))
+
 class MDash(object): pass
 
 #
@@ -834,11 +837,22 @@ class SectionTreeBuilder(object):
 def make_initial_state():
     return dict(section_tree=SectionTreeBuilder(), article_refs=[], categories=[], in_footnote=False)
 
-def parse_wiki_document(str, footnotes=True):
+class Siginfo(object):
+    def __init__(self, username, date):
+        assert type(date) == my_utils.ZonedDate
+        self.username = username
+        self.date = date
+
+def parse_wiki_document(istr, siginfo, footnotes=True):
     try:
+        # Do signatures.
+        istr = istr.replace('~~~~~', "//**%s**//" % str(siginfo.date))
+        istr = istr.replace('~~~~', "//**[[%s%s]] %s**//" % (links.USER_PAGE_PREFIX, urllib.quote(siginfo.username), str(siginfo.date)))
+        istr = istr.replace('~~~', "//**[[%s%s]]**//" % (links.USER_PAGE_PREFIX, urllib.quote(siginfo.username)))
+
         s = make_initial_state()
         s['no_footnotes'] = not footnotes
-        r = run_parser(document, str, s)
+        r = run_parser(document, istr, s)
         # Article refs list may contain duplicates.
         s['article_refs'] = my_utils.unique(map(my_utils.unfutz_article_title, map(urllib.unquote, s['article_refs'])))
 
@@ -850,7 +864,7 @@ def parse_wiki_document(str, footnotes=True):
         if isinstance(r, ParserError):
             return r
         else:
-            return r, s
+            return r, s, istr
     except SectionTreeBuilder.Error, e:
         return ParserError(0, 0, "Duplicate section title: '%s'" % e.section_title)
 
@@ -860,6 +874,7 @@ def parse_wiki_document(str, footnotes=True):
 #
 
 class IndentingWriter(object):
+    """This makes it easy to output nicely indented XHTML."""
     def __init__(self, writer):
         self.writer = writer
         self.indent = 0
@@ -1257,6 +1272,8 @@ def translate_to_xhtml_(state, elem, writer, article_exists_pred):
         else:
             for p in elem.paragraphs:
                 translate_to_xhtml_(state, p, writer, article_exists_pred)
+    else:
+        assert False
 
 class TranslatorState(object):
     def __init__(self):
