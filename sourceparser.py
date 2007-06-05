@@ -846,9 +846,11 @@ class Siginfo(object):
 def parse_wiki_document(istr, siginfo, footnotes=True):
     try:
         # Do signatures.
-        istr = istr.replace('~~~~~', "//**%s**//" % str(siginfo.date))
-        istr = istr.replace('~~~~', "//**[[%s%s]] %s**//" % (links.USER_PAGE_PREFIX, urllib.quote(siginfo.username), str(siginfo.date)))
-        istr = istr.replace('~~~', "//**[[%s%s]]**//" % (links.USER_PAGE_PREFIX, urllib.quote(siginfo.username)))
+        if siginfo:
+            quname = urllib.quote(siginfo.username)
+            istr = istr.replace('~~~~~', "//**%s**//" % str(siginfo.date))
+            istr = istr.replace('~~~~', "//**[[%s%s|%s]] %s**//" % (links.USER_PAGE_PREFIX, quname, quname, str(siginfo.date)))
+            istr = istr.replace('~~~', "//**[[%s%s|%s]]**//" % (links.USER_PAGE_PREFIX, quname, quname))
 
         s = make_initial_state()
         s['no_footnotes'] = not footnotes
