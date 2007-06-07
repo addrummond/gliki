@@ -39,6 +39,12 @@ CREATE TABLE wikiusers
     email TEXT UNIQUE
 );
 
+CREATE TABLE deleted_wikiusers
+(
+    id INTEGER NOT NULL PRIMARY KEY,
+    username TEXT NOT NULL UNIQUE
+);
+
 -- Keeps a record of the last time each user viewed a page while logged in.
 -- This is used to give messages like "your user page has changed since you
 -- last logged in".
@@ -150,7 +156,7 @@ INSERT INTO wikiusers
 --    VALUES
 --    (100, 'foo', 'bar', NULL, 0)
 --;
---INSERT INTO ADMINS
+--INSERT INTO admins
 --    (wikiusers_id)
 --    VALUES
 --    (100)
@@ -172,5 +178,20 @@ BEGIN
     DELETE FROM category_specs WHERE threads_id = old.id;
     DELETE FROM watchlist_items WHERE threads_id = old.id;
     DELETE FROM revision_histories WHERE threads_id = old.id;
+END;
+
+-- Delete all the relevant tables when a user is deleted.
+-- Also, add a deleted_wikiuser for the record (so we can still list who made
+-- edits, etc.)
+CREATE TRIGGER cleanup_wikiusers
+AFTER DELETE ON wikiusers
+BEGIN
+    DELETE FROM wikiuser_time_zone_prefs WHERE wikiusers_id = old.id;
+    DELETE FROM wikiuser_add_pages_i_create_to_watchlist_prefs WHERE wikiusers_id = old.id;
+    DELETE FROM watchlist_items WHERE wikiusers_id = old.id;
+    INSERT INTO deleted_wikiusers
+    (id, username)
+    VALUES
+    (old.id, old.username);
 END;
 

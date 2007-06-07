@@ -251,9 +251,21 @@ def get_ZonedDate(d, time):
         tz = d['preferences']['time_zone']
     return ZonedDate(time, tz)
 
+def get_username(current, deleted):
+    """
+    After performing a query which LEFT JOINs wikiusers and deleted_wikiusers,
+    we want to get the username (one of these will be NULL).
+    """
+    if current:
+        return current
+    elif deleted:
+        return deleted + ' (deleted)'
+    else:
+        assert False
+
 __qstring = \
     """
-    SELECT articles.title, articles.source, articles.cached_xhtml, articles.id, revision_histories.threads_id, revision_histories.revision_date, revision_histories.user_comment, articles.redirect, wikiusers.username
+    SELECT articles.title, articles.source, articles.cached_xhtml, articles.id, revision_histories.threads_id, revision_histories.revision_date, revision_histories.user_comment, articles.redirect, wikiusers.username, deleted_wikiusers.username
         FROM
             (SELECT threads_id
              FROM
@@ -266,7 +278,8 @@ __qstring = \
             ) query2
             INNER JOIN revision_histories ON revision_histories.threads_id = query2.threads_id
             INNER JOIN articles ON articles.id = revision_histories.articles_id
-            INNER JOIN wikiusers ON revision_histories.wikiusers_id = wikiusers.id
+            LEFT JOIN wikiusers ON revision_histories.wikiusers_id = wikiusers.id
+            LEFT JOIN deleted_wikiusers ON revision_histories.wikiusers_id = deleted_wikiusers.id
         ORDER BY revision_histories.revision_date %s
         LIMIT -1 OFFSET %i
     """ 
@@ -281,7 +294,7 @@ def __row_to_hash(r):
         'revision_date' : r[5],
         'comment'       : r[6],
         'redirect'      : r[7],
-        'username'      : r[8]
+        'username'      : get_username(r[8], r[9])
     }
 
 def get_revision(dbcon, cur, title, revision):
@@ -363,6 +376,9 @@ def delete_article(dbcon, cur, title):
         """,
         (rev['threads_id'],)
     )
+
+    dbcon.commit()
+
     return True
 
 def article_is_on_watchlist(dbcon, cur, username, title):
@@ -748,13 +764,14 @@ class RecentChangesList(object):
             merge_login(dbcon, cur, extras, d)
 
             # Quite complex because we need to get the most recent title for
-            # each thread (otherwise we get diff links with old article titles,
+            # each thread (otherwise we get diff links with old article titles
             # which don't work).
             most_recent_revisions = cur.execute(
                 """
-                SELECT title, user_comment, revision_date, threads_id, username, newest_title FROM revision_histories
+                SELECT title, user_comment, revision_date, threads_id, wikiusers.username, deleted_wikiusers.username, newest_title FROM revision_histories
                 INNER JOIN articles ON revision_histories.articles_id = articles.id
-                INNER JOIN wikiusers ON wikiusers_id = wikiusers.id
+                LEFT JOIN wikiusers ON wikiusers_id = wikiusers.id
+                LEFT JOIN deleted_wikiusers ON wikiusers_id = deleted_wikiusers.id
                 INNER JOIN (
                     SELECT MAX(revision_date), articles.title AS newest_title, threads_id AS matching_threads_id FROM revision_histories
                     INNER JOIN threads ON threads.id = revision_histories.threads_id
@@ -782,10 +799,10 @@ class RecentChangesList(object):
 
             changes = map(lambda r_and_n:
                               dict(article_title=r_and_n[0][0],
-                                   newest_article_title=r_and_n[0][5],
+                                   newest_article_title=r_and_n[0][6],
                                    comment=r_and_n[0][1],
                                    date=get_ZonedDate(d, int(r_and_n[0][2])),
-                                   username=r_and_n[0][4],
+                                   username=get_username(r_and_n[0][4], r_and_n[0][5]),
                                    diff_revno_pair=r_and_n[1]),
                           itertools.izip(most_recent_revisions, revnos))
 
@@ -1888,7 +1905,7 @@ class TrackedChanges(object):
             # Select the 50 items on the watchlist with the most recent changes.
             res = cur.execute(
                 """
-                SELECT title, revision_date, _threads_id, username, user_comment
+                SELECT title, revision_date, _threads_id, wikiusers.username, deleted_wikiusers.username, user_comment
                 FROM
                     (SELECT MAX(revision_date), revision_date, articles_id, user_comment, revision_histories.threads_id AS _threads_id, revision_histories.wikiusers_id AS _wikiusers_id FROM watchlist_items
                      INNER JOIN revision_histories ON revision_histories.threads_id = watchlist_items.threads_id
@@ -1897,7 +1914,8 @@ class TrackedChanges(object):
                      GROUP BY revision_histories.threads_id
                      LIMIT 50) q1
                 INNER JOIN articles ON articles.id = articles_id
-                INNER JOIN wikiusers ON wikiusers.id = q1._wikiusers_id
+                LEFT JOIN wikiusers ON wikiusers.id = q1._wikiusers_id
+                LEFT JOIN deleted_wikiusers ON wikiusers.id = q1._wikiusers_id
                 ORDER BY q1.revision_date DESC
                 """,
                 (d['username'],)
@@ -1921,8 +1939,8 @@ class TrackedChanges(object):
                     lambda r_and_d:
                         dict(article_title = r_and_d[0][0],
                              revision_date=get_ZonedDate(d, int(r_and_d[0][1])),
-                             username=r_and_d[0][3],
-                             comment=r_and_d[0][4],
+                             username=get_username(r_and_d[0][3], r_and_d[0][4]),
+                             comment=r_and_d[0][5],
                              diff_revs_pair=r_and_d[1]),
                     itertools.izip(res, revnos)
                 )
