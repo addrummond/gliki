@@ -31,7 +31,8 @@ CREATE TABLE wikiusers
     -- IV. The password is padded at the end with ':' characters to make its
     -- length a multiple of 16. The first 16 characters of the password are used
     -- as IV, and if the password has fewer than 16 characters it is also padded
-    -- at the end with ':' characters.
+    -- at the end with ':' characters. (':' chars are used because they are not
+    -- allowed in usernames.)
     --
     -- For obvious reasons, the key for the AES-32 encryption is not stored in
     -- the DB.
