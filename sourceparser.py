@@ -63,6 +63,7 @@ def link_encode(link):
 #    AnyChr
 #)
 def escchr_(parms, state):
+    """Recognizes a single character, or a "\X" sequence."""
     if state.index == parms.input_length:
         return estack(state, ParserError(state.line, state.col, "Unexpected end of input"))
     c = parms.input[state.index]
