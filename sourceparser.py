@@ -536,7 +536,6 @@ def paragraph_():
         )
     )
 
-import types
 paragraph = (
     CMany0(Chr('>')) >>
     (lambda left_indent:
