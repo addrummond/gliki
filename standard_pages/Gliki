@@ -3,17 +3,17 @@
 ==The basics==
 This section covers everything you need to know to get started editing.
 
-Gliki is mostly inspired by {{http://www.wikipedia.org|Wikipedia}}, which is great in general, but not so much for linguistics. Gliki is not intended to be an encyclopaedia for a general readership (or indeed an encyclopaedia at all), so there should be much more scope for theoretical discussion than there is on Wikipedia. Gliki has a very loose editorial policy: you can write whatever you like about whatever you like (so long as it's not libelous or a copyright infringement). You don't even have to write about linguistics if you don't want to (although it is encouraged). This being said, there are a few guidelines which editors are expected to follow, and one hard-and-fast rule about copyrighted material and other obviously inappropriate content.
+Gliki is mostly inspired by {{http://www.wikipedia.org|Wikipedia}}. However, Gliki is not intended to be an encyclopaedia for a general readership (or indeed an encyclopaedia at all), so there should be much more scope for theoretical discussion than there is on Wikipedia. Gliki has a very loose editorial policy: you can write whatever you like about whatever you like (so long as it's not libelous or a copyright infringement). You don't even have to write about linguistics if you don't want to (although it is encouraged). This being said, there are a few guidelines which editors are expected to follow, and one hard-and-fast rule about copyrighted material and other obviously inappropriate content.
 
 ===The guidelines===
 ====There is plenty of room====
 There's plenty of room for everyone to advocate their pet theories. It's not a good idea to edit or remove someone else's argument just because you don't like it; instead, explain why you think they're wrong in a separate section or article.
 
-====Capital letters, please====
+====Capital letters====
 Gliki article titles are case-sensitive. By convention, the first word in an article title
  //always// begins with a capital letter. Also by convention, subsequent words are only capitalized if they're proper nouns. The names of theories and grammatical processes count as proper nouns (e.g. "Government And Binding Theory", "Heavy NP Shift", "Optimality Theory"). Capitalize little words like "and" and "or" if they're part of a proper noun phrase -- it's ugly but it's easier to be consistent this way.
 
-There's one exception to the rule: user pages begin with a lowercase "user " to distinguish them from articles.
+There's a couple of exceptions to the rule: user pages begin with a lowercase "user " to distinguish them from articles, and pages about categories begin with a lower case "category ".
 
 ====Nothing is off-topic====
 Although this is //intended// to be a wiki for generative linguistics and linguistics in general, there are not any official rules about what's on topic and what isn't, and you should not delete material which isn't relevant to linguistics (unless it's vandalism or {{http://en.wikipedia.org/wiki/Wikipedia:Patent_nonsense|patent nonsense}}).
@@ -29,7 +29,7 @@ These are imposed by the law, the terms of the web host, and good taste. No copy
 Gliki accounts are **not** particularly secure. Don't use a high-value password for your Gliki account. This is especially so if you are using Internet Explorer 6 or lower, since its implementation of the more secure HTTP "digest" authentication system is buggy, forcing Gliki to use the less secure "basic" authentication system with this browser. Digest authentication works with just about every other browser (tested on IE7, Firefox, Opera, Safari, Konqueror and w3m).
 
 ===Gliki markup===
-The markup language used by Gliki is specially designed to do the sorts of things that linguists like to do, chief among these being numbered examples and footnotes. Before we get onto those, a quick overview of the basic markup.
+The markup language used by Gliki is specially designed to do the sorts of things that linguists (or at least, syntacticians) like to do, chief among these being numbered examples and footnotes. Before we get onto those, a quick overview of the basic markup.
 
 ====Text styles====
 Gliki allows for **bold**, //italic//, __underlined__ and ||small caps|| text, along with |^superscripts^| and |_subscripts_|:
@@ -89,6 +89,27 @@ And refer back to the example group collectively, [:example2:], or refer to each
 
 References to the examples work as before.
 
+====Links====
+A link to a Gliki article looks like this:
+
+><@@
+[[Heavy NP Shift]]
+@@
+
+If you want to give the link a different name to the article title, you can do it like this:
+
+><@@
+[[Heavy NP Shift|a link to the Heavy NP Shift article]]
+@@
+
+(This gives [[Heavy NP Shift|a link to the Heavy NP Shift article]].)
+
+Links to external websites look the same, except they use "\{\{" instead of "\[\[":
+
+><@@
+{{http://www.google.com|a link to Google}}
+@@
+
 ====Footnotes====
 You've already seen a couple of footnotes, but here's another ^^Footnote!^^ just for good measure. You insert them into the text like this:
 
@@ -115,7 +136,13 @@ Note to wikipedians who are used to indenting using ":". In Gliki, there must be
 
 ><@@
 > An indented paragraph.
->> Not an even more indented paragraph, because there's no blank line.
+>> Not an even more indented paragraph because there's no blank line.
+@@
+
+You can also follow the ">" characters with "<" characters to indent from the right as well as from the left:
+
+><@@
+>><<This paragraph is doubly right- and left- indented.
 @@
 
 ====Sections and subsections====
@@ -141,7 +168,7 @@ Blah blah...
 You can create a simple bullet-point list like this:
 
 ><@@
-Blah lah blah...
+Blah blah blah...
 
     (*) **First** //bullet// __point__.
     (*) Second bullet point.
@@ -172,11 +199,40 @@ This gives:
 
 ====Categories====
 
-Gliki has a simple system of categories. To add an article to a category, just place the following at the top of the article (or anywhere else, but the top is the conventional place).
+Gliki has a simple system of categories. To add an article to a category, just place the following at the top of the article (or pretty much anywhere else, but the top is the conventional place).
 
 ><@@
 #CATEGORY [[category name]]
 @@
 
 Categories are always converted to lower case (trendy!). Categories are flat, i.e. there is no way of saying that one category is a subcategory of another. Apart from making categories easier to implement, this lack of a complex structure prevents an un-wiki-like hierarchical organization of articles. This article is in the "gliki" category, which contains a small number of articles about various aspects of Gliki. To see all the articles in a category, you can go to http://gliki.whsites.net/categories/CATEGORY_NAME
+
+====Signatures====
+Sometimes, it's useful to "sign" an edit with the time and your username. You can do this by entering \~\~\~\~ (just like in Wikipedia). You can use \~\~\~ to sign with your username only, and \~\~\~\~\~ to sign with the time only (rather arbitrary, but it's the same system used by Wikipedia).
+
+====Escaping special characters====
+If you want to write something like \*\*foo\*\* without this being interpreted as bold text, you can use "\\" to "escape" special characters. For example:
+
+><@@
+\\*\\*This is not bold text (it's text with two asterisks on either side).\\*\\*
+@@
+
+Note that backslashes themselves need to be escaped (i.e. in order to make a "\\" appear in the article text, you need to write "\\\\").
+
+Gliki has a special rule for URLs: if you write http://foo, you don't need to escape the "\/\/" sequence (this also works for ftp://, etc.)
+
+====Preformatted text====
+The yellow boxes with markup code in the previous sections are created like this:
+
+><@@
+Blah blah blah:
+
+\@\@
+Some preformatted text.
+\@\@
+
+Blah blah blah...
+@@
+
+You don't need to escape special character sequences like "\*\*" in blocks of preformatted text. However, you do still need to escape backslashes (i.e. you need to write "\\\\" to get "\\"). You can also use "\\" within a block of preformatted text to escape the "@@" sequence (that's how the preformatted block above was written).
 
