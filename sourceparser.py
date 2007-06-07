@@ -242,7 +242,7 @@ external_ref = (
     (lambda url:
     Return(url.endswith('.jpeg') or url.endswith('.jpg') or \
            url.endswith('.png') or url.endswith('.gif') or \
-           url.endswith('.bmp')) \
+           url.endswith('.bmp') or url.endswith('.ico')) \
     >>
     (lambda is_img:
     LimitedFOr(2,
