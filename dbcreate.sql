@@ -181,8 +181,8 @@ BEGIN
 END;
 
 -- Delete all the relevant tables when a user is deleted.
--- Also, add a deleted_wikiuser for the record (so we can still list who made
--- edits, etc.)
+-- Also, add a deleted_wikiusers entry for the record
+-- (so we can still list who made edits, etc.)
 CREATE TRIGGER cleanup_wikiusers
 AFTER DELETE ON wikiusers
 BEGIN
