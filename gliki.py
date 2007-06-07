@@ -64,7 +64,9 @@ SERVER_PORT = 3000
 
 DIFF_LINE_LENGTH = 60
 
+#
 # Code for the AES-32/base64 encryption scheme used for user account passwords.
+#
 AES_PASSWORD_KEY = "%$GHnfgh;['*(12SDvZ\\dfgt><?@:{!!"
 AES_MODE = 2 # Must be 2, don't ask me why...
 def pad_string(s):
