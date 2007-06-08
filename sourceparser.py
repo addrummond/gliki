@@ -182,6 +182,8 @@ section = ErrorPoint(
     ))))
 
 class ArticleRef(object):
+    __slots__ = ['article', 'sections', 'alt']
+
     def __init__(self, article, sections, alt=None):
         self.article = article
         self.sections = sections
@@ -228,11 +230,15 @@ article_ref = (
 )
 
 class ExternalRef(object):
+    __slots__ = ['url', 'alt']
+
     def __init__(self, url, alt=None):
         self.url = url
         self.alt = alt
 
 class Image(object):
+    __slots__ = ['url']
+
     def __init__(self, url):
         self.url = url
 
@@ -264,6 +270,8 @@ external_ref = (
 )
 
 class ExampleRef(object):
+    __slots__ = ['label']
+
     def __init__(self, label):
         self.label = label
 
@@ -275,6 +283,8 @@ example_ref = (
 )
 
 class Footnote(object):
+    __slots__ = ['paragraphs', 'display_inline']
+
     def __init__(self, paragraphs, display_inline=False):
         self.paragraphs = paragraphs
         self.display_inline = display_inline
@@ -300,6 +310,8 @@ footnote = (
 )
 
 class Formatted(object):
+    __slots__ = ['kind', 'text', 'children']
+
     def __init__(self, kind, text, children):
         self.kind = kind
         # One of the following must be None.
@@ -309,7 +321,9 @@ class Formatted(object):
     def __repr__(self):
         return "{%s : %s : %s}" % (self.kind, self.text, str(self.children))
 
-class MDash(object): pass
+class MDash(object):
+    __slots__ = []
+    pass
 
 #
 # Earlier versions of the parser parsed nested formatting tags
@@ -325,6 +339,8 @@ class MDash(object): pass
 # and is much more robust when it comes to error reporting.
 #
 class Elem(object):
+    __slots__ = ['line', 'col', 'special', 'text']
+
     def __init__(self, line, col, special, text):
         self.line = line
         self.col = col
@@ -505,6 +521,11 @@ formatted_in_bullets = (
 )
 
 class Paragraph(object):
+    __slots__ = ['text_nodes', 'preformatted', 'left_indent', 'right_indent',
+                 # This one is used for a rather nasty hack in translate_to_xhtml.
+                 'xhtml_preamble'
+                ]
+
     def __init__(self, text_nodes, preformatted, left_indent, right_indent):
         # text_nodes is None and preformatted is a string if this is
         # preformatted text.
@@ -557,6 +578,8 @@ acceptability = Or(None, SMany1(Chrs('*!#?')))
 label = Chr(':') >> Fatalize(SUntilNRW1(escchr, Chr(':'))) % "No text between ':' and ':' for label"
 
 class SimpleExample(object):
+    __slots__ = ['label', 'acceptability', 'formatted_elems']
+
     def __init__(self, label, acceptability, formatted_elems):
         self.label = label
         self.acceptability = acceptability
@@ -566,6 +589,8 @@ def __repr__(self):
     return (self.label and ":-" + self.label + "-:" or '') + (self.acceptability and self.acceptability or '') + '"' + self.text + '"'
 
 class GlossedExample(object):
+    __slots__ = ['label', 'acceptability', 'native_elts', 'lit_elts', 'gloss']
+
     def __init__(self, label, acceptability, native_elts, lit_elts, gloss):
         self.label = label
         self.acceptability = acceptability
@@ -577,6 +602,8 @@ class GlossedExample(object):
         return repr(self.label) + " " + repr(self.acceptability) + " " + repr(self.native_elts) + " " + repr(self.lit_elts) + " " + repr(self.gloss)
 
 class ExampleGroup(object):
+    __slots__ = ['label', 'examples']
+
     def __init__(self, label, examples):
         self.label = label
         self.examples = examples
@@ -643,6 +670,8 @@ example_group = (
 )
 
 class BulletList(object):
+    __slots__ = ['bullets', 'numbered']
+
     def __init__(self, bullets, numbered=False):
         self.bullets = bullets # Each bullet is a list of Formatted objects.
         self.numbered = numbered
@@ -710,6 +739,8 @@ def document_(can_be_empty=True, after_section_title=False):
     )
 
 class Redirect(object):
+    __slots__ = ['title']
+
     def __init__(self, title):
         self.title = title
 
@@ -726,6 +757,8 @@ redirect = (
     Return(Redirect(name))))
 
 class Document(object):
+    __slots__ = ['root', 'categories']
+
     def __init__(self, root, categories):
         self.root = root
         self.categories = categories
@@ -748,7 +781,11 @@ document = (
 )
 
 class SectionTreeBuilder(object):
+    __slots__ = ['node', 'tits']
+
     class Node(object):
+        __slots__ = ['level', 'parent', 'title', 'children']
+
         def __init__(self, level, parent, title, children):
             self.level = level
             self.parent = parent
@@ -762,6 +799,8 @@ class SectionTreeBuilder(object):
                 "])"
 
     class Error(Exception):
+        __slots__ = ['section_title']
+
         def __init__(self, section_title):
             self.section_title = section_title
 
@@ -838,6 +877,8 @@ def make_initial_state():
     return dict(section_tree=SectionTreeBuilder(), article_refs=[], categories=[], in_footnote=False)
 
 class Siginfo(object):
+    __slots__ = ['username', 'date']
+
     def __init__(self, username, date):
         assert type(date) == my_utils.ZonedDate
         self.username = username
@@ -877,6 +918,9 @@ def parse_wiki_document(istr, siginfo, footnotes=True):
 
 class IndentingWriter(object):
     """This makes it easy to output nicely indented XHTML."""
+
+    __slots__ = ['writer', 'indent', 'indent_is_written', 'next_on_own_line', 'last']
+
     def __init__(self, writer):
         self.writer = writer
         self.indent = 0
@@ -913,7 +957,7 @@ class IndentingWriter(object):
             self.next_on_own_line = False
             if self.last and self.last != '\n':
                 self.writer.write('\n')
-                self.ident_is_written = True
+                self.indent_is_written = True
                 self.writer.write(''.join(' ' for i in xrange(self.indent)))
                 self.last = ' '
         for c in s:
@@ -1278,6 +1322,8 @@ def translate_to_xhtml_(state, elem, writer, article_exists_pred):
         assert False
 
 class TranslatorState(object):
+    __slots__ = ['example_no', 'examples', 'sectits_to_nums', 'footnote_no', 'footnotes']
+
     def __init__(self):
         self.example_no = 1
         self.examples = { }
