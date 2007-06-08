@@ -1,5 +1,4 @@
 == Make development easier ==
-* Add logging function to control.py
 * Allow KID templates to be modified without restarting server.
 
 == Cruicial ==
