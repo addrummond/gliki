@@ -426,3 +426,10 @@ div.diff-box {
   margin-bottom: 2em;
 }
 
+p.error-loc {
+  font-size: SMALL_TEXT;
+}
+p.error-loc a {
+  font-size: SMALL_TEXT;
+}
+

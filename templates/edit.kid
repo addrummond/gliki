@@ -56,11 +56,19 @@ rarr = "&rarr;"
                 At line ${line}, column ${column}: ${parse_error}.
             </p>
             <p class="error">
-                If you are using a reasonably modern browser
+                If you are using Firefox
                 and have Javacript turned on,
                 the region in the text box near the error
                 will have been highlighted.
-           </p>
+            </p>
+            <!--! Using document.write here so the link doesn't appear if
+                  Javascript isn't enabled.
+            -->
+            <script type="text/javascript">
+            <!--
+            document.write('<p class="error-loc"><a class="action" href="javascript:setErrorHighlighting();">&laquo;Highlight error&raquo;</a></p>');
+            -->
+            </script>
         </div>
         <p class="error" py:if="error == 'preview_redirect'">
             You cannot preview a redirect.
@@ -140,17 +148,21 @@ ${XML(preview)}
         }
     }
 
-    var text = document.getElementById('____t1')
-    setCursorPos(
-        text,
-        lineColToIndex(
-            text.value,
-            parseInt(document.getElementById('____errorLineNumber').value),
-            parseInt(document.getElementById('____errorColumnNumber').value)
-        )
-    );
+    function setErrorHighlighting() {
+        var text = document.getElementById('____t1')
+        setCursorPos(
+            text,
+            lineColToIndex(
+                text.value,
+                parseInt(document.getElementById('____errorLineNumber').value),
+                parseInt(document.getElementById('____errorColumnNumber').value)
+            )
+        );
 
-    text.focus()
+        text.focus();
+    }
+
+    setErrorHighlighting();
     -->
     </script>
 </body>
