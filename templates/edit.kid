@@ -127,7 +127,7 @@ ${XML(preview)}
             }
         }
 
-        return i + col;
+        return i + col - 1;
     }
 
     function setCursorPos(textArea, index) {

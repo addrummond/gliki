@@ -68,13 +68,13 @@ def escchr_(parms, state):
         return estack(state, ParserError(state.line, state.col, "Unexpected end of input"))
     c = parms.input[state.index]
     if parms.input[state.index] == '\\':
-        state.index += 1
+        advanceilc(state, c)
         if state.index == parms.input_length:
             return estack(state, ParserError(state.line, state.col, "EOF after backslash"))
-        state.index += 1
+        advanceilc(state, c)
         return parms.input[state.index - 1]
     else:
-        state.index += 1
+        advanceilc(state, c)
         return c
 escchr = Parser(escchr_, escchr_.__doc__)
 
@@ -427,7 +427,7 @@ def build_formatted(list):
         elif isinstance(elem, ArticleRef) or isinstance(elem, ExternalRef) or \
              isinstance(elem, Footnote) or isinstance(elem, ExampleRef):
             ensure_children(current_node).children.append(elem)
-        else:
+        else: # Plain text.
             text = elem.text
             if '||' in currently_in:
                 text = text.upper()

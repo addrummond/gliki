@@ -66,11 +66,11 @@ def restore_state(s1, s2):
     s1.line = s2.line
     s1.col = s2.col
 
-def __advanceilc(state, c):
+def advanceilc(state, c):
     state.index += 1
     if c == '\n':
         state.line += 1
-        state.col = 0
+        state.col = 1
     else:
         state.col += 1
 
@@ -206,7 +206,7 @@ def Chr(c, compl=False, name=None):
             ))
         ic = parms.input[state.index]
         if (compl and c != ic) or ((not compl) and c == ic):
-            __advanceilc(state, ic)
+            advanceilc(state, ic)
             return ic
         else:
             return estack(state, ParserError(state.line, state.col, "Expecting '%s', found '%s'" % (c, ic)))
@@ -224,7 +224,7 @@ def ChrP(name, pred):
             return estack(state, ParserError(state.line, state.col, "Expecting %s, found end of input" % name))
         ic = parms.input[state.index]
         if pred(ic):
-            __advanceilc(state, c)
+            advanceilc(state, c)
             return c
         else:
             return estack(state, ParserError(state.line, state.col, "Expecting %s, found '%s'" % (name, ic)))
@@ -239,7 +239,7 @@ def ChrRanges(name, *ranges):
         ic = parms.input[state.index]
         for r in ranges:
             if ord(ic) >= ord(r[0]) and ord(ic) <= ord(r[1]):
-                __advanceilc(state, ic)
+                advanceilc(state, ic)
                 return c
         return estack(state, ParserError(state.line, state.col, "Expecting %s, found '%s'" % (name, ic)))
     return Parser(parser, ChrRanges.__doc__)
@@ -255,7 +255,7 @@ def Chrs(chrs, compl=False):
                              ))
         ic = parms.input[state.index]
         if ((not compl) and ic in chrs) or (compl and ic not in chrs):
-            __advanceilc(state, ic)
+            advanceilc(state, ic)
             return ic
         return estack(state, ParserError(state.line, state.col,
                            "Expecting one of %s, found '%s'" % \
@@ -276,7 +276,7 @@ NoNLWhitespace = Chrs(" \t")
 # writing this out longhand can speed things up a bit.
 def skip_whitespace(include_newlines=True):
     def parser(parms, state):
-        # Note that the timing of __advanceilc makes saving and restoring the
+        # Note that the timing of advanceilc makes saving and restoring the
         # parser state unnecessary here.
         while True:
             if state.index == parms.input_length:
@@ -287,7 +287,7 @@ def skip_whitespace(include_newlines=True):
             else:
                 return None
 
-            __advanceilc(state, ic)
+            advanceilc(state, ic)
     return Parser(parser, skip_whitespace.__doc__)
 SkipWhitespace = skip_whitespace()
 SkipNoNLWhitespace = skip_whitespace(False)
@@ -300,7 +300,7 @@ def Str(s, case_sensitive=True):
                 return estack(state, ParserError(state.line, state.col,
                                             "Expecting \"%s\", found end of input" % s))
             ic = parms.input[state.index]
-            __advanceilc(state, ic)
+            advanceilc(state, ic)
             if (case_sensitive and ic != c) or ((not case_sensitive) and ic.upper() != c.upper()):
                 return estack(state, ParserError(state.line, state.col,
                                             "Expecting \"%s\"" %s))
@@ -323,7 +323,7 @@ def Strs(*strings):
                 return estack(state, ParserError(state.line, state.col,
                                             "Expecting one of %s; found end of input" % one_of()))
             ic = parms.input[state.index]
-            __advanceilc(state, ic)
+            advanceilc(state, ic)
             for j in xrange(l):
                 if not j in forbidden:
                     if ic != strings[j][i]:
@@ -543,7 +543,7 @@ def Until(n, p, until, pr=False, nrw=False):
                                                 "Expecting %s" % parser_name(p)))
                 else:
                     lst.append(r)
-    return Parser(parser, SUntil.__doc__)
+    return Parser(parser, Until.__doc__)
 def Until0(p, u): return Until(0, p, u)
 def Until1(p, u): return Until(1, p, u)
 def UntilPr0(p, u): return Until(0, p, u, True)
@@ -719,7 +719,7 @@ DebugPrintInput = Parser(debug_print_input)
 
 def run_parser(p, input, initial_user_state):
     parms = ParserParms(input=input, input_length=len(input))
-    state = ParserState(index=0, line=1, col=0, user_state=initial_user_state)
+    state = ParserState(index=0, line=1, col=1, user_state=initial_user_state)
     r = None
     try:
         r = p(parms, state)
