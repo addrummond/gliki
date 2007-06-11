@@ -117,7 +117,7 @@ ${XML(preview)}
     <license_boilerplate />
 
     <form>
-        <input type="hidden" id="____errorLineNumber" value="${locals().has_key('line') and line or 1}"></input>
+        <input type="hidden" id="____errorLineNumber" value="${locals().has_key('line') and line or 0}"></input>
         <input type="hidden" id="____errorColumnNumber" value="${locals().has_key('column') and column or 0}"></input>
     </form>
     <script type="text/javascript">
@@ -162,7 +162,9 @@ ${XML(preview)}
         text.focus();
     }
 
-    setErrorHighlighting();
+    if (document.getElementById('____errorLineNumber').value != '0' && document.getElementById('____errorColumnNumber').value != '0') {
+        setErrorHighlighting();
+    }
     -->
     </script>
 </body>
