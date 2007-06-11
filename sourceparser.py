@@ -38,10 +38,6 @@ def set_hash(hash, key, value):
     hash[key] = value
     return True
 
-def safequote(url):
-    """Quotes a URL without screwing up any existing %XX sequences in it."""
-    return urllib.quote(urllib.unquote(url))
-
 __lrexp = r"(.*?):(.*)"
 __clregexp = re.compile(__lrexp)
 def link_encode(link):
@@ -50,7 +46,7 @@ def link_encode(link):
         m = __clregexp.match(link)
         pref = m.group(1)
         addy = m.group(2)
-        return pref + ':' + safequote(addy)
+        return pref + ':' + my_utils.safequote(addy)
     else:
         return link
 

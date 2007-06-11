@@ -22,6 +22,7 @@ import urllib
 import my_utils
 import itertools
 import links
+import customize
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:py="http://purl.org/kid/ns#" py:extends="'base.kid'">
@@ -50,12 +51,9 @@ import links
         ${revision_comment}.
     </p>
     <hr />
-    <p>
-        You might want to read about
-        <a href="${links.article_link(u'Gliki-revision-numbering')}" class="article_ref">
-        Gliki's revision numbering system
-        </a>.
-    </p>
+    <div py:strip="True" py:if="customize.REVISION_NUMBERING_INFO_XHTML">
+        ${XML(customize.REVISION_NUMBERING_INFO_XHTML)}
+    </div>
 ${diff_html and XML(diff_html) or ''}
 </body>
 </html>

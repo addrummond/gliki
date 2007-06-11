@@ -20,9 +20,10 @@
 <?python
 import urllib
 import links
+import customize
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xmlns:py="http://purl.org/kid/ns#" py:extends="'base.kid', 'license_boilerplate.kid'">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:py="http://purl.org/kid/ns#" py:extends="'base.kid'">
 <head>
     <title>Gliki - The generative linguistics wiki</title>
 </head>
@@ -55,7 +56,7 @@ import links
     If you're new to wikis in general, you might want to read the
     <a href="http://en.wikipedia.org/wiki/Wiki" class="external_link">Wikipedia article on wikis</a>.
     </p>
-    <license_boilerplate />
+    ${XML(customize.LICENSE_BOILERPLATE_XHTML)}
     <p>
     Gliki uses custom software which is currently in the early stages of development,
     so there are a few missing features, and probably some bugs.

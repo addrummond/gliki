@@ -23,10 +23,11 @@ import urllib
 import my_utils
 import links
 import htmlutils
+import customize
 
 rarr = "&rarr;"
 ?>
-<html xmlns="http://www.w3.org/1999/xhtml" xmlns:py="http://purl.org/kid/ns#" py:extends="base.kid, license_boilerplate.kid">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:py="http://purl.org/kid/ns#" py:extends="base.kid">
 <head>
   <!--! Edit conflicts have a special title -->
   <title py:if="not (locals().has_key('error') and error == 'edit_conflict')">Editing - ${article_title}</title>
@@ -114,7 +115,7 @@ ${XML(preview)}
         <input name="update" type="submit" value="Update page"></input>
         <input name="preview" type="submit" value="Preview changes"></input>
     </form>
-    <license_boilerplate />
+    ${XML(customize.LICENSE_BOILERPLATE_XHTML)}
 
     <form>
         <input type="hidden" id="____errorLineNumber" value="${locals().has_key('line') and line or 0}"></input>

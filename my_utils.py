@@ -31,6 +31,10 @@ def webencode(s):
     assert type(s) == types.UnicodeType
     return s.encode(config.WEB_ENCODING)
 
+def safequote(url):
+    """Quotes a URL without screwing up any existing %XX sequences in it."""
+    return urllib.quote(urllib.unquote(url))
+
 def uu_decode(s, on_fail=u''):
     """Decodes (portions of) a URI. Removes %XX sequences and interprets the
        result as a UTF-8 formatted string. By default, returns u'' on failure.
