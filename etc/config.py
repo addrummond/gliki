@@ -31,3 +31,12 @@ WEB_ENCODING = 'utf-8'
 # Encoding used for the logs in the logs/dir.
 LOG_ENCODING = 'utf-8'
 
+USER_AUTH_REALM = "Wikiuser"
+USER_AUTH_METHOD = 'digest'
+
+DATABASE = "main.db"
+
+SERVER_PORT = 3000
+
+DIFF_LINE_LENGTH = 60
+

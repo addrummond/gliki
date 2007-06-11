@@ -55,15 +55,6 @@ import aes.Python_AES as pyaes
 import base64
 from my_utils import *
 
-USER_AUTH_REALM = "Wikiuser"
-USER_AUTH_METHOD = 'digest'
-
-DATABASE = "main.db"
-
-SERVER_PORT = 3000
-
-DIFF_LINE_LENGTH = 60
-
 #
 # Code for the AES-32/base64 encryption scheme used for user account passwords.
 #
@@ -180,7 +171,7 @@ def get_auth_method(extras):
     if browser_is_ie6_or_earlier(extras):
         return 'basic'
     else:
-        return USER_AUTH_METHOD
+        return config.USER_AUTH_METHOD
 
 def merge_login(dbcon, cur, extras, dict, dont_update_last_seen=False):
     """Merges username and user_id into a dictionary if the HTTP header
@@ -190,7 +181,7 @@ def merge_login(dbcon, cur, extras, dict, dont_update_last_seen=False):
         return dict
     elif isinstance(extras.auth, control.Extras.DigestAuth) and extras.auth.bad_auth_header:
         raise control.AuthenticationRequired(
-            USER_AUTH_REALM,
+            config.USER_AUTH_REALM,
             get_auth_method(extras),
             stale=extras.auth.bad_because == 'stale_nonce')
     elif isinstance(extras.auth, control.Extras.BasicAuth) or isinstance(extras.auth, control.Extras.DigestAuth):
@@ -202,7 +193,7 @@ def merge_login(dbcon, cur, extras, dict, dont_update_last_seen=False):
 
         id = check_bonafides(dbcon, cur, extras.auth.username, authfunc)
         if not id:
-            raise control.AuthenticationRequired(USER_AUTH_REALM, get_auth_method(extras))
+            raise control.AuthenticationRequired(config.USER_AUTH_REALM, get_auth_method(extras))
 
         # Has the user's userpage been edited since they last logged on?
         if not dont_update_last_seen:
@@ -520,7 +511,7 @@ database_error = DatabaseError()
 def dberror(e): raise control.SwitchHandler(database_error, dict(exception=e), 'GET')
 
 def get_dbcon():
-    return db.connect(DATABASE)
+    return db.connect(config.DATABASE)
 
 def get_anon_user_wikiuser_id(ipaddress):
     """Given an IP address, return the user ID for the anonymous user at this
@@ -915,7 +906,7 @@ class ReviseWikiArticle(object):
                     error = "edit_conflict",
                     line = None,
                     column = None,
-                    diff_xhtml = diffengine.pretty_diff(new_source, old_source or '', DIFF_LINE_LENGTH),
+                    diff_xhtml = diffengine.pretty_diff(new_source, old_source or '', config.DIFF_LINE_LENGTH),
                     edit_time = int_time
                 )
 
@@ -1435,7 +1426,7 @@ class Diff(object):
             return merge_login(dbcon, cur,
                                extras,
                                dict(article_title=title,
-                                    diff_html=diffengine.pretty_diff(rev1src, rev2src, DIFF_LINE_LENGTH),
+                                    diff_html=diffengine.pretty_diff(rev1src, rev2src, config.DIFF_LINE_LENGTH),
                                     rev1=rev1,
                                     rev2=rev2,
                                     formertitle=formertitle,
@@ -1686,7 +1677,7 @@ class Login(object):
                                    'text/html; charset=UTF-8',
                                    'see_other')
         else:
-            raise control.AuthenticationRequired(USER_AUTH_REALM, get_auth_method(extras))
+            raise control.AuthenticationRequired(config.USER_AUTH_REALM, get_auth_method(extras))
 login = Login()
 
 class Preferences(object):
@@ -2060,5 +2051,5 @@ control.register_handlers([front_page,
                            category_list,
                            recent_changes_list,
                            delete_article_page])
-control.start_server(SERVER_PORT)
+control.start_server(config.SERVER_PORT)
 
