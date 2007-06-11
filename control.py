@@ -39,7 +39,7 @@ import my_utils
 import time
 import md5
 import logging
-import config
+import etc.config as config
 
 __http_methods = ["OPTIONS", "GET", "HEAD", "POST", "PUT", "DELETE", "TRACE", "CONNECT"]
 

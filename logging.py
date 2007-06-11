@@ -23,7 +23,7 @@ import my_utils
 import time
 import types
 import codecs
-import config
+import etc.config as config
 
 LOG_DIR = 'logs'
 

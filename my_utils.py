@@ -23,7 +23,7 @@ in particular.
 import time
 import itertools
 import StringIO
-import config
+import etc.config as config
 import types
 import urllib
 

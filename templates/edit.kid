@@ -23,7 +23,7 @@ import urllib
 import my_utils
 import links
 import htmlutils
-import customize
+import etc.customize as customize
 
 rarr = "&rarr;"
 ?>

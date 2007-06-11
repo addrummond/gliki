@@ -20,7 +20,7 @@ This module contains some code for accessing the DB, and all of the HTTP request
 handlers registered with control.py.
 """
 
-import config
+import etc.config as config
 import sys
 import re
 from urimatch import *
