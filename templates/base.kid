@@ -20,17 +20,18 @@
 <?python
 import urllib
 import links
+import customize
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:py="http://purl.org/kid/ns#">
 <head py:match="item.tag=='{http://www.w3.org/1999/xhtml}head'" py:attrs="item.items()">
     <title py:match="item.tag=='{http://www.w3.org/1999/xhtml}title'" py:attrs="item.items()">
         <span py:replace="[item.text] + item[:]">The title</span>
-        ${(not item.text.startswith('Gliki')) and '- Gliki' or ''}
+        ${(not item.text.lower().startswith(customize.FRONT_PAGE_TITLE.lower())) and '- %s' % customize.FRONT_PAGE_TITLE or ''}
     </title>
     <span py:replace="[x for x in item[:] if x.tag != '{http://www.w3.org/1999/xhtml}title}']"></span>
     <link href="/main.css" rel="stylesheet" type="text/css" />
-    <link rel="shortcut icon" href="/favicon.ico" />
+    <link py:if="customize.ICON_URL" rel="shortcut icon" href="${customize.ICON_URL}" />
 </head>
 
 <body py:match="item.tag=='{http://www.w3.org/1999/xhtml}body'" py:attrs="item.items()">
@@ -39,7 +40,7 @@ import links
               for testing purposes. Feel free to mess around with it, but don't expect
               it to work or anything.</i></b>
     </p>
-    <img class="logo" src="/logo.png" alt="Gliki - the generative linguistics wiki"/>
+    <img py:if="customize.LOGO_IMG_URL" class="logo" src="${customize.LOGO_IMG_URL}" alt="${customize.LOGO_IMG_ALT and customize.LOGO_IMG_ALT or 'logo'}"/>
     <p class="login-message" py:if="locals().has_key('username') and username">
         <i>You are logged in as
            <a class="article_ref" href="${links.user_page_link(username)}">${username}</a>
