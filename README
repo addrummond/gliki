@@ -1,0 +1,52 @@
+1. Introduction
+----------
+This is the software behind thg Gliki website, licensed under the GPL (see
+the LICENSE file for details).
+
+
+2. Running Gliki
+----------
+First, check that you have all the dependencies listed in the DEPENDENCIES file
+installed and working correctly.
+
+Now do the following in the main Gliki directory:
+
+    * Execute 'sh build_main.css.sh' to build the CSS file.
+    * Create an sqlite3 database called main.db using the sql script
+      'dbcreate.sql'.
+    * Execute 'python gliki.py'
+
+This starts the website on port 3000. You can change the port by editing
+etc/config.py. Note that this uses a toy Python webserver which you really
+shouldn't expose to the internet directly; the real Gliki site hides it behind
+a proxy. Way back when, it was also possible to run Gliki on lighttpd using
+fastcgi, and the code to do so is still included. However, I haven't tested it
+for ages and it's not documented here (see mostly control.py if you're
+interested, and the included httpd.conf for lighttpd).
+
+
+3. Customization
+----------
+By default, Gliki looks exactly like the Gliki website. You can make basic
+changes (e.g. changing the name of the site) by editing etc/customize.py.
+The CSS file (main.css) should not be edited directly since it's built using
+the m4 macro prepocessor. Instead, edit main.css.m4 and run
+'sh buld_main.css.sh' to generate main.css. More extensive changes will require
+editing the KID templates in the 'templates' directory.
+
+
+4. Some brief notes on the code for coders.
+----------
+    * Gliki doesn't use a web framework (other than wsgi) or an ORM. This is
+      because I can never really get my head around ORM (I don't want to use
+      my database as an object store, and I can't be bothered to learn fancy
+      ORMs like sqlalchemy).
+    * The code for parsing the markup language (sourceparser.py) uses the
+      "parser combinator" technique. Reading up about this technique will make
+      the code a lot easier to understand. Gliki uses its own parser
+      combinator library, parcombs.py.
+    * As of yet, there are no plans to make Gliki work with a "real" DB since
+      sqlite seems to work pretty well. Modfifying Gliki to work with another
+      DB would not be difficult (but since it doesn't use ORM, it wouldn't be
+      trivial either).
+
