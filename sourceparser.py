@@ -892,7 +892,6 @@ def parse_wiki_document(istr, siginfo, footnotes=True):
             istr = istr.replace('~~~~~', "//**%s**//" % str(siginfo.date))
             istr = istr.replace('~~~~', "//**[[%s%s|%s]] %s**//" % (links.USER_PAGE_PREFIX, quname, quname, str(siginfo.date)))
             istr = istr.replace('~~~', "//**[[%s%s|%s]]**//" % (links.USER_PAGE_PREFIX, quname, quname))
-        print '---\n', istr
 
         s = make_initial_state()
         s['no_footnotes'] = not footnotes
