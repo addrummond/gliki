@@ -53,6 +53,7 @@ import diffengine
 import userprefs
 import aes.Python_AES as pyaes
 import base64
+import block
 from my_utils import *
 
 #
@@ -178,6 +179,11 @@ def merge_login(dbcon, cur, extras, dict, dont_update_last_seen=False):
        has auth information. Raises AuthenticationRequired if auth info is
        given but is incorrect."""
     if not extras.auth:
+        # Is their IP blocked?
+        ip = parse_ip_to_4tuple(extras.remote_ip)
+        assert ip
+        if block.is_blocked('', ip):
+            raise control.SwitchHandler(block_handler, { }, 'GET')
         return dict
     elif isinstance(extras.auth, control.Extras.DigestAuth) and extras.auth.bad_auth_header:
         raise control.AuthenticationRequired(
@@ -194,6 +200,12 @@ def merge_login(dbcon, cur, extras, dict, dont_update_last_seen=False):
         id = check_bonafides(dbcon, cur, extras.auth.username, authfunc)
         if not id:
             raise control.AuthenticationRequired(config.USER_AUTH_REALM, get_auth_method(extras))
+
+        # Is this user blocked?
+        ip = parse_ip_to_4tuple(extras.remote_ip)
+        assert ip
+        if block.is_blocked('', ip):
+            raise control.SwitchHandler(block_handler, { }, 'GET')
 
         # Has the user's userpage been edited since they last logged on?
         if not dont_update_last_seen:
@@ -1445,6 +1457,15 @@ class FrontPage(object):
     def GET(self, parms, extras):
         return dbcon_merge_login(extras, { })
 front_page = FrontPage()
+
+class Block(object):
+    # No uris because this is only ever switched to.
+
+    @ok_html()
+    @showkid('templates/block.kid')
+    def GET(self, parms, extras):
+        return { }
+block_handler = Block()
 
 class CreateAccount(object):
     uris = [Abs(links.CREATE_ACCOUNT) >> OptDir()]

@@ -122,6 +122,14 @@ Gliki is written in %s using %s for the databse
 )
 
 
+BLOCK_MESSAGE_XHTML = \
+"""<p>
+    Sorry, you've been blocked.
+    If you think this is a mistake,
+    <a href="mailto:webmaster@gliki.whsites.net">contact the webmaster</a>.
+</p>"""
+
+
 #
 # License conditions
 # ------------------

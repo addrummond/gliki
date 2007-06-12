@@ -26,6 +26,7 @@ import StringIO
 import etc.config as config
 import types
 import urllib
+import re
 
 def webencode(s):
     assert type(s) == types.UnicodeType
@@ -295,4 +296,12 @@ def mark_last(seq):
             break
         for p in previous: yield p, False
         previous = [r1]
+
+__ip_regex = re.compile(r"^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$")
+def parse_ip_to_4tuple(s):
+    m = __ip_regex.match(s)
+    if m:
+        return (int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4)))
+    else:
+        return False
 

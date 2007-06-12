@@ -14,6 +14,7 @@ Now do the following in the main Gliki directory:
     * Execute 'sh build_main.css.sh' to build the CSS file.
     * Create an sqlite3 database called main.db using the sql script
       'dbcreate.sql'.
+    * Touch the file etc/block in order to avoid warnings in the server logs.
     * Execute 'python gliki.py'
 
 This starts the website on port 3000. You can change the port by editing
