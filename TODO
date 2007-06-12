@@ -23,6 +23,10 @@
 * Automatically find the dimensions of images + check that the link isn't broken.
 * Bibliography features. (Could this ever be worth the trouble?)
 
+==When I have a lot of free time==
+* Write a custom templating system that makes it easier to customize how
+  Gliki looks without using the nasty customize.py
+
 == Fixing parser error messages ==
 Make sure we get good errors for the following specific cases:
 
