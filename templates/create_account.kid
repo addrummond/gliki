@@ -51,7 +51,7 @@ import links
         </span>
         <span py:strip="True" py:if="error == 'userpage_exists'">
             The userpage
-            <a class="article_ref" href="${links.user_page_link(default_username)}">links.qaf(${links.USER_PAGE_PREFIX + default_username})</a>
+            <a class="article_ref" href="${links.user_page_link(default_username)}">${links.USER_PAGE_PREFIX + default_username}</a>
             already exists,
             but no such user exists.
             If you move this page somewhere else,

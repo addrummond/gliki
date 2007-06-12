@@ -122,11 +122,19 @@ Gliki is written in %s using %s for the databse
 )
 
 
-BLOCK_MESSAGE_XHTML = \
+BLOCKED_BY_USERNAME_MESSAGE_XHTML = \
 """<p>
-    Sorry, you've been blocked.
+    Sorry, your account has been blocked.
     If you think this is a mistake,
     <a href="mailto:webmaster@gliki.whsites.net">contact the webmaster</a>.
+</p>"""
+BLOCKED_BY_IP_MESSAGE_XHTML = \
+"""<p>
+Sorry, your IP address has been blocked.
+Blocking by IP address is not very reliable,
+and you may have been blocked by accident.
+If you think this is the case,
+<a href="mailto:webmaster@gliki.whsites.net">contact the webmaster</a>.
 </p>"""
 
 

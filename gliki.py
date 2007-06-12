@@ -183,7 +183,7 @@ def merge_login(dbcon, cur, extras, dict, dont_update_last_seen=False):
         ip = parse_ip_to_4tuple(extras.remote_ip)
         assert ip
         if block.is_blocked('', ip):
-            raise control.SwitchHandler(block_handler, { }, 'GET')
+            raise control.SwitchHandler(block_handler, { 'because' : 'by_ip' }, 'GET')
         return dict
     elif isinstance(extras.auth, control.Extras.DigestAuth) and extras.auth.bad_auth_header:
         raise control.AuthenticationRequired(
@@ -204,8 +204,9 @@ def merge_login(dbcon, cur, extras, dict, dont_update_last_seen=False):
         # Is this user blocked?
         ip = parse_ip_to_4tuple(extras.remote_ip)
         assert ip
-        if block.is_blocked('', ip):
-            raise control.SwitchHandler(block_handler, { }, 'GET')
+        because = block.is_blocked(extras.auth.username, ip)
+        if because: 
+            raise control.SwitchHandler(block_handler, { 'because' : because }, 'GET')
 
         # Has the user's userpage been edited since they last logged on?
         if not dont_update_last_seen:
@@ -1464,7 +1465,7 @@ class Block(object):
     @ok_html()
     @showkid('templates/block.kid')
     def GET(self, parms, extras):
-        return { }
+        return dict(because=parms['because'])
 block_handler = Block()
 
 class CreateAccount(object):
@@ -1547,7 +1548,7 @@ class MakeNewAccount(object):
             if rev:
                 return dict(default_email=email,
                             default_username=username,
-                            error="userpage_exists" % username)
+                            error="userpage_exists")
 
             # All clear: we can go ahead and create a new account.
             res = cur.execute(

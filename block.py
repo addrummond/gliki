@@ -21,7 +21,7 @@ class IPRangeBlock(Block):
             l, u = r
             if not (n >= l and n <= u):
                 return False
-        return True
+        return 'by_ip'
 
 class UserBlock(Block):
     __slots__ = ['username']
@@ -34,14 +34,14 @@ class UserBlock(Block):
 
     def matches(self, username, ip_4tuple):
         assert type(username) == types.StringType
-        return username == self.username
+        return (username == self.username) and 'by_username' or False
 
 def in_block_list(block_list, username, ip_4tuple):
     return reduce(lambda x,y: x or y, map(lambda b: b.matches(username, ip_4tuple), block_list), False)
 
 __comment_line = re.compile(r"\s*#.*")
 __ip_line = re.compile(r"^\s*([^.]+)\.([^.]+).([^.]+).([^.]+)\s*$")
-__user_line = re.compile(r"^\s*:\s*(\S*)\s*$")
+__user_line = re.compile(r"^\s*(\S*)\s*$")
 __blank_line = re.compile(r"^\s*$")
 __range_seg = re.compile(r"^\s*(\d{1,3})\s*-\s*(\d{1,3})\s*$")
 __star_seg = re.compile(r"^\s*\*\s*$")
@@ -109,11 +109,11 @@ def is_blocked(username, ip_4tuple):
 # TEST CODE.
 #
 #
-#bl = """
+bl = """
 ## A comment
 #
 #127. * .56 - 78 .66
-#: fdsfsdfsdf
+#fdsfsdfsdf
 #sdfsdfsdf
 #178.567.555.77
 #"""

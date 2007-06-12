@@ -8,7 +8,12 @@ import etc.customize as customize
 </head>
 
 <body>
-    ${XML(customize.BLOCK_MESSAGE_XHTML)}
+    <div py:strip="True" py:if="because == 'by_ip'">
+        ${XML(customize.BLOCKED_BY_IP_MESSAGE_XHTML)}
+    </div>
+    <div py:strip="True" py:if="because == 'by_username'">
+        ${XML(customize.BLOCKED_BY_USERNAME_MESSAGE_XHTML)}
+    </div>
 </body>
 </html>
 
