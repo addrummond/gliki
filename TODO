@@ -3,14 +3,15 @@
 
 == Cruicial ==
 * Tree drawing (bugs in sizing trees, but 90% complete).
-* Fix bad line/column numbers in parser.
+* Fix bad line/column numbers in parser (this is now 90% done).
 * Get cursor placement working in IE and other non-Firefox browsers.
-* Client-side validation for preferences. Use watchlist preference.
+* Use watchlist preference.
 * Allow list of articles, list of categories and page history to be split
   over multiple pages when it gets too big.
 * List of a user's contributions (add some generic list code first).
 
 == Would be nice ==
+* Client-side validation.
 * Remove all error messages from gliki.py and shift them to templates.
 * Table of contents for articles.
 * Do diffs properly (not just line by line).
