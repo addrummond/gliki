@@ -1,13 +1,20 @@
 1. Introduction
 ----------
 This is the software behind thg Gliki website, licensed under the GPL (see
-the LICENSE file for details).
+the LICENSE file for details). The software is written by Alex Drummond
+<a.d.drummond@gmail.com>, with much work on the HTML and CSS done by James Adams
+("Mue").
 
 
 2. Running Gliki
 ----------
 First, check that you have all the dependencies listed in the DEPENDENCIES file
 installed and working correctly.
+
+I assume you are using some sort of vaguely Unixy system. It is (almost
+certainly) possible to run Gliki on Windows, but you'll need to install some
+sort of Unix environment (e.g. Cygwin) and I haven't actually tested it on
+Windows.
 
 Now do the following in the main Gliki directory:
 
@@ -21,7 +28,7 @@ Now do the following in the main Gliki directory:
 This starts the website on port 3000. You can change the port by editing
 etc/config.py. Note that this uses a toy Python webserver which you really
 shouldn't expose to the internet directly; the real Gliki site hides it behind
-a proxy. Way back when, it was also possible to run Gliki on lighttpd using
+Apache. Way back when, it was also possible to run Gliki on lighttpd using
 fastcgi, and the code to do so is still included. However, I haven't tested it
 for ages and it's not documented here (see mostly control.py if you're
 interested, and the included httpd.conf for lighttpd).
@@ -68,12 +75,18 @@ Badly formatted lines in the block file are ignored. However, warnings are
 logged in logs/server if there are badly formatted lines.
 
 
-5. Some brief notes on the code for coders.
+6. Standard pages
+----------
+The standard_pages directory contains the source for some of the pages in
+Gliki, which you may or may not find useful.
+
+
+7. Some brief notes on the code for developers.
 ----------
     * Gliki doesn't use a web framework (other than wsgi) or an ORM. This is
-      because I can never really get my head around ORM (I don't want to use
+      because I could never really get my head around ORM (I don't want to use
       my database as an object store, and I can't be bothered to learn fancy
-      ORMs like sqlalchemy).
+      ORMs like sqlalchemy which allow you to go beyond this).
     * The code for parsing the markup language (sourceparser.py) uses the
       "parser combinator" technique. Reading up about this technique will make
       the code a lot easier to understand. Gliki uses its own parser
@@ -82,4 +95,20 @@ logged in logs/server if there are badly formatted lines.
       sqlite seems to work pretty well. Modfifying Gliki to work with another
       DB would not be difficult (but since it doesn't use ORM, it wouldn't be
       trivial either).
+
+
+8. Patches.
+----------
+
+I'm always happy to accept patches. However, I don't want any of the following:
+
+    * Additional features for the markup parser, since it's already getting
+      hard to modify and debug. In future, I intend to expand it by allowing
+      embedding of other markup languages within Gliki pages (e.g. HTML, TeX
+      equations). Contributions towards this end are very welcome.
+    * Any attempt to use ORM or make Gliki more OO. I'm a luddite.
+    * Backwards-incompatible changes to the DB schema (unless absolutely
+      necessary in the service of a compellingly useful feature).
+
+If you want some ideas, take a look at the TODO file.
 
