@@ -1,15 +1,17 @@
-This is a list of dependencies for Gliki (over and above a standard Python
-installation). It should help with setting up Gliki.
+This is a list of dependencies for the Gliki software.
 
-For Python <= 2.5:
+Gliki requires Python >= 2.4 and the following libraries:
+
     * Cairo + PyCairo
-        - libpng
-        - freetype
-        - fontconfig
+        These in turn depend on:
+            - libpng
+            - freetype
+            - fontconfig
     * Python Paste (if using the toy paste webserver as a proxy)
     * flup (if using fastcgi)
-    * Kid template system.
+    * Kid template system
 
 For Python 2.4:
-    * Python SQLite bindings.
+
+    * Python SQLite bindings
 

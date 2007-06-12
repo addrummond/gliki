@@ -14,7 +14,8 @@ Now do the following in the main Gliki directory:
     * Execute 'sh build_main.css.sh' to build the CSS file.
     * Create an sqlite3 database called main.db using the sql script
       'dbcreate.sql'.
-    * Touch the file etc/block in order to avoid warnings in the server logs.
+    * Touch the file etc/block in order to avoid warnings in the server logs
+      (see section 4 for more details).
     * Execute 'python gliki.py'
 
 This starts the website on port 3000. You can change the port by editing
@@ -30,13 +31,44 @@ interested, and the included httpd.conf for lighttpd).
 ----------
 By default, Gliki looks exactly like the Gliki website. You can make basic
 changes (e.g. changing the name of the site) by editing etc/customize.py.
+This is all rather nasty, and I'm hoping to move to a custom template system
+at some point which will make customization easier.
+
 The CSS file (main.css) should not be edited directly since it's built using
 the m4 macro prepocessor. Instead, edit main.css.m4 and run
 'sh buld_main.css.sh' to generate main.css. More extensive changes will require
 editing the KID templates in the 'templates' directory.
 
 
-4. Some brief notes on the code for coders.
+4. Blocking users.
+----------
+You can block users (either by username or by IP address) by editing the
+etc/block file in the main Gliki directory (it is not necessary to restart Gliki
+after editing the file for the changes to take effect). The block file has the
+following syntax. Lines beginning with '#' are ignored. A line containing an IP
+address specifies that the IP address should be blocked; similarly for a line
+containing a username. It is also possible to specify IP address ranges, as in
+the following examples:
+
+    83.64.77.*
+    56-66.5.6-8.8
+
+The first line specifies that any IP address beginning 83.64.77 should be
+blocked. The second line blocks any IP address with first number 56-66
+inclusive, second number 5, third number 6-8 inclusive, and last number 8.
+Here's an example block file:
+
+    # A comment.
+    167.8.7.8
+    john
+    156.55.77.*
+    77.88.99.12-19
+
+Badly formatted lines in the block file are ignored. However, warnings are
+logged in logs/server if there are badly formatted lines.
+
+
+5. Some brief notes on the code for coders.
 ----------
     * Gliki doesn't use a web framework (other than wsgi) or an ORM. This is
       because I can never really get my head around ORM (I don't want to use
