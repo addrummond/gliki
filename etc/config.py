@@ -32,6 +32,8 @@ WEB_ENCODING = 'utf-8'
 LOG_ENCODING = 'utf-8'
 
 USER_AUTH_REALM = "Wikiuser"
+# The default authentication method to use for user logins. With IE6, plain
+# text authentication will always be used.
 USER_AUTH_METHOD = 'digest'
 
 DATABASE = "main.db"
