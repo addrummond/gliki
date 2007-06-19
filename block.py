@@ -127,11 +127,12 @@ def is_blocked(username, ip_4tuple):
 
     return in_block_list(__current_block_list, username, ip_4tuple)
 
+
 #
 # TEST CODE.
 #
-#
-bl = """
+
+#bl = """
 ## A comment
 #
 #127. * .56 - 78 .66
