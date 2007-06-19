@@ -72,7 +72,7 @@ WATCH_SUFFIX = 'watch'
 UNWATCH_SUFFIX = 'unwatch'
 WATCHLIST = 'watchlist'
 TRACKED_CHANGES = 'tracked-changes'
-RENDER_SYNTAX_TREE = 'render-tree'
+RENDER_SYNTAX_TREE = 'render-syntax-tree'
 SYNTAX_TREE = 'syntax-tree'
 DELETE_SUFFIX = 'delete'
 

@@ -18,9 +18,7 @@
 ?>
 
 <?python
-#import urllib
-#import my_utils
-#import itertools
+import links
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:py="http://purl.org/kid/ns#" py:extends="'base.kid'">
@@ -50,7 +48,7 @@
         syntax &lsquo;-&gt;label&rsquo;, and its initial position is given
         a matching label using the syntax &lsquo;&lt;-label&rsquo;.
     </p>
-    <form method="POST" action="/render-syntax-tree">
+    <form method="POST" action="${links.render_syntax_tree_link()}">
         <textarea name="tree" cols="100" rows="25"></textarea>
         <br />
         <input type="submit" value="Send"></input>
