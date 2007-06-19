@@ -1,9 +1,9 @@
 1. Introduction
 ----------
-This is the software behind thg Gliki website, licensed under the GPL (see
+This is the software behind the Gliki website, licensed under the GPL (see
 the LICENSE file for details). The software is written by Alex Drummond
-<a.d.drummond@gmail.com>, with much work on the HTML and CSS done by James Adams
-("Mue").
+<a.d.drummond@gmail.com>, with much work on the HTML and CSS by James Adams
+("Mue", http://www.bluezen.co.uk/james).
 
 
 2. Running Gliki
@@ -21,8 +21,6 @@ Now do the following in the main Gliki directory:
     * Execute 'sh build_main.css.sh' to build the CSS file.
     * Create an sqlite3 database called main.db using the sql script
       'dbcreate.sql'.
-    * Touch the file etc/block in order to avoid warnings in the server logs
-      (see section 4 for more details).
     * Execute 'python gliki.py'
 
 This starts the website on port 3000. You can change the port by editing
@@ -38,7 +36,7 @@ interested, and the included httpd.conf for lighttpd).
 ----------
 By default, Gliki looks exactly like the Gliki website. You can make basic
 changes (e.g. changing the name of the site) by editing etc/customize.py.
-This is all rather nasty, and I'm hoping to move to a custom template system
+This is all rather nasty, and I'm hoping to move to a another template system
 at some point which will make customization easier.
 
 The CSS file (main.css) should not be edited directly since it's built using
@@ -46,10 +44,15 @@ the m4 macro prepocessor. Instead, edit main.css.m4 and run
 'sh buld_main.css.sh' to generate main.css. More extensive changes will require
 editing the KID templates in the 'templates' directory.
 
+You can edit links.py if you want to change the URIs for various parts of the
+site (e.g. if you want to use "/pages/Gliki" instead of "/articles/Gliki").
+This file defines a number of string constants and should be fairly
+self-explanatory.
+
 
 4. Blocking users.
 ----------
-You can block users (either by username or by IP address) by editing the
+You can block users, either by username or by IP address, by editing the
 etc/block file in the main Gliki directory (it is not necessary to restart Gliki
 after editing the file for the changes to take effect). The block file has the
 following syntax. Lines beginning with '#' are ignored. A line containing an IP
@@ -75,13 +78,29 @@ Badly formatted lines in the block file are ignored. However, warnings are
 logged in logs/server if there are badly formatted lines.
 
 
-6. Standard pages
+6. Administrators
+----------
+Currently, Gliki doesn't support a full system of permissions for different
+users. However, you can make a user an "administrator", which allows them to
+delete (as opposed to merely blanking) pages. At the moment, this requires
+a manual DB edit. You need to add an entry in the "admins" table (see
+dbcreate.sql). At some point in the future I'll add some scripts for doing
+this.
+
+Administrators can delete a page called Foo by going to the following URL:
+
+    http://my.web.site/articles/Foo/delete
+
+THERE WILL BE NO REQUEST FOR CONFIRMATION!
+
+
+7. Standard pages
 ----------
 The standard_pages directory contains the source for some of the pages in
 Gliki, which you may or may not find useful.
 
 
-7. Some brief notes on the code for developers.
+8. Some brief notes on the code for developers.
 ----------
     * Gliki doesn't use a web framework (other than wsgi) or an ORM. This is
       because I could never really get my head around ORM (I don't want to use
@@ -97,7 +116,7 @@ Gliki, which you may or may not find useful.
       trivial either).
 
 
-8. Patches.
+9. Patches.
 ----------
 
 I'm always happy to accept patches. However, I don't want any of the following:
