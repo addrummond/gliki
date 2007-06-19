@@ -25,7 +25,7 @@ ARTICLE_SOURCE_ENCODING = 'utf-8'
 ARTICLE_XHTML_ENCODING  = 'utf-8'
 
 # Generally, UTF-8 encoding is used on the web for things like unicode chars
-# in URLs, etc.
+# in URLs, etc. (Not that this is an actual official standard.)
 WEB_ENCODING = 'utf-8'
 
 # Encoding used for the logs in the logs/dir.
