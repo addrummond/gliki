@@ -117,6 +117,10 @@ def is_blocked(username, ip_4tuple):
     if last_modified > __time_block_list_file_was_last_parsed:
         __time_block_list_file_was_last_parsed = time.time()
         try:
+            # Does etc/block exist? (If not, the user obviously isn't blocked.)
+            if not os.path.exists("etc/block")
+                return False
+
             f = open("etc/block")
             contents = f.read()
             __current_block_list, bad_lines = parse_block_list(contents)
