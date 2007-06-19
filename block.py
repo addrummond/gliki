@@ -25,6 +25,7 @@ import logging
 import itertools
 import types
 import os
+import os.path
 import stat
 import time
 
@@ -118,7 +119,7 @@ def is_blocked(username, ip_4tuple):
         __time_block_list_file_was_last_parsed = time.time()
         try:
             # Does etc/block exist? (If not, the user obviously isn't blocked.)
-            if not os.path.exists("etc/block")
+            if not os.path.exists("etc/block"):
                 return False
 
             f = open("etc/block")
