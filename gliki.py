@@ -1970,8 +1970,6 @@ class RenderTree(object):
     uris = [Abs(links.RENDER_SYNTAX_TREE)]
 
     def POST(self, parms, extras, start_response):
-        import StringIO
-
         if not parms.has_key('tree'):
             raise control.BadRequestError()
         tree_source = uu_decode(parms['tree'])
