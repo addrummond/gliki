@@ -19,6 +19,20 @@
 This module contains various global configuration options.
 """
 
+#
+# ==== Server options ====
+#
+
+# Lighttpd not tested for ages.
+SERVER = "paste" # OR "lighttpd"
+
+SERVER_PORT = 3000
+
+
+#
+# ==== Unicode/encoding options ====
+#
+
 # These don't yet work! Setting them to anything other than utf-8 will have
 # strange consequences.
 ARTICLE_SOURCE_ENCODING = 'utf-8'
@@ -31,14 +45,45 @@ WEB_ENCODING = 'utf-8'
 # Encoding used for the logs in the logs/dir.
 LOG_ENCODING = 'utf-8'
 
+
+#
+# ==== Authentication options ====
+#
 USER_AUTH_REALM = "Wikiuser"
 # The default authentication method to use for user logins. With IE6, plain
 # text authentication will always be used.
 USER_AUTH_METHOD = 'digest'
 
+
+#
+# ==== Database options ====
+#
 DATABASE = "main.db"
 
-SERVER_PORT = 3000
 
+#
+# ==== Logging options ====
+#
+LOG_DIR = 'logs'
+
+LOGGING_ON = True
+
+# Some standard log names.
+EDITS_LOG = 'edits'
+INTERNAL_LOG = 'internal'
+SERVER_LOG = 'server'
+
+
+#
+# ==== Cache options ====
+#
+
+CACHE_THREADS_IDS = True
+THREADS_IDS_CACHE_DIR = 'cache/threads_id'
+
+
+#
+# ==== Misc. options ====
+#
 DIFF_LINE_LENGTH = 60
 

@@ -53,7 +53,10 @@ import diffengine
 import userprefs
 import aes.Python_AES as pyaes
 import block
+import cache
 from my_utils import *
+
+__threads_id_cache = cache.FSThreadsIdCache(config.THREADS_IDS_CACHE_DIR)
 
 #
 # Code for the AES-32/base64 encryption scheme used for user account passwords.
@@ -266,21 +269,26 @@ def get_username(current, deleted):
     elif deleted:
         return deleted + ' (deleted)'
     else:
+        # A user ID should either belong to a current user or a deleted user.
         assert False
 
-__qstring = \
+__threads_id_select = \
+    """
+    (SELECT threads_id
+     FROM
+         (SELECT MAX(revision_date), threads_id, title
+          FROM revision_histories
+          INNER JOIN articles ON articles.id = revision_histories.articles_id
+          GROUP BY revision_histories.threads_id
+         ) query1
+     WHERE query1.title = ?
+    ) 
+    """
+__qstring_template = \
     """
     SELECT articles.title, articles.source, articles.cached_xhtml, articles.id, revision_histories.threads_id, revision_histories.revision_date, revision_histories.user_comment, articles.redirect, wikiusers.username, deleted_wikiusers.username
         FROM
-            (SELECT threads_id
-             FROM
-                (SELECT MAX(revision_date), threads_id, title
-                 FROM revision_histories
-                 INNER JOIN articles ON articles.id = revision_histories.articles_id
-                 GROUP BY revision_histories.threads_id
-                 ) query1
-             WHERE query1.title = ?
-            ) query2
+            %s query2
             INNER JOIN revision_histories ON revision_histories.threads_id = query2.threads_id
             INNER JOIN articles ON articles.id = revision_histories.articles_id
             LEFT JOIN wikiusers ON revision_histories.wikiusers_id = wikiusers.id
@@ -312,7 +320,7 @@ def get_revision(dbcon, cur, title, revision):
         use_desc = False
     offset = abs(revision) - 1
 
-    qstring = __qstring % (use_desc and "DESC" or "", offset)
+    qstring = __qstring_template % (__threads_id_select, use_desc and "DESC" or "", offset)
 
     rows = cur.execute(
         qstring,
@@ -336,7 +344,7 @@ def make_article_exists_pred(dbcon, cur):
 
 def get_ordered_revisions(dbcon, cur, title):
     """Get all revisions of a title, most recent first."""
-    qstring = __qstring % ("DESC", 0)
+    qstring = __qstring_template % (__threads_id_select, "DESC", 0)
     rows = cur.execute(
         qstring,
         (title,)
@@ -693,7 +701,7 @@ class ShowWikiArticle(object):
                 # hack.
                 is_circular, path = get_redirect_path(dbcon, cur, title, row['redirect'])
                 if is_circular:
-                    logging.log(logging.INTERNAL_LOG, 'Unexpected circular redirect,"%s"\n' % htmlutils.htmlencode(row['title']))
+                    logging.log(config.INTERNAL_LOG, 'Unexpected circular redirect,"%s"\n' % htmlutils.htmlencode(row['title']))
                     raise control.SwitchHandler(generic_internal_error, { }, 'GET')
                 # We use a temporary redirect because the redirect could go
                 # away at any time, and we don't want any weird cash issues.
@@ -852,7 +860,7 @@ class ReviseWikiArticle(object):
         comment = ''
         if parms.has_key('comment'):
             comment = uu_decode(parms['comment'])
-        # This should be specified if editing by thread_id so that we can
+        # This should be specified if editing by threads_id so that we can
         # include the title of the page being edited in any pages we send
         # back.
         redundant_title = None
@@ -1055,7 +1063,7 @@ class ReviseWikiArticle(object):
 
             def make_thread(title):
                 """Find/create the article using the title provided
-                   Returns a thread_id.
+                   Returns a threads_id.
                 """
                 if not threads_id:
                     rev = get_revision(dbcon, cur, title, 1)
@@ -1122,7 +1130,7 @@ class ReviseWikiArticle(object):
                 dbcon.commit()
 
                 logging.log(
-                    logging.EDITS_LOG,
+                    config.EDITS_LOG,
                     u'%s,%s,%s,redirect,"%s",%i\n' % (
                         extras.remote_ip,
                         d.has_key('username') and d['username'] or u'',
@@ -1136,7 +1144,7 @@ class ReviseWikiArticle(object):
                 # existing article (you cunning bastard, Mue).
                 # Some nasty logic here because we're dealing with two cases:
                 # one where the revision is specified by title, and the other
-                # where it's specified by thread_id.
+                # where it's specified by threads_id.
                 if new_title and ((title is None) or (title != new_title)):
                     rev = get_revision(dbcon, cur, new_title, 1)
                     if rev and ((title is not None) or (rev['threads_id'] != threads_id)):
@@ -1207,7 +1215,7 @@ class ReviseWikiArticle(object):
                 dbcon.commit()
 
                 logging.log(
-                    logging.EDITS_LOG,
+                    config.EDITS_LOG,
                     u'%s,%s,%s,edit,"%s",%i\n' % (
                         extras.remote_ip,
                         d.has_key('username') and d['username'] or '',
@@ -1312,7 +1320,7 @@ class WikiArticleHistory(object):
             dberror(e)
         except ValueError:
             # The use of int(...) above could potentially raise an exception.
-            logging.log(logging.INTERNAL_LOG, "Not int\n")
+            logging.log(config.INTERNAL_LOG, "Not int\n")
             raise control.SwitchHandler(generic_internal_error, { }, 'GET')
 wiki_article_history = WikiArticleHistory()
 

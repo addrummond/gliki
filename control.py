@@ -19,12 +19,10 @@
 This module directs HTTP requests to the correct handlers.
 """
 
-# ADVANCED CONFIGURATION SYSTEM.
-SERVER = "paste" # OR "lighttpd"
-
-if SERVER == "lighttpd":
+import etc.config as config
+if config.SERVER == "lighttpd":
    from flup.server.fcgi import WSGIServer
-elif SERVER == "paste":
+elif config.SERVER == "paste":
    from paste import httpserver
 import itertools
 import urimatch
@@ -39,21 +37,20 @@ import my_utils
 import time
 import md5
 import logging
-import etc.config as config
 
 __http_methods = ["OPTIONS", "GET", "HEAD", "POST", "PUT", "DELETE", "TRACE", "CONNECT"]
 
 # Inconsistent environment variable naming with different WSGI implementations!
 def get_uri(env):
-    if SERVER == "lighttpd":
+    if config.SERVER == "lighttpd":
         return env['REQUEST_URI']
-    elif SERVER == "paste":
+    elif config.SERVER == "paste":
         return env['PATH_INFO']
     assert False
 def get_content_length(env):
-    if SERVER == "lighttpd":
+    if config.SERVER == "lighttpd":
         return env['HTTP_CONTENT_LENGTH']
-    elif SERVER == "paste":
+    elif config.SERVER == "paste":
         return env['CONTENT_LENGTH']
     assert False
 
@@ -468,8 +465,8 @@ def control(env, start_response):
                 method = e.method
             handler_method = getattr(e.handler_instance, method)
             if not handler_method:
-                logging.log(logging.SERVER_LOG, 'WARNING: Bad SwitchHandler,"%s","%s","%s"' % \
-                                                (str(e.handler_instance), str(e.method), str(e.dict)))
+                logging.log(config.SERVER_LOG, 'WARNING: Bad SwitchHandler,"%s","%s","%s"' % \
+                                               (str(e.handler_instance), str(e.method), str(e.dict)))
                 raise NotFoundError()
             goto = handler_method
             goto_dict = e.dict
@@ -514,14 +511,14 @@ def paste_server_static_wrapper(path, control_func):
             else:
                 # We found the file, but it didn't have an extension so we
                 # couldn't work out what kind of file it was.
-                logging.log(logging.SERVER_LOG, "WARNING: 500 error due to unknown file type of %s" % local_path)
+                logging.log(config.SERVER_LOG, "WARNING: 500 error due to unknown file type of %s" % local_path)
                 return signal_error('500', 'Internal Server Error', [], start_response)
     return control
 
 def start_server(port):
-    if SERVER == "lighttpd":
+    if config.SERVER == "lighttpd":
         WSGIServer(control, bindAddress = '/tmp/fcgi.sock').run() 
-    elif SERVER == "paste":
+    elif config.SERVER == "paste":
         httpserver.serve(paste_server_static_wrapper('static', control), port=port)
     else:
         assert False

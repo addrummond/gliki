@@ -25,15 +25,6 @@ import types
 import codecs
 import etc.config as config
 
-LOG_DIR = 'logs'
-
-# Some standard log names.
-EDITS_LOG = 'edits'
-INTERNAL_LOG = 'internal'
-SERVER_LOG = 'server'
-
-LOGGING_ON = True
-
 def log(logname, text):
     # Check everything is OK w.r.t unicode.
     if config.LOG_ENCODING.lower() != 'ascii':
@@ -46,9 +37,9 @@ def log(logname, text):
                 assert False
 
     assert not ('/' in logname)
-    if LOGGING_ON:
+    if config.LOGGING_ON:
         try:
-            f = codecs.open(LOG_DIR + '/' + logname, "a", config.LOG_ENCODING)
+            f = codecs.open(config.LOG_DIR + '/' + logname, "a", config.LOG_ENCODING)
             f.write(str(my_utils.ZonedDate(time.time(), 0)) + ': ' + text)
             if text[len(text) -1] != '\n':
                 f.write('\n')

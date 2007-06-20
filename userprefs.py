@@ -24,6 +24,7 @@ import sys
 import my_utils
 import logging
 import re
+import etc.config as config
 
 def boolize(v):
     return v and True or False
@@ -31,7 +32,7 @@ def safe_intize(n, default=0):
     try:
         return int(n)
     except ValueError:
-        logging.log(logging.SERVER_LOG, "DATABASE CORRUPTION: Non-integer time preference")
+        logging.log(config.SERVER_LOG, "DATABASE CORRUPTION: Non-integer time preference")
         return default
 def oktimeoffset(offset):
     try:
