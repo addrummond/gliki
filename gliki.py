@@ -52,7 +52,6 @@ import logging
 import diffengine
 import userprefs
 import aes.Python_AES as pyaes
-import base64
 import block
 from my_utils import *
 
