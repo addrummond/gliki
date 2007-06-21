@@ -62,6 +62,10 @@ define(`BUTTON_SEP', `1.5em')
 
 define(`INDENT_DISTANCE', `2em')
 
+define(`LMESSAGE_TOP_PADDING', `1em')
+
+define(`SEARCH_BOX_BACKGROUND', BODY_BACKGROUND)
+
 body {
   margin-top: 0;
   padding-top: 0;
@@ -160,7 +164,7 @@ ul.article-actions li {
 
 h1.article-title {
   clear:both;
-  margin-top: 0em;
+  margin-top: 0;
   padding-top: 0.5em;
 }
 
@@ -405,6 +409,8 @@ form input.f-comment {
 p.login-message {
   font-size: SMALL_TEXT;
   clear: none;
+  padding-top: LMESSAGE_TOP_PADDING;
+  margin-top: 0;
 }
 p.login-message a {
   font-size: SMALL_TEXT;
@@ -431,5 +437,31 @@ p.error-loc {
 }
 p.error-loc a {
   font-size: SMALL_TEXT;
+}
+
+form.search-box {
+  margin-top: LMESSAGE_TOP_PADDING;
+  padding-top: LMESSAGE_TOP_PADDING;
+  padding-left: 1em;
+  padding-right: 1em;
+  padding-bottom: 0;
+  float: right;
+  clear: none;
+  background-color: SEARCH_BOX_BACKGROUND;
+  border-color: LIGHT_BORDER_COLOR;
+  border-style: dashed;
+  border-width: 1px;
+  text-align: right;
+}
+button.search-button {
+  border-style: none;
+  background-color: BODY_BACKGROUND;
+  font-size: SMALL_TEXT;
+  font-weight: bold;
+  padding-top: 0.5em;
+  padding-right: 0;
+  margin-right: 0;
+  text-align: right;
+  cursor: pointer;
 }
 

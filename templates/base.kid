@@ -35,12 +35,17 @@ import etc.customize as customize
 </head>
 
 <body py:match="item.tag=='{http://www.w3.org/1999/xhtml}body'" py:attrs="item.items()">
-    <p style="color: darkred;">
+    <!--! <p style="color: darkred;">
         <b><i>To all intrepid travelers of the interweb: This is currently just up
               for testing purposes. Feel free to mess around with it, but don't expect
               it to work or anything.</i></b>
-    </p>
+    </p>-->
     <img py:if="customize.LOGO_IMG_URL" class="logo" src="${customize.LOGO_IMG_URL}" alt="${customize.LOGO_IMG_ALT and customize.LOGO_IMG_ALT or 'logo'}"/>
+    <form class="search-box" action="/search" method="GET">
+        <input type="text" name="query" size="20"></input>
+        <br />
+        <button type="submit" class="search-button">Title/category search</button>
+    </form>
     <p class="login-message" py:if="locals().has_key('username') and username">
         <i>You are logged in as
            <a class="article_ref" href="${links.user_page_link(username)}">${username}</a>

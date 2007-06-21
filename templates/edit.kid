@@ -104,10 +104,10 @@ ${XML(preview)}
                type="hidden" name="redundant_title" value="${old_article_title}"></input>
         <input type="hidden" name="edit_time" value="${edit_time}"></input>
 
-        <label class="f-title" id="____title_label" for="____title">Title</label>
+        <label class="f-title" for="____title">Title</label>
         <input class="f-title" id="____title" type="text" name="new_title" value="${article_title}" size="70"></input>
         <br />
-        <label class="f-comment" id="____comment_label" for="____comment">Comment</label>
+        <label class="f-comment" for="____comment">Comment</label>
         <input class="f-comment" id="____comment" type="text" name="comment" value="${comment}" size="70"></input>
         <br />
         <label for="____t1">Enter your text here:</label>
