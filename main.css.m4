@@ -453,7 +453,7 @@ form.search-box {
   border-width: 1px;
   text-align: right;
 }
-button.search-button {
+form.search-box button {
   border-style: none;
   background-color: BODY_BACKGROUND;
   font-size: SMALL_TEXT;

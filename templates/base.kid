@@ -44,7 +44,7 @@ import etc.customize as customize
     <form class="search-box" action="/search" method="GET">
         <input type="text" name="query" size="20"></input>
         <br />
-        <button type="submit" class="search-button">Title/category search</button>
+        <button type="submit">Title/category search</button>
     </form>
     <p class="login-message" py:if="locals().has_key('username') and username">
         <i>You are logged in as
