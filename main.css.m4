@@ -67,7 +67,7 @@ define(`LMESSAGE_TOP_PADDING', `1em')
 define(`SEARCH_BOX_BACKGROUND', BODY_BACKGROUND)
 
 body {
-  margin-top: 0;
+  margin-top: 2px;
   padding-top: 0;
   font-family: verdana, arial, helvetica, sans-serif;
   font-size: TEXT_BASE(0);
@@ -461,6 +461,8 @@ form.search-box button {
   padding-top: 0.5em;
   padding-right: 0;
   margin-right: 0;
+  margin-bottom: 0;
+  padding-bottom: 0.25em;
   text-align: right;
   cursor: pointer;
 }
