@@ -9,6 +9,7 @@
 * Allow list of articles, list of categories and page history to be split
   over multiple pages when it gets too big.
 * List of a user's contributions (add some generic list code first).
+* Make "link to this revsion" link work properly.
 
 == Would be nice ==
 * Client-side validation.
