@@ -60,6 +60,7 @@ threads_id_cache = cache.FSThreadsIdCache(config.THREADS_IDS_CACHE_DIR)
 
 #
 # Code for the AES-32/base64 encryption scheme used for user account passwords.
+# See dbcreate.sql for a description of the encryption scheme.
 #
 AES_PASSWORD_KEY = "%$GHnfgh;['*(12SDvZ\\dfgt><?@:{!!"
 AES_MODE = 2 # Must be 2, don't ask me why...
