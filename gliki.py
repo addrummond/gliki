@@ -56,7 +56,7 @@ import block
 import cache
 from my_utils import *
 
-__threads_id_cache = cache.FSThreadsIdCache(config.THREADS_IDS_CACHE_DIR)
+threads_id_cache = cache.FSThreadsIdCache(config.THREADS_IDS_CACHE_DIR)
 
 #
 # Code for the AES-32/base64 encryption scheme used for user account passwords.
@@ -295,7 +295,19 @@ __qstring_template = \
             LEFT JOIN deleted_wikiusers ON revision_histories.wikiusers_id = deleted_wikiusers.id
         ORDER BY revision_histories.revision_date %s
         LIMIT -1 OFFSET %i
-    """ 
+    """
+
+def get_threads_id_select_statement(title):
+    """Returns (statment, should_add_threads_id_to_cache_now_boolean, pass_title_to_query)"""
+    threads_id_select = None
+    if config.CACHE_THREADS_IDS:
+        id = threads_id_cache.get_threads_id(title)
+        if id is not False:
+            return ("(SELECT threads_id FROM (SELECT %i AS threads_id))" % id, False, False)
+        else:
+            return __threads_id_select, True, True
+    else:
+        return __threads_id_select, False, True
 
 def __row_to_hash(r):
     return {
@@ -320,16 +332,20 @@ def get_revision(dbcon, cur, title, revision):
         use_desc = False
     offset = abs(revision) - 1
 
-    qstring = __qstring_template % (__threads_id_select, use_desc and "DESC" or "", offset)
+    stmt, add_to_cache, give_title = get_threads_id_select_statement(title)
+    qstring = __qstring_template % (stmt, use_desc and "DESC" or "", offset)
 
     rows = cur.execute(
         qstring,
-        (title,)
+        give_title and (title,) or ()
     )
     rows = list(rows)
 
     for r in rows:
-        return __row_to_hash(r)
+        h = __row_to_hash(r)
+        if add_to_cache:
+            threads_id_cache.set_threads_id(title, h['threads_id'])
+        return h
     # If no revisions for this title were found.
     return None
 
@@ -344,16 +360,20 @@ def make_article_exists_pred(dbcon, cur):
 
 def get_ordered_revisions(dbcon, cur, title):
     """Get all revisions of a title, most recent first."""
-    qstring = __qstring_template % (__threads_id_select, "DESC", 0)
+
+    stmt, add_to_cache, give_title = get_threads_id_select_statement(title)
+    qstring = __qstring_template % (stmt, "DESC", 0)
     rows = cur.execute(
         qstring,
-        (title,)
+        give_title and (title,) or ()
     )
     rows = map(__row_to_hash, rows)
     l = len(rows)
     for i, row in itertools.izip(itertools.count(0), rows):
         row['diff_revs_pair'] = (l - i,
                                  l - i != 1 and l - i - 1 or None)
+    if l > 0 and add_to_cache:
+        threads_id_cache.set_threads_id(title, rows[0]['threads_id'])
     return rows
 
 def get_diff_revision_number_pair(dbcon, cur, threads_id, revision_date):
@@ -567,12 +587,6 @@ def get_anon_user_wikiuser_id(ipaddress):
         return id
     except db.Error, e:
         dberror(e)
-
-def unixify_text(source):
-    source = source.replace("\r\n", "\n") # Windows?
-    if '\r' in source: # Anyone still using Mac classic?
-        source = source.replace("\r", "\n")
-    return source
 
 class GenericInternalError(object):
     @ok_html()
@@ -879,11 +893,13 @@ class ReviseWikiArticle(object):
                     return redundant_title
             else:
                 return '[unknown title]'
+        title_for_user = get_title_for_user()
         def get_old_title():
             if title:
                 return title
             else:
                 return redundant_title
+        old_title = get_old_title()
 
         dbcon,cur = None,None
         try:
@@ -919,8 +935,8 @@ class ReviseWikiArticle(object):
                    created the edit conflict."""
                 return dict(
                     article_source = source,
-                    article_title = get_title_for_user(),
-                    old_article_title = get_old_title(),
+                    article_title = title_for_user,
+                    old_article_title = old_title,
                     threads_id = threads_id, # If there's an edit conflict, the article must exist, so there will be a threads_id.
                     comment = comment,
                     error = "edit_conflict",
@@ -967,8 +983,8 @@ class ReviseWikiArticle(object):
                 d,
                 dict(
                     article_source = source,
-                    article_title = get_title_for_user(),
-                    old_article_title = get_old_title(),
+                    article_title = title_for_user,
+                    old_article_title = old_title,
                     threads_id = threads_id,
                     comment = comment,
                     error = "bad_title_char",
@@ -991,7 +1007,7 @@ class ReviseWikiArticle(object):
                 dict(
                     article_source=source,
                     article_title=get_title_for_user(),
-                    old_article_title=get_old_title(),
+                    old_article_title=old_title,
                     threads_id = threads_id,
                     comment=comment,
                     error = "parse_error",
@@ -1026,7 +1042,7 @@ class ReviseWikiArticle(object):
                     dict(
                         article_source = sig_source,
                         article_title = get_title_for_user(),
-                        old_article_title = get_old_title(),
+                        old_article_title = old_title,
                         threads_id = threads_id,
                         comment = comment,
                         error = "preview_redirect",
@@ -1040,7 +1056,7 @@ class ReviseWikiArticle(object):
                 dict(
                     article_source = sig_source,
                     article_title = get_title_for_user(),
-                    old_article_title = get_old_title(),
+                    old_article_title = old_title,
                     threads_id = threads_id,
                     comment = comment,
                     preview = xhtml_output,
@@ -1090,8 +1106,8 @@ class ReviseWikiArticle(object):
                         d,
                         dict(
                             article_source = sig_source,
-                            article_title = get_title_for_user(),
-                            old_article_title = get_old_title(),
+                            article_title = title_for_user,
+                            old_article_title = old_title,
                             threads_id = threads_id,
                             comment = comment,
                             error = "circular_redirect",
@@ -1152,8 +1168,8 @@ class ReviseWikiArticle(object):
                             d,
                             dict(
                                 article_source = sig_source,
-                                article_title = get_title_for_user(),
-                                old_article_title = get_old_title(),
+                                article_title = title_for_user,
+                                old_article_title = old_title,
                                 threads_id = threads_id,
                                 comment = comment,
                                 error = "rename_to_existing",
@@ -1212,8 +1228,13 @@ class ReviseWikiArticle(object):
                 # Update the categories for this article.
                 update_categories_for_thread(dbcon, cur, r, threads_id)
 
+                # If the title changed, update the threads_id cache.
+                if old_title != new_title:
+                    threads_id_cache.move_if_cached(old_title, new_title)
+
                 dbcon.commit()
 
+                # Make a log of the edit.
                 logging.log(
                     config.EDITS_LOG,
                     u'%s,%s,%s,edit,"%s",%i\n' % (
@@ -1551,7 +1572,7 @@ class MakeNewAccount(object):
 
             # User's need a user page. Perhaps someone has mischeivously created
             # a user-$USERNAME page already.
-            rev = get_revision(dbcon, cur, links.USER_PAGE_PREFIX + username, 1)
+            rev = get_revision(dbcon, cur, (links.USER_PAGE_PREFIX + username).decode(config.ARTICLE_SOURCE_ENCODING), 1)
             if rev:
                 return dict(default_email=email,
                             default_username=username,
@@ -2043,7 +2064,11 @@ class DeleteArticle(object):
                 return merge_dicts(d, dict(title=title))
 
             if delete_article(dbcon, cur, title):
-                # The article exists and was deleted.
+                # The article exists and was deleted. Before committing to the
+                # DB, make sure we remove the threads_id cache entry.
+                if not threads_id_cache.stop_caching(title):
+                    # Log a warning that the cache is now incorrect.
+                    logging.log(config.INTERNAL_LOG, "WARNING: Could not remove threads_id cache for '%s'; cache now incorrect." % title)
                 dbcon.commit()
                 return merge_dicts(d, dict(title=title, exists_and_deleted=True))
             else:

@@ -22,6 +22,7 @@ threads_id numbers.
 
 import os
 import os.path
+import shutil
 import types
 import base64
 import thread
@@ -41,7 +42,7 @@ class FSThreadsIdCache(object):
 
     def __fname(self, title):
         """Returns an ASCII string."""
-        return self.path + os.sep + base64.encode(title.encode('utf-8'))
+        return self.path + os.sep + base64.b64encode(title.encode('utf-8'))
 
     def is_cached(self, title):
         assert type(title) == types.UnicodeType
@@ -91,4 +92,20 @@ class FSThreadsIdCache(object):
         finally:
             self.lock.release()
         return True
+
+    def move_if_cached(self, title1, title2):
+        """Returns True if a move operation was performed, False otherwise."""
+        fname1 = self.__fname(title1)
+        fname2 = self.__fname(title2)
+        if os.path.isfile(fname1):
+            try:
+                try:
+                    self.lock.acquire()
+                    shutil.move(fname1, fname2)
+                except:
+                    return False
+            finally:
+                self.lock.release()
+        else:
+            return False
 

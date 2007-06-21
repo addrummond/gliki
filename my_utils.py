@@ -105,6 +105,12 @@ def flatten_list(L):
     if L == []: return L
     return flatten_list(L[0]) + flatten_list(L[1:])
 
+def unixify_text(source):
+    source = source.replace("\r\n", "\n") # Windows?
+    if '\r' in source: # Anyone still using Mac classic?
+        source = source.replace("\r", "\n")
+    return source
+
 # From the Python cookbook.
 def unique(s):
     """Return a list of the elements in s, but without duplicates.
