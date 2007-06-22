@@ -88,6 +88,11 @@ class OptDir(Seqable):
 class SetDict(Seqable):
     def __init__(self, **dict):
         self.dict = dict
+class FollowedByQuery(Seqable):
+    """For query strings."""
+    def __init__(self, prefix, keyname='query'):
+        self.prefix = prefix
+        self.keyname = keyname
 
 
 #
@@ -196,6 +201,16 @@ def test_pattern_helper(pattern, uri, base=True):
             return False
     elif isinstance(pattern, SetDict):
         return (pattern.dict, uri)
+    elif isinstance(pattern, FollowedByQuery):
+        slashskip = 0
+        for c in uri:
+            if c == '/': slashskip += 1
+        if uri[slashskip:].startswith(pattern.prefix):
+            if len(uri) - slashskip > len(pattern.prefix) and uri[len(pattern.prefix) + slashskip] == '?':
+                rem = uri[len(pattern.prefix) + slashskip + 1:]
+                return ({ pattern.keyname : rem }, rem)
+        else:
+            return False
 
 def test_pattern(pattern, uri):
     res = test_pattern_helper(pattern, uri)

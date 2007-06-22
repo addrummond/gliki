@@ -54,6 +54,7 @@ import userprefs
 import aes.Python_AES as pyaes
 import block
 import cache
+import cgi
 from my_utils import *
 
 threads_id_cache = cache.FSThreadsIdCache(config.THREADS_IDS_CACHE_DIR)
@@ -1995,6 +1996,45 @@ class TrackedChanges(object):
             dberror(e)
 tracked_changes = TrackedChanges()
 
+class Search(object):
+    uris = [FollowedByQuery(links.SEARCH_PREFIX)]
+
+    @ok_html()
+    @showkid('templates/search.kid')
+    def GET(self, parms, extras):
+        assert parms.has_key('query')
+
+        qs = cgi.parse_qs(parms['query'])
+        if not qs.has_key('query'):
+            raise control.BadRequestError()
+
+        try:
+            dbcon = get_dbcon()
+            cur = dbcon.cursor()
+
+            res = cur.execute(
+            """
+            SELECT threads_id, query1.title
+            FROM
+                (SELECT MAX(revision_date), threads_id, title
+                 FROM revision_histories
+                 INNER JOIN articles ON articles.id = revision_histories.articles_id
+                 GROUP BY revision_histories.threads_id
+                ) query1
+            WHERE query1.title LIKE ?
+            """,
+            (qs['query'][0].replace('%', '\\%').replace('_', '\\_'),)
+            )
+
+            for r in res:
+                print r[1]
+
+            return merge_login(dbcon, cur, extras, dict())
+
+        except db.Error, e:
+            dberror(e)
+search = Search()
+
 class RenderTree(object):
     uris = [Abs(links.RENDER_SYNTAX_TREE)]
 
@@ -2103,6 +2143,7 @@ control.register_handlers([front_page,
                            category,
                            category_list,
                            recent_changes_list,
-                           delete_article_page])
+                           delete_article_page,
+                           search])
 control.start_server(config.SERVER_PORT)
 

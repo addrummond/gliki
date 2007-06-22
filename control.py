@@ -45,7 +45,7 @@ def get_uri(env):
     if config.SERVER == "lighttpd":
         return env['REQUEST_URI']
     elif config.SERVER == "paste":
-        return env['PATH_INFO']
+        return env['PATH_INFO'] + ((env.has_key('QUERY_STRING') and len(env['QUERY_STRING'].strip()) > 0) and '?' + env['QUERY_STRING'] or '')
     assert False
 def get_content_length(env):
     if config.SERVER == "lighttpd":

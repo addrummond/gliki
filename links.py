@@ -75,6 +75,7 @@ TRACKED_CHANGES = 'tracked-changes'
 RENDER_SYNTAX_TREE = 'render-syntax-tree'
 SYNTAX_TREE = 'syntax-tree'
 DELETE_SUFFIX = 'delete'
+SEARCH_PREFIX = 'search'
 
 USER_PAGE_PREFIX = 'user '
 CATEGORY_PAGE_PREFIX = 'category '
