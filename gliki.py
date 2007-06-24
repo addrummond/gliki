@@ -1999,6 +1999,8 @@ tracked_changes = TrackedChanges()
 class Search(object):
     uris = [FollowedByQuery(links.SEARCH_PREFIX)]
 
+    search_query_regex = re.compile(ur"""\s*((?:(?:"|')[^\"]*(?:"|'))|(?:\S+))\s*""")
+
     @ok_html()
     @showkid('templates/search.kid')
     def GET(self, parms, extras):
@@ -2006,31 +2008,44 @@ class Search(object):
 
         qs = cgi.parse_qs(parms['query'])
         if not qs.has_key('query'):
+            # Temporary measure; should do something sensible in this case.
             raise control.BadRequestError()
+
+        # Now decode the query string (since we've been working in ASCII so far).
+        qs['query'][0] = qs['query'][0].decode(config.WEB_ENCODING)
+        #print qs['query'][0]
+
+        strings = re.findall(Search.search_query_regex, qs['query'][0])
+        if not strings:
+            raise control.BadRequestError()
+        strings = map(lambda s: s.strip(u'"').strip(u"'"), strings)
 
         try:
             dbcon = get_dbcon()
             cur = dbcon.cursor()
 
-            res = cur.execute(
-            """
-            SELECT threads_id, query1.title
-            FROM
-                (SELECT MAX(revision_date), threads_id, title
-                 FROM revision_histories
-                 INNER JOIN articles ON articles.id = revision_histories.articles_id
-                 GROUP BY revision_histories.threads_id
-                ) query1
-            WHERE query1.title LIKE ?
-            """,
-            (qs['query'][0].replace('%', '\\%').replace('_', '\\_'),)
-            )
+            for s in strings:
+                like_string = '%' + s.replace('%', '\\%').replace('_', '\\_') + '%'
 
-            for r in res:
-                print r[1]
+                res = cur.execute(
+                    """
+                    SELECT DISTINCT query1.threads_id, query1.title
+                    FROM
+                        (SELECT MAX(revision_date), revision_histories.threads_id AS threads_id, title
+                         FROM revision_histories
+                         INNER JOIN articles ON articles.id = revision_histories.articles_id
+                         GROUP BY revision_histories.threads_id
+                        ) query1
+                    INNER JOIN category_specs ON category_specs.threads_id = query1.threads_id
+                    WHERE query1.title LIKE ? OR category_specs.name LIKE ?
+                """,
+                (like_string, like_string)
+                )
+
+                for r in res:
+                    print r[0], r[1]
 
             return merge_login(dbcon, cur, extras, dict())
-
         except db.Error, e:
             dberror(e)
 search = Search()
