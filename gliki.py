@@ -1010,7 +1010,7 @@ class ReviseWikiArticle(object):
         # Parse the wiki markup.
         uname = d.has_key('username') and d['username'] or extras.remote_ip
         sinfo = sourceparser.Siginfo(uname, ZonedDate(int_time, 0))
-        result = sourceparser.parse_wiki_document(unixify_text(source), sinfo)
+        result = sourceparser.parse_wiki_document(unixify_text(source).decode(config.WEB_ENCODING), sinfo)
         if isinstance(result, sourceparser.ParserError):
             # This goes to the edit.kid template.
             return my_utils.merge_dicts(
@@ -1607,7 +1607,7 @@ class MakeNewAccount(object):
             int_time = int(time.time())
 
             # Now create the user's user page.
-            userpage_source = "#CATEGORY [[user pages]]\n\nThis is the user page for %s." % username
+            userpage_source = u"#CATEGORY [[user pages]]\n\nThis is the user page for %s." % username.decode('utf-8')
             userpage_title = links.USER_PAGE_PREFIX + username
             result = sourceparser.parse_wiki_document(userpage_source, siginfo=None)
             assert not isinstance(result, sourceparser.ParserError)
