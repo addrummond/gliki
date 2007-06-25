@@ -329,6 +329,8 @@ def get_revision(dbcon, cur, title, revision):
        (returns a dictionary).
     """
     assert revision != 0
+    assert type(title) == types.UnicodeType
+
     use_desc = True
     if revision > 0:
         use_desc = False
@@ -362,6 +364,7 @@ def make_article_exists_pred(dbcon, cur):
 
 def get_ordered_revisions(dbcon, cur, title):
     """Get all revisions of a title, most recent first."""
+    assert type(title) == types.UnicodeType
 
     stmt, add_to_cache, give_title = get_threads_id_select_statement(title)
     qstring = __qstring_template % (stmt, "DESC", 0)
@@ -400,6 +403,8 @@ def delete_article(dbcon, cur, title):
     """Delete an article with a given title.
        Returns True if the article exists, or False if it doesn't.
     """
+    assert type(title) == types.UnicodeType
+
     rev = get_revision(dbcon, cur, title, -1)
     if not rev:
         return False
@@ -420,6 +425,8 @@ def article_is_on_watchlist(dbcon, cur, username, title):
     """Checks whether an article is on a given user's watchlist.
        Returns a boolean.
     """
+    assert type(title) == types.UnicodeType
+
     # Is this article already on the user's watchlist?
     res = cur.execute(
         """
@@ -473,6 +480,7 @@ def add_thread_to_categories(dbcon, cur, thread, categories):
     #cur.execute(qstring, my_utils.flatten_list(map(lambda cat: (thread, cat), categories)))
 
     for c in categories:
+        assert type(c) == types.UnicodeType
         cur.execute(
             """
             INSERT INTO category_specs (threads_id, name)
@@ -492,6 +500,7 @@ def remove_thread_from_categories(dbcon, cur, thread, categories):
     #cur.execute(qstring, [thread] + categories)
 
     for c in categories:
+        assert type(c) == types.UnicodeType
         cur.execute(
             """
             DELETE FROM category_specs
@@ -1999,12 +2008,12 @@ tracked_changes = TrackedChanges()
 class Search(object):
     uris = [FollowedByQuery(links.SEARCH_PREFIX)]
 
-    search_query_regex = re.compile(ur"""\s*((?:(?:"|')[^\"]*(?:"|'))|(?:\S+))\s*""")
+    search_query_regex = re.compile(r"""\s*((?:(?:"|')[^\"]*(?:"|'))|(?:\S+))\s*""")
 
     @ok_html()
     @showkid('templates/search.kid')
     def GET(self, parms, extras):
-        assert parms.has_key('query')
+        assert parms.has_key('query') # This key will be added by FollowedByQuery.
 
         qs = cgi.parse_qs(parms['query'])
         if not qs.has_key('query'):
@@ -2028,7 +2037,7 @@ class Search(object):
                 like_string = '%' + s.replace('%', '\\%').replace('_', '\\_') + '%'
 
                 res = cur.execute(
-                    """
+                    u"""
                     SELECT DISTINCT query1.threads_id, query1.title
                     FROM
                         (SELECT MAX(revision_date), revision_histories.threads_id AS threads_id, title
