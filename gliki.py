@@ -652,7 +652,7 @@ class EditWikiArticle(object):
     uris = [VParm(links.ARTICLE_LINK_PREFIX) >> Opt(VParm(links.REVISIONS_SUFFIX), { links.REVISIONS_SUFFIX: '-1' }) >> Abs(links.EDIT_SUFFIX) >> OptDir()]
 
     @ok_html()
-    @showkid('templates/edit.kid')
+    @show_cheetah('templates/edit')
     def GET(self, parms, extras):
         int_time = int(time.time()) # For edit_time key for template dict.
 
@@ -2132,7 +2132,7 @@ class DeleteArticle(object):
     uris = [VParm(links.ARTICLE_LINK_PREFIX) >> Abs(links.DELETE_SUFFIX) >> OptDir()]
 
     @ok_html()
-    @showkid('templates/deleted.kid')
+    @show_cheetah('templates/deleted')
     def GET(self, parms, extras):
         try:
             dbcon = get_dbcon()
