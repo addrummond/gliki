@@ -1520,7 +1520,7 @@ class Block(object):
     # No uris because this is only ever switched to.
 
     @ok_html()
-    @showkid('templates/block.kid')
+    @show_cheetah('templates/block')
     def GET(self, parms, extras):
         return dict(because=parms['because'])
 block_handler = Block()
