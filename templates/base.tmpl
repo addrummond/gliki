@@ -56,7 +56,7 @@ Body not defined
 ##              it to work or anything.</i></b>
 ##    </p>
 #if $getVar('LOGO_IMG_URL', False)
-    <img class="logo" src="$LOGO_IMG_URL" alt="#if $getVar('LOGO_IMG_ALT', False) then $LOGO_IMG_ALT else 'logo' #end if#"/>
+    <img class="logo" src="$LOGO_IMG_URL" alt="#if $getVar('LOGO_IMG_ALT', False) then $LOGO_IMG_ALT else logo#"/>
 #end if
     <form class="search-box" action="/search" method="GET">
         <input type="text" name="query" size="20"></input>
