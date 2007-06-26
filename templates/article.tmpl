@@ -1,0 +1,80 @@
+## Copyright (C) 2007 Alex Drummond <a.d.drummond@gmail.com>
+##
+## This program is free software; you can redistribute it and/or
+## modify it under the terms of the GNU General Public License
+## as published by the Free Software Foundation; either version 2
+## of the License, or (at your option) any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with this program; if not, write to the Free Software
+## Foundation, Inc., 51 Franklin Street, Fifth Floor,
+## Boston, MA  02110-1301, USA.
+
+#import urllib
+#import my_utils
+#import htmlutils
+#import links
+#from templates.base import base
+
+#extends base
+
+#def title#$article_title#end def#
+
+## To be overridden.
+##def article_title#[article title]#end def#
+##def redirects#foo#end def#
+##def newest_article_title#[newest article title]#end def#
+##def revision#foo#end def#
+##def article_xhtml#[article xhtml]#end def#
+##def categories#foo#end def#
+##def threads_id#foo#end def#
+
+#def body
+#if $getVar('show_prefs_link', False)
+    <ul>
+        <li><a class="button" href="<%= links.preferences_link() %>">My preferences</a></li>
+        <li><a class="button" href="<%= links.watchlist_link() %>">My watchlist</a></li>
+        <li><a class="button" href="<%= links.tracked_changes_link() %>">My tracked changes</a></li>
+        <li><a class="button" href="<%= links.delete_account_confirm_link %>">Delete my account</a></li>
+    </ul> 
+#end if
+    <ul class="article-actions">
+        <li><a class="button" href="<%= links.edit_article_link(self.getVar('newest_article_title'), self.getVar('revision')) %>">Edit this article</a></li>
+        <li><a class="button" href="<%= links.article_history_link(self.getVar('newest_article_title')) %>">View history</a></li>
+        <li><a class="button" href="<%= links.links_here_link(self.getVar('newest_article_title')) %>">What links here?</a></li>
+#if $getVar('on_watchlist', False)
+        <li>
+            <a class="button" href="<%= links.watch_article_link(self.getVar('newest_article_title')) %>">Watch this article</a>
+        </li>
+#else
+        <li>
+            <a class="button" href="<%= links.unwatch_article_link(self.getVar('newest_article_title')) %>">Unwatch this article</a>
+        </li>
+#end if
+    </ul>
+    <p class="categories">
+        <a class="article_ref" href="<%= links.article_link(self.getVar('newest_article_title'), self.getVar('revision')) %>">Link to this revision</a>
+        <br />
+
+#if len($categories) > 0
+    Categories:
+#echo ' | '.join(map(lambda c: '<a class="category_ref" href="%s">%s</a>' % (links.category_link(c), c), self.getVar('categories')))
+#end if
+    </p>
+    <h1 class="article-title">$article_title</h1>
+#if $getVar('redirects', False)
+    <p class="redirects">
+        Redirect:
+        <%= '&rarr;'.join(map(htmlutils.htmlencode, redirects)) %>
+    </p>
+#end if
+    <div class="article-text">
+$article_xhtml
+    </div>
+#end def
+

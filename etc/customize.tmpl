@@ -24,6 +24,8 @@
 
 #def login_link($gloss=None)#<a class="action" href="<%= links.login_link() %>">#if $gloss then $gloss else links.login_link()#</a>#end def#
 
+#def WEB_PAGE_ENCODING#UTF-8#end def#
+
 
 ##
 ## CHANGE THE FOLLOWING DEFINITIONS.
@@ -50,25 +52,17 @@
 ## The root for static files is the 'static' directory in the main Gliki
 ## directory. So, if the URL is "/XXX.png", the png file should be
 ## static/XXX.png.
-#def LOGO_IMG_URL
-/logo.png
-#end def
-#def LOGO_IMG_ALT
-Gliki logo
-#end def
+#def LOGO_IMG_URL#/logo.png#end def#
+#def LOGO_IMG_ALT#Gliki logo#end def#
 
 ## Comment out this def if you don't want a favorites icon.
 ## As with the logo (see previous comment), the icon file should be in the
 ## 'static' directory.
-#def ICON_URL
-/favicon.ico
-#end def
+#def ICON_URL#/favicon.ico#end def#
 
 
 ## Sets the title of the front page and the title appended to all other pages.
-#def FRONT_PAGE_TITLE
-Gliki
-#end def
+#def FRONT_PAGE_TITLE#Gliki#end def#
 ## XHTML to go between <body>...</body> on the front page.
 #def FRONT_PAGE_BODY_XHTML
 <h1>Welcome to Gliki</h1>
@@ -138,8 +132,7 @@ If you think this is the case,
 ##
 ## DO NOT EDIT THIS CODE.
 ##
-#def __TEXT__
-#end def
+#def __TEXT__# #end def#
 $__TEXT__
 
 

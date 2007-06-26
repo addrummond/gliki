@@ -710,7 +710,7 @@ class ShowWikiArticle(object):
         self.redirect_path = redirect_path
 
     @ok_html()
-    @showkid('templates/article.kid')
+    @show_cheetah('templates/article')
     def GET(self, d, extras):
         try:
             title = unfutz_article_title(uu_decode(d[links.ARTICLE_LINK_PREFIX]))
