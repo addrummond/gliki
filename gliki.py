@@ -1763,7 +1763,7 @@ class Preferences(object):
     uris = [Abs(links.PREFERENCES)]
 
     @ok_html()
-    @showkid('templates/preferences.kid')
+    @show_cheetah('templates/preferences')
     def GET(self, parms, extras):
         # Get the preferences for this user.
         try:

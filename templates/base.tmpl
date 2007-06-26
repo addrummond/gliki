@@ -66,7 +66,7 @@ Body not defined
 #if $getVar('username', False)
     <p class="login-message">
         <i>You are logged in as
-           <a class="article_ref" href="<%= user_page_link(username) %>">$username</a>
+           <a class="article_ref" href="<%= links.user_page_link(self.getVar('username')) %>">$username</a>
 #if $getVar('is_admin', False)
            with administrator privileges
 #end if
