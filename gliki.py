@@ -20,6 +20,8 @@ This module contains some code for accessing the DB, and all of the HTTP request
 handlers registered with control.py.
 """
 
+import Cheetah
+import kid
 import etc.config as config
 import sys
 import re
@@ -34,7 +36,6 @@ if (sys.version.split(' ')[0]) >= '2.5':
     from sqlite3 import dbapi2 as db
 else:
     from pysqlite2 import dbapi2 as db
-import kid
 import time
 import htmlutils
 import itertools
@@ -97,6 +98,19 @@ def showkid(file, serializer=kid.HTMLSerializer(encoding=config.ARTICLE_XHTML_EN
             parms = f(*args)
             t = template_module.Template(file=file, **parms)
             return [t.serialize(output=serializer)]
+        return r
+    return decorator
+
+def show_cheetah(path):
+    module = __import__(path)
+    lst = path.split('/')
+    class_ = getattr(module, lst[len(lst) - 1])
+
+    def decorator(f):
+        def r(*args):
+            for k, v in f(*args).iteritems():
+                setattr(class_, k, v)
+            return [str(class_)]
         return r
     return decorator
 
