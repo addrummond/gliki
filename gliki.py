@@ -1529,7 +1529,7 @@ class CreateAccount(object):
     uris = [Abs(links.CREATE_ACCOUNT) >> OptDir()]
 
     @ok_html()
-    @showkid('templates/create_account.kid')
+    @show_cheetah('templates/create_account')
     def GET(self, parms, extras):
         return dbcon_merge_login(extras, { })
 create_account = CreateAccount()
