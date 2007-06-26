@@ -1,6 +1,6 @@
 This is a list of dependencies for the Gliki software.
 
-Gliki requires Python >= 2.4 and the following libraries:
+Gliki requires Python >= 2.4 and the following other things:
 
     * Cairo + PyCairo
         These in turn depend on:
@@ -9,9 +9,11 @@ Gliki requires Python >= 2.4 and the following libraries:
             - fontconfig
     * Python Paste (if using the toy paste webserver as a proxy)
     * flup (if using fastcgi)
-    * Kid template system
+    * Cheetah template system.
+    * M4 macro preprocessor (included on most Linux/Unix systems)
+    * Basic Unix environment (i.e. an sh-compatible shell, etc.)
 
-For Python 2.4:
+For Python 2.4 only:
 
     * Python SQLite bindings
 

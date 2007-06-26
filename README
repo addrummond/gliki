@@ -19,8 +19,9 @@ Windows.
 Now do the following in the main Gliki directory:
 
     * Execute 'sh build_main.css.sh' to build the CSS file.
+    * Execute 'sh compile_templates.sh' to compile the Cheetah templates.
     * Create an sqlite3 database called main.db using the sql script
-      'dbcreate.sql'.
+      'dbcreate.sql'. (Use the '.read' command at the prompt.)
     * Execute 'python gliki.py'
 
 This starts the website on port 3000. You can change the port by editing
