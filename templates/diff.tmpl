@@ -1,0 +1,62 @@
+## Copyright (C) 2007 Alex Drummond <a.d.drummond@gmail.com>
+##
+## This program is free software; you can redistribute it and/or
+## modify it under the terms of the GNU General Public License
+## as published by the Free Software Foundation; either version 2
+## of the License, or (at your option) any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with this program; if not, write to the Free Software
+## Foundation, Inc., 51 Franklin Street, Fifth Floor,
+## Boston, MA  02110-1301, USA.
+
+#import urllib
+#import my_utils
+#import itertools
+#import links
+#from templates.base import base
+
+#extends base
+
+#def title#$article_title - Diff#end def#
+
+#def body
+    <p>
+        The difference between
+        <a class="article_ref" href="<%= links.article_link(self.getVar('article_title')) %>">$article_title</a>
+        revision $rev1 and revision $rev2 is as follows.
+    </p>
+    #if $getVar('newtitle', False)
+    <p>
+        The title of revision $rev1 is &lsquo;$oldtitle&rsquo;; the title of revision $rev2 is &lsquo;$newtitle&rsquo;.
+    </p>
+    #end if
+    #if $getVar('formertitle', False)
+    <p>
+        Note: At the time, this article was called &lsquo;$formertitle&rsquo;.
+    </p>
+    #end if
+    #if not ($getVar('diff_html', False) or $getVar('newtitle', False))
+    <p>
+        There is no difference between revision $rev1 and revision $rev2 of
+        <a class="article_ref" href="<%= links.article_link(self.getVar('article_title')) %>">$article_title</a>.
+    </p>
+    #end if
+    #if $getVar('revision_comment', False)
+    <p>
+        <b>Comment:</b>
+        $revision_comment.
+    </p>
+    #end if
+    #if $getVar('REVISION_NUMBERING_INFO_XHTML', False)
+    $REVISION_NUMBERING_INFO_XHTML
+    #end if
+    <hr />
+$getVar('diff_html', '')
+#end def
+

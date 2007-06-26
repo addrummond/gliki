@@ -1455,7 +1455,7 @@ class Diff(object):
     uris = [VParm(links.ARTICLE_LINK_PREFIX) >> VParm(links.DIFF_SUFFIX) >> Selector('with') >> OptDir()]
 
     @ok_html()
-    @showkid('templates/diff.kid')
+    @show_cheetah('templates/diff')
     def GET(self, parms, extras):
         title = unfutz_article_title(uu_decode(parms[links.ARTICLE_LINK_PREFIX]))
         rev1 = uu_decode(parms[links.DIFF_SUFFIX])
