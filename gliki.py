@@ -699,7 +699,7 @@ class NoSuchRevision(object):
         self.title = title
 
     @ok_html()
-    @showkid('templates/no_such_revision.kid')
+    @show_cheetah('templates/no_such_revision')
     def GET(self, parms, extras):
         return dict(kind=self.kind, article_title=self.title)
 
