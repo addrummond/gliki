@@ -36,9 +36,13 @@ interested, and the included httpd.conf for lighttpd).
 3. Customization
 ----------
 By default, Gliki looks exactly like the Gliki website. You can make basic
-changes (e.g. changing the name of the site) by editing etc/customize.py.
-This is all rather nasty, and I'm hoping to move to a another template system
-at some point which will make customization easier.
+changes (e.g. changing the name of the site) by editing the etc/customize.tmpl
+template. You'll need to look at the Cheetah template system documentation if
+you want to do anything advanced, but the basic format should be fairly
+intuitive. Note that comment lines must begin with two '#' characters in a
+row (a single '#' is used to indicate the start of a Cheetah directive)..
+After making changes to customize.tmpl (or any other .tmpl file) you must
+execute 'sh compile_templates.sh' and restart gliki.py.
 
 The CSS file (main.css) should not be edited directly since it's built using
 the m4 macro prepocessor. Instead, edit main.css.m4 and run
@@ -76,7 +80,9 @@ Here's an example block file:
     77.88.99.12-19
 
 Badly formatted lines in the block file are ignored. However, warnings are
-logged in logs/server if there are badly formatted lines.
+logged in logs/server if there are badly formatted lines. Note that it is NOT
+possible to have a comment on the same line as a block directive; comments
+must be on their own lines.
 
 
 6. Administrators
@@ -92,7 +98,8 @@ Administrators can delete a page called Foo by going to the following URL:
 
     http://my.web.site/articles/Foo/delete
 
-THERE WILL BE NO REQUEST FOR CONFIRMATION!
+THERE WILL BE NO REQUEST FOR CONFIRMATION! The article will be immediately
+and irreversibly deleted.
 
 
 7. Standard pages

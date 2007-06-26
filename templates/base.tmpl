@@ -15,10 +15,9 @@
 ## Foundation, Inc., 51 Franklin Street, Fifth Floor,
 ## Boston, MA  02110-1301, USA.
 
-#import setpath
 #import urllib
 #import links
-#import etc.customize as customize
+#from etc.customize import customize
 
 #extends customize
 
@@ -29,6 +28,7 @@ Body not defined
 [title]
 #end def
 
+#def __TEXT__
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
     "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
@@ -39,12 +39,12 @@ Body not defined
 <head>
     <title>
     $title
-#if not item.text.lower().startswith($FRONT_PAGE_TITLE.lower())
+#if not $title.lower().startswith($FRONT_PAGE_TITLE.lower())
     - $FRONT_PAGE_TITLE
 #end if
     </title>
     <link href="/main.css" rel="stylesheet" type="text/css" />
-#if getVar('ICON_URL', False)
+#if $getVar('ICON_URL', False)
     <link rel="shortcut icon" href="$ICON_URL" />
 #end if
 </head>
@@ -57,6 +57,7 @@ Body not defined
 ##    </p>
 #if $getVar('LOGO_IMG_URL', False)
     <img class="logo" src="$LOGO_IMG_URL" alt="#if $getVar('LOGO_IMG_ALT', False) then $LOGO_IMG_ALT else 'logo' #end if#"/>
+#end if
     <form class="search-box" action="/search" method="GET">
         <input type="text" name="query" size="20"></input>
         <br />
@@ -88,4 +89,5 @@ Body not defined
 </body>
 
 </html>
+#end def
 

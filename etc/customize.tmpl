@@ -13,25 +13,16 @@
 ##
 ## DON'T EDIT THIS CODE.
 ##
-#import setpath
 #import links
 #import htmlutils
 
-#def article_link($article_name, $gloss=None)
-<a class="article_ref" href="<%= links.article_link(article_name) %>">#if $gloss then $gloss else $article_name #end if#</a>
-#end def
+#def article_link($article_name, $gloss=None)#<a class="article_ref" href="<%= links.article_link(article_name) %>">#if $gloss then $gloss else $article_name#</a>#end def#
 
-#def external_link($url, $gloss=None)
-<a class="external_link" href="<%= links.external_link(url) %>">#if $gloss then $gloss else $url #end if#</a>
-#end def
+#def external_link($url, $gloss=None)#<a class="external_link" href="$url">#if $gloss then $gloss else $url#</a>#end def#
 
-#def create_account_link($gloss=None)
-<a class="action" href="<%= links.create_account_link() %>">#if $gloss then $gloss else links.create_account_link() #end if#</a>
-#end def
+#def create_account_link($gloss=None)#<a class="action" href="<%= links.create_account_link() %>">#if $gloss then $gloss else links.create_account_link()#</a>#end def#
 
-#def login_link($gloss=None)
-<a class="action" href="<%= links.login_link() %>">#if $gloss then $gloss else links.login_link() #end if#</a>
-#end def
+#def login_link($gloss=None)#<a class="action" href="<%= links.login_link() %>">#if $gloss then $gloss else links.login_link()#</a>#end def#
 
 
 ##
@@ -55,7 +46,7 @@
 #end def
 
 
-## Set both to None if you don't want a logo.
+## Comment out both defs if you don't want a logo.
 ## The root for static files is the 'static' directory in the main Gliki
 ## directory. So, if the URL is "/XXX.png", the png file should be
 ## static/XXX.png.
@@ -66,8 +57,8 @@
 Gliki logo
 #end def
 
-## Set to None if you don't want an icon.
-## As for the logo (see previous comment), the icon file should be in the
+## Comment out this def if you don't want a favorites icon.
+## As with the logo (see previous comment), the icon file should be in the
 ## 'static' directory.
 #def ICON_URL
 /favicon.ico
@@ -142,6 +133,14 @@ If you think this is the case,
 <a href="mailto:webmaster@gliki.whsites.net">contact the webmaster</a>.
 </p>
 #end def
+
+
+##
+## DO NOT EDIT THIS CODE.
+##
+#def __TEXT__
+#end def
+$__TEXT__
 
 
 ##

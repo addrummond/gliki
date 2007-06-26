@@ -114,7 +114,7 @@ def show_cheetah(path):
         def r(*args):
             for k, v in f(*args).iteritems():
                 setattr(instance, k, v)
-            return [str(instance)]
+            return [str(instance).strip()]
         return r
     return decorator
 
