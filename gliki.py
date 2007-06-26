@@ -89,28 +89,32 @@ def showkid(file, serializer=kid.HTMLSerializer(encoding=config.ARTICLE_XHTML_EN
     """Decorator for handler methods which passes the return value of the method
        into a Kid template.
     """
+    def decorator(f): return f
+    return decorator
+
     #kid.enable_import()
 
-    def decorator(f):
-        template_module = kid.load_template(file, cache=1)
-
-        def r(*args):
-            parms = f(*args)
-            t = template_module.Template(file=file, **parms)
-            return [t.serialize(output=serializer)]
-        return r
-    return decorator
+    #def decorator(f):
+    #    template_module = kid.load_template(file, cache=1)
+    #
+    #    def r(*args):
+    #        parms = f(*args)
+    #        t = template_module.Template(file=file, **parms)
+    #        return [t.serialize(output=serializer)]
+    #    return r
+    #return decorator
 
 def show_cheetah(path):
     module = __import__(path)
     lst = path.split('/')
     class_ = getattr(module, lst[len(lst) - 1])
+    instance = class_()
 
     def decorator(f):
         def r(*args):
             for k, v in f(*args).iteritems():
-                setattr(class_, k, v)
-            return [str(class_)]
+                setattr(instance, k, v)
+            return [str(instance)]
         return r
     return decorator
 
@@ -1507,7 +1511,7 @@ class FrontPage(object):
     uris = [Abs("")]
 
     @ok_html()
-    @showkid('templates/frontpage.kid')
+    @show_cheetah('templates/frontpage')
     def GET(self, parms, extras):
         return dbcon_merge_login(extras, { })
 front_page = FrontPage()

@@ -1,0 +1,91 @@
+## Copyright (C) 2007 Alex Drummond <a.d.drummond@gmail.com>
+##
+## This program is free software; you can redistribute it and/or
+## modify it under the terms of the GNU General Public License
+## as published by the Free Software Foundation; either version 2
+## of the License, or (at your option) any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with this program; if not, write to the Free Software
+## Foundation, Inc., 51 Franklin Street, Fifth Floor,
+## Boston, MA  02110-1301, USA.
+
+#import setpath
+#import urllib
+#import links
+#import etc.customize as customize
+
+#extends customize
+
+#def body
+Body not defined
+#end def
+#def title
+[title]
+#end def
+
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+     xsi:schemaLocation="http://www.w3.org/MarkUp/SCHEMA/xhtml11.xsd"
+     xml:lang="en">
+<head>
+    <title>
+    $title
+#if not item.text.lower().startswith($FRONT_PAGE_TITLE.lower())
+    - $FRONT_PAGE_TITLE
+#end if
+    </title>
+    <link href="/main.css" rel="stylesheet" type="text/css" />
+#if getVar('ICON_URL', False)
+    <link rel="shortcut icon" href="$ICON_URL" />
+#end if
+</head>
+
+<body>
+##    <p style="color: darkred;">
+##        <b><i>To all intrepid travelers of the interweb: This is currently just up
+##              for testing purposes. Feel free to mess around with it, but don't expect
+##              it to work or anything.</i></b>
+##    </p>
+#if $getVar('LOGO_IMG_URL', False)
+    <img class="logo" src="$LOGO_IMG_URL" alt="#if $getVar('LOGO_IMG_ALT', False) then $LOGO_IMG_ALT else 'logo' #end if#"/>
+    <form class="search-box" action="/search" method="GET">
+        <input type="text" name="query" size="20"></input>
+        <br />
+        <button type="submit">Title/category search</button>
+    </form>
+#if $getVar('username', False)
+    <p class="login-message">
+        <i>You are logged in as
+           <a class="article_ref" href="<%= user_page_link(username) %>">$username</a>
+#if $getVar('is_admin', False)
+           with administrator privileges
+#end if
+           .
+        </i>
+#if $getVar('user_page_updated', False)
+        <br />
+        <b class="error">Your user page has been updated since the last time you logged in.</b>
+#end if
+    </p>
+#else
+    <p class="login-message" py:if="(not locals().has_key('username')) or (not username)">
+        <i>You are not currently logged in.</i>
+        <a class="action" href="%<= links.create_account_link() %>">create an account</a> |
+        <a class="action" href="%<= links.login_link() %>">log in</a>.
+    </p>
+#end if
+    <ul class="home"><li><a class="button" href="/">Home</a></li></ul>
+    $body
+</body>
+
+</html>
+

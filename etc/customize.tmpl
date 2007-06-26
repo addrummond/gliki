@@ -1,0 +1,167 @@
+## SEE END OF FILE FOR LICENSE CONDITIONS.
+
+##
+## Instructions for basic customization.
+## -------------------------------------
+##
+## 1) Change the definitions below.
+## 2) Add any necessary static files (e.g. images) to the 'static' directory.
+## 3) Possibly edit config.py, but this should not normally be necessary.
+##
+
+
+##
+## DON'T EDIT THIS CODE.
+##
+#import setpath
+#import links
+#import htmlutils
+
+#def article_link($article_name, $gloss=None)
+<a class="article_ref" href="<%= links.article_link(article_name) %>">#if $gloss then $gloss else $article_name #end if#</a>
+#end def
+
+#def external_link($url, $gloss=None)
+<a class="external_link" href="<%= links.external_link(url) %>">#if $gloss then $gloss else $url #end if#</a>
+#end def
+
+#def create_account_link($gloss=None)
+<a class="action" href="<%= links.create_account_link() %>">#if $gloss then $gloss else links.create_account_link() #end if#</a>
+#end def
+
+#def login_link($gloss=None)
+<a class="action" href="<%= links.login_link() %>">#if $gloss then $gloss else links.login_link() #end if#</a>
+#end def
+
+
+##
+## CHANGE THE FOLLOWING DEFINITIONS.
+##
+
+#def LICENSE_BOILERPLATE_XHTML
+<p>
+    Contributions are licensed under the
+    $external_link("http://creativecommons.org/licenses/by-sa/3.0/", u"Creative Commons Attribution Share Alike License").
+    Anyone can edit articles at any time.
+</p>
+#end def
+
+
+#def REVISION_NUMBERING_INFO_XHTML
+<p>
+    You might want to read about the wiki's
+    $article_link(u"Revision numbering", u"revision numbering system").
+</p>
+#end def
+
+
+## Set both to None if you don't want a logo.
+## The root for static files is the 'static' directory in the main Gliki
+## directory. So, if the URL is "/XXX.png", the png file should be
+## static/XXX.png.
+#def LOGO_IMG_URL
+/logo.png
+#end def
+#def LOGO_IMG_ALT
+Gliki logo
+#end def
+
+## Set to None if you don't want an icon.
+## As for the logo (see previous comment), the icon file should be in the
+## 'static' directory.
+#def ICON_URL
+/favicon.ico
+#end def
+
+
+## Sets the title of the front page and the title appended to all other pages.
+#def FRONT_PAGE_TITLE
+Gliki
+#end def
+## XHTML to go between <body>...</body> on the front page.
+#def FRONT_PAGE_BODY_XHTML
+<h1>Welcome to Gliki</h1>
+
+<p>
+Gliki is a wiki for generative linguistics.
+The idea is for people to write articles collaberatively on topics which interest them.
+You can write in whatever style you like, and on whatever topic.
+Even topics outside linguistics altogether are OK, but
+but the site has various features designed for linguists.
+Currently, these mostly favor syntacticians:
+numbered and glossed examples are supported,
+and there is a utility for rendering labelled bracketings
+as trees.
+</p>
+<p>
+You can start editing any page in the Wiki (except this one) right now,
+but you might want to
+$create_account_link(u"create an account")
+first,
+or $login_link(u"log in"),
+if you already have an account.
+</p>
+<p>
+<b>For more detailed information about the site,
+see the $article_link(u"Gliki") article and the list of
+$article_link(u"Useful links", u"list of useful links").</b>
+</p>
+<p>
+If you're new to wikis in general, you might want to read the
+<a href="http://en.wikipedia.org/wiki/Wiki" class="external_link">Wikipedia article on wikis</a>.
+</p>
+$LICENSE_BOILERPLATE_XHTML
+<p>
+Gliki uses custom software which is currently in the early stages of development,
+so there are a few missing features, and probably some bugs.
+If something needs fixing,
+add a note to the $article_link(u"Bugs") page.
+</p>
+<p>
+Gliki is written in
+$external_link(u"http://www.python.org", u"Python")
+using $external_link(u"http://www.sqlite.org", u"SQLite")
+for the database.
+</p>
+#end def
+
+
+#def BLOCKED_BY_USERNAME_MESSAGE_XHTML
+<p>
+    Sorry, your account has been blocked.
+    If you think this is a mistake,
+    <a href="mailto:webmaster@gliki.whsites.net">contact the webmaster</a>.
+</p>
+#end def
+#def BLOCKED_BY_IP_MESSAGE_XHTML
+<p>
+Sorry, your IP address has been blocked.
+Blocking by IP address is not very reliable,
+and you may well have been blocked by accident.
+If you think this is the case,
+<a href="mailto:webmaster@gliki.whsites.net">contact the webmaster</a>.
+</p>
+#end def
+
+
+##
+## License conditions
+## ------------------
+##
+## Copyright (C) 2007 Alex Drummond <a.d.drummond@gmail.com>
+##
+## This program is free software; you can redistribute it and/or
+## modify it under the terms of the GNU General Public License
+## as published by the Free Software Foundation; either version 2
+## of the License, or (at your option) any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with this program; if not, write to the Free Software
+## Foundation, Inc., 51 Franklin Street, Fifth Floor,
+## Boston, MA  02110-1301, USA.
+
