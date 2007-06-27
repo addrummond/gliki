@@ -1,0 +1,52 @@
+## Copyright (C) 2007 Alex Drummond <a.d.drummond@gmail.com>
+##
+## This program is free software; you can redistribute it and/or
+## modify it under the terms of the GNU General Public License
+## as published by the Free Software Foundation; either version 2
+## of the License, or (at your option) any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with this program; if not, write to the Free Software
+## Foundation, Inc., 51 Franklin Street, Fifth Floor,
+## Boston, MA  02110-1301, USA.
+
+#import links
+#from templates.base import base
+
+#extends base
+
+#def title#Syntax tree#end def#
+
+#def body
+    <p>
+        This is a utility for drawing syntax trees given a labelled
+        bracketing. It can draw trees with bar levels and movement indicated
+        by arrows (although the arrow drawing algorithm doesn't always work well
+        at the moment). Here's a simple example:
+    </p>
+    <pre>
+[S [NP [D the] [N cat]] [VP [V sat] [PP [P on] [NP [D the] [N mat]]]]]
+    </pre>
+    <p>
+        Here's an example with a passive transformation:
+    </p>
+    <pre>
+[S [-&gt;label NP [D the] [N man]] [Aux was] [VP [VP [V bitten] &lt;-label] [PP [P by] [NP [D the] [N dog]]]]]
+    </pre>
+    <p>
+        The surface position of the moved constituent is labelled using the
+        syntax &lsquo;-&gt;label&rsquo;, and its initial position is given
+        a matching label using the syntax &lsquo;&lt;-label&rsquo;.
+    </p>
+    <form method="POST" action="<%= links.render_syntax_tree_link() %>">
+        <textarea name="tree" cols="100" rows="25"></textarea>
+        <br />
+        <input type="submit" value="Send"></input>
+    </form>
+#end def
+

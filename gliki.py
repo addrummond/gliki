@@ -894,7 +894,7 @@ class ReviseWikiArticle(object):
                 title = unfutz_article_title(uu_decode(parms[links.ARTICLE_LINK_PREFIX]))
             else:
                 threads_id = int(uu_decode(parms[links.REVISE_SUFFIX]))
-            source = urllib.unquote(parms['source']).decode(config.ARTICLE_SOURCE_ENCODING)
+            source = urllib.unquote(parms['source']) # Unicode stuff done later.
         except (KeyError, ValueError), e:
             raise control.BadRequestError()
         new_title = title
@@ -2121,7 +2121,7 @@ class SyntaxTree(object):
     uris = [Abs(links.SYNTAX_TREE)]
 
     @ok_html()
-    @showkid('templates/syntax_tree.kid')
+    @show_cheetah('templates/syntax_tree')
     def GET(self, parms, extras):
         d = { }
         dbcon_merge_login(extras, d)
