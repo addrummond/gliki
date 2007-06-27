@@ -1676,7 +1676,7 @@ class DeleteAccountConfirm(object):
     uris = [Abs(links.DELETE_ACCOUNT_CONFIRM)]
 
     @ok_html()
-    @showkid('templates/delete_account_confirm.kid')
+    @show_cheetah('templates/delete_account_confirm')
     def GET(self, parms, extras):
         d = { }
         dbcon_merge_login(extras, d)
@@ -1691,7 +1691,7 @@ class DeleteAccount(object):
     uris = [Abs(links.DELETE_ACCOUNT)]
 
     @ok_html()
-    @showkid('templates/delete_account.kid')
+    @show_cheetah('templates/delete_account')
     def POST(self, parms, extras):
         try:
             dbcon = get_dbcon()
@@ -2029,7 +2029,7 @@ class Search(object):
     search_query_regex = re.compile(r"""\s*((?:(?:"|')[^\"]*(?:"|'))|(?:\S+))\s*""")
 
     @ok_html()
-    @showkid('templates/search.kid')
+    @show_cheetah('templates/search')
     def GET(self, parms, extras):
         assert parms.has_key('query') # This key will be added by FollowedByQuery.
 
