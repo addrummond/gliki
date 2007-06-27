@@ -265,8 +265,9 @@ a.button {
 }
 
 a.footnote-link {
-  border: none;
   padding: 0 0;
+  border: none;
+  color: INTERNAL_LINK_COLOR;
 }
 a.footnote-link:hover {
   border: none;

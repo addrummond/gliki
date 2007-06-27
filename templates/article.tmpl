@@ -54,7 +54,7 @@
 
 #if len($categories) > 0
     Categories:
-#echo ' | '.join(map(lambda c: '<a class="category_ref" href="%s">%s</a>' % (links.category_link(c), c), self.getVar('categories')))
+#echo ' <span class="category-sep">|</span> '.join(map(lambda c: '<a class="category_ref" href="%s">%s</a>' % (links.category_link(c), c), self.getVar('categories')))
 #end if
     </p>
     <h1 class="article-title">$article_title</h1>
