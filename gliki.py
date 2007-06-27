@@ -1833,7 +1833,7 @@ class Watch(object):
     # Unfortunately we can't use a POST here because of inconsistent display of
     # the form across browsers. Using a GET with Pragma: no-cache instead.
     @ok_html(cache=False)
-    @showkid('templates/watch.kid')
+    @show_cheetah('templates/watch')
     def GET(self, parms, extras):
         title = unfutz_article_title(uu_decode(parms[links.ARTICLE_LINK_PREFIX]))
 
@@ -1884,7 +1884,7 @@ class Unwatch(object):
     # Unfortunately we can't use a POST here because of inconsistent display of
     # the form across browsers. Using a GET with Pragma: no-cache instead.
     @ok_html(cached=False)
-    @showkid('templates/unwatch.kid')
+    @show_cheetah('templates/unwatch')
     def GET(self, parms, extras):
         title = unfutz_article_title(uu_decode(parms[links.ARTICLE_LINK_PREFIX]))
 

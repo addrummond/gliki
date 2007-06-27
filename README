@@ -21,38 +21,41 @@ Now do the following in the main Gliki directory:
     * Execute 'sh build_main.css.sh' to build the CSS file.
     * Execute 'sh compile_templates.sh' to compile the Cheetah templates.
     * Create an sqlite3 database called main.db using the sql script
-      'dbcreate.sql'. (Use the '.read' command at the prompt.)
+      'dbcreate.sql'. (Use the '.read' command at the sqlite3 prompt.)
     * Execute 'python gliki.py'
 
-This starts the website on port 3000. You can change the port by editing
-etc/config.py. Note that this uses a toy Python webserver which you really
-shouldn't expose to the internet directly; the real Gliki site hides it behind
-Apache. Way back when, it was also possible to run Gliki on lighttpd using
-fastcgi, and the code to do so is still included. However, I haven't tested it
-for ages and it's not documented here (see mostly control.py if you're
+The last command starts the website on port 3000. You can change the port by
+editing etc/config.py. Note that this uses a toy Python webserver which you
+really shouldn't expose to the internet directly; the real Gliki site hides it
+behind Apache. Way back when, it was also possible to run Gliki on lighttpd
+using fastcgi, and the code to do so is still included. However, I haven't
+tested it for ages and it's not documented here (see mostly control.py if you're
 interested, and the included httpd.conf for lighttpd).
 
 
-3. Customization
+3. Configuration and customization
 ----------
 By default, Gliki looks exactly like the Gliki website. You can make basic
 changes (e.g. changing the name of the site) by editing the etc/customize.tmpl
 template. You'll need to look at the Cheetah template system documentation if
 you want to do anything advanced, but the basic format should be fairly
 intuitive. Note that comment lines must begin with two '#' characters in a
-row (a single '#' is used to indicate the start of a Cheetah directive)..
+row (a single '#' is used to indicate the start of a Cheetah directive).
 After making changes to customize.tmpl (or any other .tmpl file) you must
 execute 'sh compile_templates.sh' and restart gliki.py.
 
+Various configuration options (e.g. the port the server runs on) can be set
+by editing etc/config.py.
+
 The CSS file (main.css) should not be edited directly since it's built using
 the m4 macro prepocessor. Instead, edit main.css.m4 and run
-'sh buld_main.css.sh' to generate main.css. More extensive changes will require
-editing the KID templates in the 'templates' directory.
+'sh buld_main.css.sh' to generate main.css. More extensive changes to the site's
+appearence will require editing the templates in the 'templates' directory.
 
-You can edit links.py if you want to change the URIs for various parts of the
-site (e.g. if you want to use "/pages/Gliki" instead of "/articles/Gliki").
-This file defines a number of string constants and should be fairly
-self-explanatory.
+If you want to change the URIs for various parts of the
+site (e.g. if you want to use "/pages/Gliki" instead of "/articles/Gliki")
+you can edit links.py. This file defines a number of string constants and should
+be fairly self-explanatory.
 
 
 4. Blocking users.
@@ -79,17 +82,16 @@ Here's an example block file:
     156.55.77.*
     77.88.99.12-19
 
-Badly formatted lines in the block file are ignored. However, warnings are
+Badly formatted lines in the block file are ignored, but warnings are
 logged in logs/server if there are badly formatted lines. Note that it is NOT
-possible to have a comment on the same line as a block directive; comments
-must be on their own lines.
+possible to have a comment on the same line as a block directive.
 
 
 6. Administrators
 ----------
 Currently, Gliki doesn't support a full system of permissions for different
 users. However, you can make a user an "administrator", which allows them to
-delete (as opposed to merely blanking) pages. At the moment, this requires
+delete pages (as opposed to merely blanking them). At the moment, this requires
 a manual DB edit. You need to add an entry in the "admins" table (see
 dbcreate.sql). At some point in the future I'll add some scripts for doing
 this.
@@ -120,7 +122,7 @@ Gliki, which you may or may not find useful.
       combinator library, parcombs.py.
     * As of yet, there are no plans to make Gliki work with a "real" DB since
       sqlite seems to work pretty well. Modfifying Gliki to work with another
-      DB would not be difficult (but since it doesn't use ORM, it wouldn't be
+      DB would not be difficult (but since it uses raw SQL, it wouldn't be
       trivial either).
 
 
@@ -129,7 +131,7 @@ Gliki, which you may or may not find useful.
 
 I'm always happy to accept patches. However, I don't want any of the following:
 
-    * Additional features for the markup parser, since it's already getting
+    * Additional features for the markup parser. It's already getting too
       hard to modify and debug. In future, I intend to expand it by allowing
       embedding of other markup languages within Gliki pages (e.g. HTML, TeX
       equations). Contributions towards this end are very welcome.

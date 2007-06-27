@@ -25,15 +25,6 @@
 
 #def title#$article_title#end def#
 
-## To be overridden.
-##def article_title#[article title]#end def#
-##def redirects#foo#end def#
-##def newest_article_title#[newest article title]#end def#
-##def revision#foo#end def#
-##def article_xhtml#[article xhtml]#end def#
-##def categories#foo#end def#
-##def threads_id#foo#end def#
-
 #def body
 #if $getVar('show_prefs_link', False)
     <ul class="user-actions">
@@ -47,7 +38,7 @@
         <li><a class="button" href="<%= links.edit_article_link(self.getVar('newest_article_title'), self.getVar('revision')) %>">Edit this article</a></li>
         <li><a class="button" href="<%= links.article_history_link(self.getVar('newest_article_title')) %>">View history</a></li>
         <li><a class="button" href="<%= links.links_here_link(self.getVar('newest_article_title')) %>">What links here?</a></li>
-#if $getVar('on_watchlist', False)
+#if not $getVar('on_watchlist', False)
         <li>
             <a class="button" href="<%= links.watch_article_link(self.getVar('newest_article_title')) %>">Watch this article</a>
         </li>
