@@ -60,6 +60,16 @@ from my_utils import *
 
 threads_id_cache = cache.FSThreadsIdCache(config.THREADS_IDS_CACHE_DIR)
 
+LIST_START_DEFAULT = 0
+LIST_N_DEFAULT = 50
+def list_uri(name):
+    """Create a parser for the URI for a list page (e.g. list of recent changes)."""
+    return (
+        Abs(name) >>
+        Opt(VParm(links.FROM_SUFFIX), {'from' : str(LIST_START_DEFAULT)}) >> Opt(Selector('n'), {'n' : str(LIST_N_DEFAULT)}) >>
+        OptDir()
+    )
+
 #
 # Code for the AES-32/base64 encryption scheme used for user account passwords.
 # See dbcreate.sql for a description of the encryption scheme.
@@ -796,7 +806,7 @@ class RecentChangesList(object):
     # /recent-changes/100          List of 100 most recent changes
     # /recent-changes/from/65      List of 50 most recent changes with offset 65
     # /recent-changes/from/65/100  List of 100 most recent changes with offset 65
-    uris = [Abs(links.RECENT_CHANGES) >> Opt(VParm(links.FROM_SUFFIX), {'from' : '0'}) >> Opt(Selector('n'), {'n' : '50'}) >> OptDir()]
+    uris = [list_uri(links.RECENT_CHANGES)]
 
     @ok_html()
     @show_cheetah('templates/recent_changes_list')
@@ -1322,22 +1332,34 @@ category = Category()
 
 class CategoryList(object):
     uris = [Abs(links.CATEGORIES_PREFIX) >> OptDir(),
-            Abs(links.CATEGORY_LIST) >> OptDir()]
+            list_uri(links.CATEGORY_LIST)]
 
     @ok_html()
-    @showkid('templates/category_list.kid')
+    @show_cheetah('templates/category_list')
     def GET(self, parms, extras):
         try:
+            from_, n = LIST_START_DEFAULT, LIST_N_DEFAULT
+            if parms.has_key('from'):
+                try:
+                    from_ = int(uu_decode(parms['from']))
+                    n = int(uu_decode(parms['n']))
+                except ValueError:
+                    raise control.BadRequestError()
+
             dbcon = get_dbcon()
             cur = dbcon.cursor()
 
             res = cur.execute(
                 """
-                SELECT DISTINCT NAME FROM category_specs
-                """
+                SELECT DISTINCT name FROM category_specs
+                ORDER BY name
+                LIMIT ?
+                OFFSET ?
+                """,
+                (n, from_)
             )
 
-            return merge_login(dbcon, cur, extras, dict(categories=list(map(lambda x: x[0].lower(), res))))
+            return merge_login(dbcon, cur, extras, dict(categories=map(lambda x: x[0].lower(), res), from_=from_, n=n))
         except db.Error, e:
             raise dberror(e)
 category_list = CategoryList()
