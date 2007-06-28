@@ -104,9 +104,6 @@ def category_page_link(name):
     name = my_utils.webencode(name)
     return '/' + ARTICLE_LINK_PREFIX + '/' + qaf(CATEGORY_PAGE_PREFIX + name)
 
-def article_list_link():
-    return '/' + ARTICLE_LIST
-
 def edit_article_link(title, revision=None):
     assert_is_int_or_none(revision)
     return article_link(title, revision) + '/' + EDIT_SUFFIX
@@ -126,18 +123,6 @@ def diff_link(title, rev1, rev2):
     title = my_utils.webencode(title)
     return '/' + ARTICLE_LINK_PREFIX + '/' + qaf(title) + '/' + \
            DIFF_SUFFIX + '/' + str(rev1) + '/' + str(rev2)
-
-def make_list_link(name, from_, n):
-    assert_is_int_or_none(from_)
-    assert_is_int_or_none(n)
-    return '/' + name + '/' + \
-           (from_ and FROM_SUFFIX + '/' + str(from_) + '/' or '') + \
-           (n and str(n) or '')
-
-def recent_changes_link(from_=None, n=None):
-    return make_list_link(RECENT_CHANGES, from_, n)
-def category_list_link(from_=None, n=None):
-    return make_list_link(CATEGORY_LIST, from_, n)
 
 def category_link(name):
     name = my_utils.webencode(name)
@@ -194,4 +179,18 @@ def render_syntax_tree_link():
 
 def syntax_tree_link():
     return '/' + SYNTAX_TREE
+
+# Lists.
+def __make_list_link(name, from_, n):
+    assert_is_int_or_none(from_)
+    assert_is_int_or_none(n)
+    return '/' + name + '/' + \
+           (from_ and FROM_SUFFIX + '/' + str(from_) + '/' or '') + \
+           (n and str(n) or '')
+def recent_changes_link(from_=None, n=None):
+    return __make_list_link(RECENT_CHANGES, from_, n)
+def category_list_link(from_=None, n=None):
+    return __make_list_link(CATEGORY_LIST, from_, n)
+def article_list_link(from_=None, n=None):
+    return __make_list_link(ARTICLE_LIST, from_, n)
 

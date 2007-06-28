@@ -1402,44 +1402,41 @@ wiki_article_history = WikiArticleHistory()
 
 class WikiArticleList(object):
     uris = [Abs(links.ARTICLE_LINK_PREFIX) >> OptDir(),
-            Abs(links.ARTICLE_LIST) >> Opt(VParm(links.FROM_SUFFIX), {'from' : '0'}) >> OptDir()]
+            list_uri(links.ARTICLE_LIST)]
 
     @ok_html()
-    @showkid('templates/article_list.kid')
+    @show_cheetah('templates/article_list')
     def GET(self, parms, extras):
-        index = None
+        from_, n = LIST_START_DEFAULT, LIST_N_DEFAULT
         if parms.has_key('from'):
-            index = uu_decode(parms['from'])
             try:
-                index = int(index)
+                from_ = int(uu_decode(parms['from']))
+                n = int(uu_decode(parms['n']))
             except ValueError:
                 raise control.BadRequestError()
-        else:
-            raise control.Redirect(links.article_list_link(), 'text/html; charset=UTF-8', 'permanent')
 
         try:
             dbcon = get_dbcon()
             cur = dbcon.cursor()
 
-            # Get the (alphabetically) first 100 article titles.
             rows = cur.execute(
                 """
                 SELECT MAX(revision_date), title FROM revision_histories
                 INNER JOIN articles ON articles.id = revision_histories.articles_id
                 GROUP BY revision_histories.threads_id
                 ORDER BY articles.title
-                LIMIT 100 OFFSET ?
+                LIMIT ?
+                OFFSET ?
                 """,
-                (index,)
+                (n, from_)
             )
 
             titles = [row[1] for row in rows]
             return merge_login(dbcon, cur,
                                extras,
                                dict(article_titles=titles,
-                                    starting_from=index + 1,
-                                    going_to=index + len(titles),
-                                    partial=len(titles) == 100))
+                                    from_=from_,
+                                    n=n))
         except db.Error, e:
             dberror(e)
 wiki_article_list = WikiArticleList()
