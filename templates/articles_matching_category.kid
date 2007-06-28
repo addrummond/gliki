@@ -30,7 +30,7 @@ import links
 
 <body>
     <p>
-        You can also look at a list of <a class="category_ref" href="${links.category_list_link()}">all the categories</a> in Gliki.
+        You can also look at a list of <a class="category_ref" href="${links.category_list_link()}">all the categories</a> in the wiki.
     </p>
     <p>
         By convention, any information relating to this category should go in
