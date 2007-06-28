@@ -111,3 +111,6 @@ THREADS_IDS_CACHE_DIR = 'cache/threads_id'
 # The maximum length of each line in diff output.
 DIFF_LINE_LENGTH = 60
 
+# Comments on edits truncated for display if they exceed this length.
+COMMENT_TRUNCATE_LENGTH = 250
+

@@ -799,7 +799,7 @@ class RecentChangesList(object):
     uris = [Abs(links.RECENT_CHANGES) >> Opt(VParm(links.FROM_SUFFIX), {'from' : '0'}) >> Opt(Selector('n'), {'n' : '50'}) >> OptDir()]
 
     @ok_html()
-    @showkid('templates/recent_changes_list.kid')
+    @show_cheetah('templates/recent_changes_list')
     def GET(self, parms, extras):
         from_, n = None, None
         try:
