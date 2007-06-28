@@ -124,10 +124,6 @@ def diff_link(title, rev1, rev2):
     return '/' + ARTICLE_LINK_PREFIX + '/' + qaf(title) + '/' + \
            DIFF_SUFFIX + '/' + str(rev1) + '/' + str(rev2)
 
-def category_link(name):
-    name = my_utils.webencode(name)
-    return '/' + CATEGORIES_PREFIX + '/' + qaf(name.lower())
-
 def article_history_link(title):
     title = my_utils.webencode(title)
     return '/' + ARTICLE_LINK_PREFIX + '/' + qaf(title) + '/' + HISTORY_SUFFIX
@@ -193,4 +189,6 @@ def category_list_link(from_=None, n=None):
     return __make_list_link(CATEGORY_LIST, from_, n)
 def article_list_link(from_=None, n=None):
     return __make_list_link(ARTICLE_LIST, from_, n)
+def category_link(name, from_=None, n=None):
+    return __make_list_link(CATEGORIES_PREFIX + '/' + qaf(name), from_, n)
 

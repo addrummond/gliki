@@ -1,0 +1,56 @@
+## Copyright (C) 2007 Alex Drummond <a.d.drummond@gmail.com>
+##
+## This program is free software; you can redistribute it and/or
+## modify it under the terms of the GNU General Public License
+## as published by the Free Software Foundation; either version 2
+## of the License, or (at your option) any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with this program; if not, write to the Free Software
+## Foundation, Inc., 51 Franklin Street, Fifth Floor,
+## Boston, MA  02110-1301, USA.
+
+#import urllib
+#import my_utils
+#import links
+#from templates.base import base
+
+#extends base
+
+#def title#Category $category#end def#
+
+#def body#
+    <p>
+        You can also look at a list of <a class="category_ref" href="<%= links.category_list_link() %>">all the categories</a> in the wiki.
+    </p>
+    <p>
+        By convention, any information relating to this category should go in
+        <a class="article_ref" href="<%= links.category_page_link(self.getVar('category')) %>"><%=links.CATEGORY_PAGE_PREFIX%>$category</a>.
+    </p>
+
+    #if len($article_titles) > 0
+    <p>The following articles are in category &lsquo;$category&rsquo;:</p>
+    #end if
+
+    <p>
+        $next_and_prev_links($from_, $n, lambda x, y: links.category_link(self.getVar('category'), x, y))
+    </p>
+
+    #if len($article_titles) > 0
+    <ol class="article-list">
+        #for $title in $article_titles
+        <li><a href="<%= links.article_link(title) %>" class="article_ref">$title</a></li>
+        #end for
+    </ol>
+    #else
+    <p>
+        There are currently no articles in category &lsquo;$category&rsquo;.
+    </p>
+    #end if
+#end def#
+

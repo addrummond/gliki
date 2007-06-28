@@ -62,10 +62,10 @@ threads_id_cache = cache.FSThreadsIdCache(config.THREADS_IDS_CACHE_DIR)
 
 LIST_START_DEFAULT = 0
 LIST_N_DEFAULT = 50
-def list_uri(name):
+def list_uri(prelude):
     """Create a parser for the URI for a list page (e.g. list of recent changes)."""
     return (
-        Abs(name) >>
+        prelude >>
         Opt(VParm(links.FROM_SUFFIX), {'from' : str(LIST_START_DEFAULT)}) >> Opt(Selector('n'), {'n' : str(LIST_N_DEFAULT)}) >>
         OptDir()
     )
@@ -806,7 +806,7 @@ class RecentChangesList(object):
     # /recent-changes/100          List of 100 most recent changes
     # /recent-changes/from/65      List of 50 most recent changes with offset 65
     # /recent-changes/from/65/100  List of 100 most recent changes with offset 65
-    uris = [list_uri(links.RECENT_CHANGES)]
+    uris = [list_uri(Abs(links.RECENT_CHANGES))]
 
     @ok_html()
     @show_cheetah('templates/recent_changes_list')
@@ -1296,13 +1296,20 @@ class ReviseWikiArticle(object):
 revise_wiki_article = ReviseWikiArticle()
 
 class Category(object):
-    uris = [VParm(links.CATEGORIES_PREFIX) >> OptDir()]
+    uris = [list_uri(VParm(links.CATEGORIES_PREFIX))]
 
     @ok_html()
-    @showkid('templates/articles_matching_category.kid')
+    @show_cheetah('templates/articles_matching_category')
     def GET(self, parms, extras):
         # NOTE THAT CATEGORIES ARE CASE INSENSITIVE, SO THERE ARE SOME
         # CASE INSENSITIVE SQL STRING COMPARISONS HERE.
+
+        from_,n = LIST_START_DEFAULT, LIST_N_DEFAULT
+        try:
+            from_ = int(uu_decode(parms['from']))
+            n = int(uu_decode(parms['n']))
+        except ValueError:
+            raise control.BadRequestError()
 
         category = unfutz_article_title(uu_decode(parms[links.CATEGORIES_PREFIX])).lower()
 
@@ -1321,18 +1328,21 @@ class Category(object):
                     ) query1
                 INNER JOIN category_specs ON query1.threads_id = category_specs.threads_id AND
                                              category_specs.name = ?
+                ORDER BY title
+                LIMIT ?
+                OFFSET ?
                 """,
-                (category,)
+                (category, n, from_)
             )
 
-            return merge_login(dbcon, cur, extras, dict(category=category, article_titles=list(map(lambda x: x[0], res))))
+            return merge_login(dbcon, cur, extras, dict(category=category, article_titles=list(map(lambda x: x[0], res)), from_=from_, n=n))
         except db.Error, e:
             dberror(e)
 category = Category()
 
 class CategoryList(object):
     uris = [Abs(links.CATEGORIES_PREFIX) >> OptDir(),
-            list_uri(links.CATEGORY_LIST)]
+            list_uri(Abs(links.CATEGORY_LIST))]
 
     @ok_html()
     @show_cheetah('templates/category_list')
@@ -1402,7 +1412,7 @@ wiki_article_history = WikiArticleHistory()
 
 class WikiArticleList(object):
     uris = [Abs(links.ARTICLE_LINK_PREFIX) >> OptDir(),
-            list_uri(links.ARTICLE_LIST)]
+            list_uri(Abs(links.ARTICLE_LIST))]
 
     @ok_html()
     @show_cheetah('templates/article_list')
