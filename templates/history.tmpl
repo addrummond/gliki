@@ -1,0 +1,66 @@
+## Copyright (C) 2007 Alex Drummond <a.d.drummond@gmail.com>
+##
+## This program is free software; you can redistribute it and/or
+## modify it under the terms of the GNU General Public License
+## as published by the Free Software Foundation; either version 2
+## of the License, or (at your option) any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License
+## along with this program; if not, write to the Free Software
+## Foundation, Inc., 51 Franklin Street, Fifth Floor,
+## Boston, MA  02110-1301, USA.
+
+#import urllib
+#import my_utils
+#import itertools
+#import links
+#import etc.config
+#from templates.base import base
+
+#extends base
+
+#def title#$article_title - History#end def#
+
+#def body
+    <p>History for <a href="<%= links.article_link(self.getVar('article_title')) %>" class="article_ref"><b>$article_title</b></a>:</p>
+    <table class="history">
+        <tr>
+            <th>Date</th>
+            <th>User</th>
+            <th>Article title</th>
+            <th>Comment</th>
+        </tr>
+        #for $r in $revisions
+        <tr>
+            <td>
+                <table class="date-diff-pair">
+                    <tr>
+                        <td>
+                            <a class="article_ref"
+                               href="<%= links.article_link(self.getVar('article_title'), r['diff_revs_pair'][0]) %>">
+                                $r.revision_date
+                            </a>
+                        </td>
+                        #if r['diff_revs_pair'][0] and r['diff_revs_pair'][1]
+                        <td>
+                            <a class="diff_ref" href="<%= links.diff_link(self.getVar('article_title'), r['diff_revs_pair'][0], r['diff_revs_pair'][1]) %>">
+                diff w/previous
+                            </a>
+                        </td>
+                        #end if
+                    </tr>
+                </table>
+            </td>
+            <td><a href="<%= links.user_page_link(r['username']) %>" class="article_ref">$r.username</a></td>
+            <td>$r.article_title</td>
+            <td><%= my_utils.truncate(etc.config.COMMENT_TRUNCATE_LENGTH, r['comment']) %></td>
+        </tr>
+        #end for
+    </table>
+#end def
+

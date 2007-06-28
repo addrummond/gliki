@@ -1368,7 +1368,7 @@ class WikiArticleHistory(object):
     uris = [VParm(links.ARTICLE_LINK_PREFIX) >> Abs(links.HISTORY_SUFFIX) >> OptDir()]
 
     @ok_html()
-    @showkid('templates/history.kid')
+    @show_cheetah('templates/history')
     def GET(self, parms, extras):
         title = unfutz_article_title(uu_decode(parms[links.ARTICLE_LINK_PREFIX]))
 
