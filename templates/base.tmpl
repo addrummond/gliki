@@ -21,6 +21,23 @@
 
 #extends customize
 
+
+##
+## SOME GENERAL UTILITIES.
+##
+#def next_and_prev_links($from_, $n, $linkf)
+    <a href="<%= linkf(from_ + n, n) %>">Next $n</a>
+        #if $from_ > 0
+        |
+    <a href="<%= linkf(((from_ - n < 0) and (0,) or (from_ - n),)[0], n) %>">Previous $n</a>
+        #end if
+#end def
+
+
+##
+## THE BASIC XHTML PAGE TEMPLATE.
+## 
+
 #def body
 Body not defined
 #end def

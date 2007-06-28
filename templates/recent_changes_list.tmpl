@@ -29,11 +29,7 @@
 #def body
     <p>Recent changes $from_ to <%= str(self.getVar('from_') + len(self.getVar('changes'))) %>:</p>
     <p>
-        <a href="<%= links.recent_changes_link(self.getVar('from_') + self.getVar('n'), self.getVar('n')) %>">Next $n</a>
-        #if $from_ > 0
-        |
-        <a href="<%= links.recent_changes_link(((self.getVar('from_') - self.getVar('n') < 0) and (0,) or (self.getVar('from_') - self.getVar('n')),)[0], self.getVar('n')) %>">Previous $n</a>
-        #end if
+        $next_and_prev_links($from_, $n, links.recent_changes_link)
     </p>
     <table class="history">
         <tr>

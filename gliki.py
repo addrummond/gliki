@@ -862,7 +862,11 @@ class RecentChangesList(object):
                                    diff_revno_pair=r_and_n[1]),
                           itertools.izip(most_recent_revisions, revnos))
 
-            return merge_login(dbcon, cur, extras, dict(changes=changes, from_=from_, n=n))
+            return merge_login(dbcon, cur,
+                               extras,
+                               dict(changes=changes,
+                                    from_=from_,
+                                    n=n))
         except db.Error, e:
             dberror(e)
 recent_changes_list = RecentChangesList()
