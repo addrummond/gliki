@@ -164,9 +164,6 @@ def unwatch_article_link(title):
     title = my_utils.webencode(title)
     return '/' + ARTICLE_LINK_PREFIX + '/' + qaf(title) + '/' + UNWATCH_SUFFIX
 
-def watchlist_link():
-    return '/' + WATCHLIST
-
 def tracked_changes_link():
     return '/' + TRACKED_CHANGES
 
@@ -191,4 +188,6 @@ def article_list_link(from_=None, n=None):
     return __make_list_link(ARTICLE_LIST, from_, n)
 def category_link(name, from_=None, n=None):
     return __make_list_link(CATEGORIES_PREFIX + '/' + qaf(name), from_, n)
+def watchlist_link(from_=None, n=None):
+    return __make_list_link(WATCHLIST, from_, n)
 

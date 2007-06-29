@@ -15,19 +15,34 @@
 ## Foundation, Inc., 51 Franklin Street, Fifth Floor,
 ## Boston, MA  02110-1301, USA.
 
+#import urllib
+#import my_utils
+#import links
 #from templates.base import base
 
 #extends base
 
-#def title#$article_title - No such revision#end def#
+#def title#$article_title - Links here#end def#
 
 #def body
-    #if $kind == 'diff'
-        One of the revisions specified for this diff does not exist. Probably,
-        you tried to diff the first revision of an article with its previous
-        revision.
-    #elif $kind == 'show'
-        No such revision for this article.
+    <p>
+        $next_and_prev_links($from_, $n, lambda x, y: links.links_here_link(self.getVar('article_title'), x, y))
+    </p>
+    #if len($titles) == 0
+    <p>
+        Currently, no articles link to <a class="article_ref" href="<%= links.article_link(self.getVar('article_title')) %>">$article_title</a>.
+    </p>
+    #else
+    <p>
+        The following articles link to <a class="article_ref" href="<%= links.article_link(self.getVar('article_title')) %>">$article_title</a>.
+        <ul class="links-here">
+            #for $t in titles
+            <li>
+                <a class="article_ref" href="<%= links.article_link(t) %>">$t</a>
+            </li>
+            #end for
+        </ul>
+    </div>
     #end if
 #end def
 

@@ -16,23 +16,41 @@
 ## Boston, MA  02110-1301, USA.
 
 #import urllib
+#import my_utils
 #import links
 #from templates.base import base
 
 #extends base
 
-#def title#Confirm deletion of your account#end def#
+#def title#$username - Watchlist#end def#
 
-#def body
+#def body#
     #if $getVar('error', False)
     <p>
         $error
     </p>
     #else
-    <p>Are you sure you want to delete your user account &lsquo;$username&rsquo;?</p>
-    <form method="POST" action="<%= links.delete_account_link() %>">
-        <input type="submit" value="Yes, delete it"></input>
-    </form>
+        #if len($article_titles) == 0
+        <p>
+        Currently, you do not have any articles on your watchlist.
+        </p>
+        #else
+        <p>
+        You can look at the list of
+        <a href="<%= links.tracked_changes_link() %>">articles on your watchlist which have recently changed</a>.
+        </p>
+        <p>
+        The following articles are on your watchlist:
+        </p>
+        <p>
+            $next_and_prev_links($from_, $n, links.watchlist_link)
+        </p>
+        <ol class="article-list">
+            #for $title in $article_titles
+            <li><a href="<%= links.article_link(title) %>" class="article_ref">$title</a></li>
+            #end for
+        </ol>
+        #end if
     #end if
-#end def
+#end def#
 

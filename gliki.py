@@ -95,25 +95,6 @@ def decrypt_password(iv, ciphertext):
     dec = base64.b64decode(ciphertext)
     return unpad_string(a.decrypt(dec).decode('utf-8'))
 
-def showkid(file, serializer=kid.HTMLSerializer(encoding=config.ARTICLE_XHTML_ENCODING)):
-    """Decorator for handler methods which passes the return value of the method
-       into a Kid template.
-    """
-    def decorator(f): return f
-    return decorator
-
-    #kid.enable_import()
-
-    #def decorator(f):
-    #    template_module = kid.load_template(file, cache=1)
-    #
-    #    def r(*args):
-    #        parms = f(*args)
-    #        t = template_module.Template(file=file, **parms)
-    #        return [t.serialize(output=serializer)]
-    #    return r
-    #return decorator
-
 def show_cheetah(path):
     module = __import__(path)
     lst = path.split('/')
@@ -893,7 +874,7 @@ class ReviseWikiArticle(object):
     ]
 
     @ok_html()
-    @showkid('templates/edit.kid')
+    @show_cheetah('templates/edit')
     def POST(self, parms, extras):
         int_time = int(time.time())
 
@@ -1452,12 +1433,19 @@ class WikiArticleList(object):
 wiki_article_list = WikiArticleList()
 
 class LinksHere(object):
-    uris = [VParm(links.ARTICLE_LINK_PREFIX) >> Abs(links.LINKS_HERE_SUFFIX) >> OptDir()]
+    uris = [list_uri(VParm(links.ARTICLE_LINK_PREFIX) >> Abs(links.LINKS_HERE_SUFFIX))]
 
     @ok_html()
-    @showkid('templates/links-here.kid')
+    @show_cheetah('templates/links_here')
     def GET(self, parms, extras):
         title = unfutz_article_title(uu_decode(parms[links.ARTICLE_LINK_PREFIX]))
+
+        from_, n = None, None
+        try:
+            from_ = int(uu_decode(parms['from']))
+            n = int(uu_decode(parms['n']))
+        except ValueError:
+            raise control.BadRequestError()
 
         try:
             dbcon = get_dbcon()
@@ -1473,13 +1461,16 @@ class LinksHere(object):
                  ON articles.id = articles_id
                  GROUP BY revision_histories.threads_id) query1
             ON query1.threads_id = links.threads_id
-            WHERE links.to_title = ?;
+            WHERE links.to_title = ?
+            ORDER BY title
+            LIMIT ?
+            OFFSET ?
             """,
-            (title,)
+            (title, n, from_)
             )
 
             titles = map(lambda x: x[0], list(rows))
-            return merge_login(dbcon, cur, extras, dict(article_title=title, titles=titles))
+            return merge_login(dbcon, cur, extras, dict(article_title=title, titles=titles, from_=from_, n=n))
         except db.Error, e:
             dberror(e)
 links_here = LinksHere()
@@ -1574,7 +1565,7 @@ class MakeNewAccount(object):
     ip_addy_regex = re.compile(ip_addy_regex_string)
 
     @ok_html()
-    @showkid('templates/create_account.kid') # Go here if there's an error.
+    @show_cheetah('templates/create_account') # Go here if there's an error.
     def POST(self, parms, extras):
         if not (parms.has_key('username') and
                 parms.has_key('password')):
@@ -1957,11 +1948,18 @@ class Unwatch(object):
 unwatch = Unwatch()
 
 class Watchlist(object):
-    uris = [Abs(links.WATCHLIST)]
+    uris = [list_uri(Abs(links.WATCHLIST))]
 
     @ok_html()
-    @showkid('templates/watchlist.kid')
+    @show_cheetah('templates/watchlist')
     def GET(self, parms, extras):
+        from_,n = None,None
+        try:
+            from_ = int(uu_decode(parms['from']))
+            n = int(uu_decode(parms['n']))
+        except ValueError:
+            raise control.BadRequestError()
+
         try:
             dbcon = get_dbcon()
             cur = dbcon.cursor()
@@ -1982,11 +1980,16 @@ class Watchlist(object):
                          (SELECT id FROM wikiusers WHERE wikiusers.username = ?)
                      GROUP BY revision_histories.threads_id) q1
                 INNER JOIN articles ON articles.id = q1.articles_id
+                ORDER BY title
+                LIMIT ?
+                OFFSET ?
                 """,
-                (d['username'],)
+                (d['username'], n, from_)
             )
 
             d['article_titles'] = [r[0] for r in res if len(r) == 1]
+            d['from_'] = from_
+            d['n'] = n
             return d
         except db.Error, e:
             dberror(e)
@@ -1996,7 +1999,7 @@ class TrackedChanges(object):
     uris = [Abs(links.TRACKED_CHANGES)]
 
     @ok_html()
-    @showkid('templates/tracked_changes.kid')
+    @show_cheetah('templates/tracked_changes')
     def GET(self, parms, extras):
         try:
             dbcon = get_dbcon()
