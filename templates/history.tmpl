@@ -27,7 +27,10 @@
 #def title#$article_title - History#end def#
 
 #def body
-    <p>History for <a href="<%= links.article_link(self.getVar('article_title')) %>" class="article_ref"><b>$article_title</b></a>:</p>
+    <p>Revisions $from_ to $n for <a href="<%= links.article_link(self.getVar('article_title')) %>" class="article_ref"><b>$article_title</b></a>:</p>
+    <p>
+        $next_and_prev_links($from_, $n, lambda x, y: links.article_history_link(self.getVar('article_title'), x, y))
+    </p>
     <table class="history">
         <tr>
             <th>Date</th>

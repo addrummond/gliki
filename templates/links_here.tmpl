@@ -25,6 +25,7 @@
 #def title#$article_title - Links here#end def#
 
 #def body
+    <p>Articles from $from_ to $n linking to &lsquo;$article_title&rsquo;:</p>
     <p>
         $next_and_prev_links($from_, $n, lambda x, y: links.links_here_link(self.getVar('article_title'), x, y))
     </p>

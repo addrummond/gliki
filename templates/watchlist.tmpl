@@ -30,6 +30,10 @@
         $error
     </p>
     #else
+        <p>
+        Articles from $from_ to $n on your watchlist:
+        </p>
+
         #if len($article_titles) == 0
         <p>
         Currently, you do not have any articles on your watchlist.
@@ -38,9 +42,6 @@
         <p>
         You can look at the list of
         <a href="<%= links.tracked_changes_link() %>">articles on your watchlist which have recently changed</a>.
-        </p>
-        <p>
-        The following articles are on your watchlist:
         </p>
         <p>
             $next_and_prev_links($from_, $n, links.watchlist_link)

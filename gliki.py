@@ -305,7 +305,7 @@ __qstring_template = \
             LEFT JOIN wikiusers ON revision_histories.wikiusers_id = wikiusers.id
             LEFT JOIN deleted_wikiusers ON revision_histories.wikiusers_id = deleted_wikiusers.id
         ORDER BY revision_histories.revision_date %s
-        LIMIT -1 OFFSET %i
+        LIMIT %i OFFSET %i
     """
 
 def get_threads_id_select_statement(title):
@@ -346,7 +346,7 @@ def get_revision(dbcon, cur, title, revision):
     offset = abs(revision) - 1
 
     stmt, add_to_cache, give_title = get_threads_id_select_statement(title)
-    qstring = __qstring_template % (stmt, use_desc and "DESC" or "", offset)
+    qstring = __qstring_template % (stmt, use_desc and "DESC" or "", -1, offset)
 
     rows = cur.execute(
         qstring,
@@ -371,12 +371,12 @@ def make_article_exists_pred(dbcon, cur):
         else:
             return False
 
-def get_ordered_revisions(dbcon, cur, title):
+def get_ordered_revisions(dbcon, cur, title, limit=0, offset=0):
     """Get all revisions of a title, most recent first."""
     assert type(title) == types.UnicodeType
 
     stmt, add_to_cache, give_title = get_threads_id_select_statement(title)
-    qstring = __qstring_template % (stmt, "DESC", 0)
+    qstring = __qstring_template % (stmt, "DESC", limit, offset)
     rows = cur.execute(
         qstring,
         give_title and (title,) or ()
@@ -1356,18 +1356,25 @@ class CategoryList(object):
 category_list = CategoryList()
 
 class WikiArticleHistory(object):
-    uris = [VParm(links.ARTICLE_LINK_PREFIX) >> Abs(links.HISTORY_SUFFIX) >> OptDir()]
+    uris = [list_uri(VParm(links.ARTICLE_LINK_PREFIX) >> Abs(links.HISTORY_SUFFIX))]
 
     @ok_html()
     @show_cheetah('templates/history')
     def GET(self, parms, extras):
+        from_,n = None,None
+        try:
+            from_ = int(uu_decode(parms['from']))
+            n = int(uu_decode(parms['n']))
+        except ValueError:
+            raise control.BadRequestError()
+
         title = unfutz_article_title(uu_decode(parms[links.ARTICLE_LINK_PREFIX]))
 
         try:
             dbcon = get_dbcon()
             cur = dbcon.cursor()
 
-            rows = get_ordered_revisions(dbcon, cur, title)
+            rows = get_ordered_revisions(dbcon, cur, title, n, from_)
             if not rows:
                 raise control.NotFoundError()
             d = { }
@@ -1381,7 +1388,9 @@ class WikiArticleHistory(object):
                                               comment       = row['comment'],
                                               diff_revs_pair = row['diff_revs_pair'])
                                          for row in rows
-                                        ]
+                                        ],
+                                    from_ = from_,
+                                    n = n
                                ))
         except db.Error, e:
             dberror(e)

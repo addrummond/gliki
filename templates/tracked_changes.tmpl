@@ -30,14 +30,15 @@
     <p>
         $error
     </p>
-    #elif len($revisions) == 0
+    #else
+    <p>
+        Articles from $from_ to $n on your watchlist which were recently modified:
+    </p>
+    #if len($revisions) == 0
     <p>
         Currently, you do not have any articles on your watchlist.
     </p>
     #else
-    <p>
-        The following articles on your watchlist have recently been modified:
-    </p>
     <table class="history">
         <tr>
             <th>Date</th>
@@ -77,6 +78,7 @@
         </tr>
         #end for
     </table>
+    #end if
     #end if
 #end def
 
