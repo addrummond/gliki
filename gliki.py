@@ -21,6 +21,7 @@ handlers registered with control.py.
 """
 
 import Cheetah
+import Cheetah.Template
 import kid
 import etc.config as config
 import sys
@@ -56,6 +57,8 @@ import aes.Python_AES as pyaes
 import block
 import cache
 import cgi
+import os
+import stat
 from my_utils import *
 
 threads_id_cache = cache.FSThreadsIdCache(config.THREADS_IDS_CACHE_DIR)
@@ -96,16 +99,18 @@ def decrypt_password(iv, ciphertext):
     return unpad_string(a.decrypt(dec).decode('utf-8'))
 
 def show_cheetah(path):
-    module = __import__(path)
-    lst = path.split('/')
-    class_ = getattr(module, lst[len(lst) - 1])
-    instance = class_()
+    cached_template_object = [None]
+    time_last_compiled = [0]
 
     def decorator(f):
         def r(*args):
+            modtime = os.stat(path + '.tmpl')[stat.ST_MTIME]
+            if time_last_compiled[0] < modtime:
+                cached_template_object[0] = Cheetah.Template.Template(file = path + '.tmpl')
+                time_last_compiled[0] = time.time()
             for k, v in f(*args).iteritems():
-                setattr(instance, k, v)
-            return [str(instance).strip()]
+                setattr(cached_template_object[0], k, v)
+            return [str(cached_template_object[0]).strip()]
         return r
     return decorator
 
