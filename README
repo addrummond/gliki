@@ -12,11 +12,11 @@ First, check that you have all the dependencies listed in the DEPENDENCIES file
 installed and working correctly.
 
 I assume you are using some sort of vaguely Unixy system. It is (almost
-certainly) possible to run Gliki on Windows, but you'll need to install some
-sort of Unix environment (e.g. Cygwin) and I haven't actually tested it on
-Windows.
+certainly) possible to run Gliki on Windows, but it would be necessary to
+install some sort of Unix environment (e.g. Cygwin) and I haven't actually
+tested it on Windows.
 
-Now do the following in the main Gliki directory:
+First, do the following in the main Gliki directory:
 
     * Execute 'sh build_main.css.sh' to build the CSS file.
     * Execute 'sh compile_templates.sh' to compile the Cheetah templates.
@@ -62,11 +62,12 @@ be fairly self-explanatory.
 ----------
 You can block users, either by username or by IP address, by editing the
 etc/block file in the main Gliki directory (it is not necessary to restart Gliki
-after editing the file for the changes to take effect). The block file has the
-following syntax. Lines beginning with '#' are ignored. A line containing an IP
-address specifies that the IP address should be blocked; similarly for a line
-containing a username. It is also possible to specify IP address ranges, as in
-the following examples:
+after editing the file for the changes to take effect).
+
+The block file has the following syntax. Lines beginning with '#' are ignored.
+A line containing an IP address specifies that the IP address should be
+blocked; similarly for a line containing a username. It is also possible to
+specify IP address ranges, as in the following examples:
 
     83.64.77.*
     56-66.5.6-8.8
@@ -100,8 +101,8 @@ Administrators can delete a page called Foo by going to the following URL:
 
     http://my.web.site/articles/Foo/delete
 
-THERE WILL BE NO REQUEST FOR CONFIRMATION! The article will be immediately
-and irreversibly deleted.
+THERE WILL BE NO REQUEST FOR CONFIRMATION! The article and its edit history
+will be immediately and irreversibly deleted.
 
 
 7. Standard pages
