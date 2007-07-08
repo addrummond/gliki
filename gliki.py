@@ -361,9 +361,31 @@ def get_revision(dbcon, cur, title, revision):
         h = __row_to_hash(r)
         if add_to_cache:
             threads_id_cache.set_threads_id(title, h['threads_id'])
+
         return h
     # If no revisions for this title were found.
     return None
+
+def get_positive_revision_number(dbcon, cur, revhash):
+    """Given the hash returned by get_revision(...), return a positive
+       (i.e. permanent) revision number for the article.
+    """
+    res = cur.execute(
+        """
+        SELECT articles.id FROM revision_histories
+        INNER JOIN articles ON articles.id = revision_histories.articles_id
+        WHERE threads_id = ?
+        ORDER BY revision_date
+        """,
+        (revhash['threads_id'],)
+    )
+
+    rnum = 1
+    for r in res:
+        if r[0] == revhash['articles_id']:
+            return rnum
+        rnum += 1
+    assert False
 
 def make_article_exists_pred(dbcon, cur):
     """Returns predicate to be passed to sourceparser.translate_to_xhtml(...)"""
@@ -750,6 +772,7 @@ class ShowWikiArticle(object):
             cached_xhtml = row['cached_xhtml']
             articles_id = row['articles_id']
             threads_id = row['threads_id']
+            permanent_revision = revision > 0 and revision or get_positive_revision_number(dbcon, cur, row)
 
             # Get the list of categories that the article belongs to.
             res = cur.execute(
@@ -766,6 +789,7 @@ class ShowWikiArticle(object):
                          article_title=ntitle,
                          newest_article_title=title,
                          revision=revision,
+                         permanent_revision=permanent_revision,
                          threads_id=threads_id,
                          categories=categories,
                          redirects=self.redirect_path)
