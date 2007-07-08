@@ -99,18 +99,16 @@ def decrypt_password(iv, ciphertext):
     return unpad_string(a.decrypt(dec).decode('utf-8'))
 
 def show_cheetah(path):
-    cached_template_object = [None]
-    time_last_compiled = [0]
+    module = __import__(path)
+    lst = path.split('/')
+    class_ = getattr(module, lst[len(lst) - 1])
+    instance = class_()
 
     def decorator(f):
         def r(*args):
-            modtime = os.stat(path + '.tmpl')[stat.ST_MTIME]
-            if time_last_compiled[0] < modtime:
-                cached_template_object[0] = Cheetah.Template.Template(file = path + '.tmpl')
-                time_last_compiled[0] = time.time()
             for k, v in f(*args).iteritems():
-                setattr(cached_template_object[0], k, v)
-            return [str(cached_template_object[0]).strip()]
+                setattr(instance, k, v)
+            return [str(instance).strip()]
         return r
     return decorator
 
