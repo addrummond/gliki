@@ -869,9 +869,9 @@ class RecentChangesList(object):
             # Quite complex because we need to get the most recent title for
             # each thread (otherwise we get diff links with old article titles
             # which don't work).
-            most_recent_revisions = cur.execute(
+            base = \
                 """
-                SELECT title, user_comment, revision_date, threads_id, wikiusers.username, deleted_wikiusers.username, newest_title FROM revision_histories
+                newest_title FROM revision_histories
                 INNER JOIN articles ON revision_histories.articles_id = articles.id
                 LEFT JOIN wikiusers ON wikiusers_id = wikiusers.id
                 LEFT JOIN deleted_wikiusers ON wikiusers_id = deleted_wikiusers.id
@@ -882,11 +882,11 @@ class RecentChangesList(object):
                     GROUP BY revision_histories.threads_id
                 ) ON threads_id = matching_threads_id
                 ORDER BY revision_date DESC
-                LIMIT ?
-                OFFSET ?
-                """,
-                (n, from_)
-            )
+                """
+            num_query = "SELECT COUNT(title) %s" % base
+            res_query = "SELECT title, user_comment, revision_date, threads_id, wikiusers.username, deleted_wikiusers.username, newest_title %s LIMIT ? OFFSET ?" % base
+            max = int(list(cur.execute(num_query))[0][0])
+            most_recent_revisions = cur.execute(res_query, (n, from_))
             most_recent_revisions = list(most_recent_revisions)
 
             # For each of these changes, we want to find out the revision number
@@ -913,7 +913,8 @@ class RecentChangesList(object):
                                extras,
                                dict(changes=changes,
                                     from_=from_,
-                                    n=n))
+                                    n=n,
+                                    max=max))
         except db.Error, e:
             dberror(e)
 recent_changes_list = RecentChangesList()

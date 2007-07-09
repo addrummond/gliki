@@ -281,6 +281,10 @@ a.article_ref {
   color: INTERNAL_LINK_COLOR;
 }
 
+a.next-prev-link {
+  color: INTERNAL_LINK_COLOR;
+}
+
 a.category_ref {
   color: CATEGORY_REF_COLOR;
 }

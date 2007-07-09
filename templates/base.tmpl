@@ -26,11 +26,17 @@
 ## SOME GENERAL UTILITIES.
 ##
 #def next_and_prev_links($from_, $n, $linkf)
-    <a href="<%= linkf(from_ + n, n) %>">Next $n</a>
-        #if $from_ > 0
-        |
-    <a href="<%= linkf(((from_ - n < 0) and (0,) or (from_ - n),)[0], n) %>">Previous $n</a>
+    #if $max > 0
+        #if $from_ + $n <= $max
+            <a class="next-prev-link" href="<%= linkf(from_ + n, n) %>">Next $n &raquo;</a>
         #end if
+        #if $from_ + $n <= $max and $from_ > 0
+            <span class="category-sep">|</span>
+        #end if
+        #if $from_ > 0
+            <a class="next-prev-link" href="<%= linkf(((from_ - n < 0) and (0,) or (from_ - n),)[0], n) %>">&laquo; Previous $n</a>
+        #end if
+    #end if
 #end def
 
 
