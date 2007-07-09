@@ -76,6 +76,7 @@ RENDER_SYNTAX_TREE = 'render-syntax-tree'
 SYNTAX_TREE = 'syntax-tree'
 DELETE_SUFFIX = 'delete'
 SEARCH_PREFIX = 'search'
+PERMALINK_SUFFIX = 'permalink'
 
 USER_PAGE_PREFIX = 'user '
 CATEGORY_PAGE_PREFIX = 'category '
@@ -91,6 +92,9 @@ def article_link(title, revision=None):
     assert_is_int_or_none(revision)
     return '/' + ARTICLE_LINK_PREFIX + '/' + qaf(title) + \
            (revision and "/revisions/%i" % revision or '')
+
+def permalink_link(title, revision=None):
+    return article_link(title, revision) + '/' + PERMALINK_SUFFIX
 
 def user_page_link(name):
     if type(name) != types.StringType:

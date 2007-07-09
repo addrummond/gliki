@@ -719,6 +719,37 @@ class NoSuchRevision(object):
     def GET(self, parms, extras):
         return dict(kind=self.kind, article_title=self.title)
 
+class Permalink(object):
+    # Keep this in synch with ShowWikiArticle.uris
+    uris = [VParm(links.ARTICLE_LINK_PREFIX) >> VParm(links.REVISIONS_SUFFIX) >> Abs(links.PERMALINK_SUFFIX) >> OptDir()]
+
+    @ok_html()
+    @show_cheetah('templates/permalink')
+    def GET(self, parms, extras):
+        title = unfutz_article_title(uu_decode(parms[links.ARTICLE_LINK_PREFIX]))
+        revision = None
+        try:
+            revision = int(parms[links.REVISIONS_SUFFIX])
+        except ValueError:
+            raise control.BadRequestError()
+
+        permanent_revision = revision
+        if revision < 0:
+            try:
+                dbcon = get_dbcon()
+                cur = dbcon.cursor()
+
+                permanent_revision = get_positive_revision_number(dbcon, cur, get_revision(dbcon, cur, title, revision))
+            except db.Error, e:
+                dberror(e)
+
+        return dict(
+            title=title,
+            revision=revision,
+            permanent_revision=permanent_revision
+        )
+permalink = Permalink()
+
 class ShowWikiArticle(object):
     uris = [VParm(links.ARTICLE_LINK_PREFIX) >> Opt(VParm(links.REVISIONS_SUFFIX), {links.REVISIONS_SUFFIX: '-1' }) >> OptDir()]
 
@@ -772,7 +803,6 @@ class ShowWikiArticle(object):
             cached_xhtml = row['cached_xhtml']
             articles_id = row['articles_id']
             threads_id = row['threads_id']
-            permanent_revision = revision > 0 and revision or get_positive_revision_number(dbcon, cur, row)
 
             # Get the list of categories that the article belongs to.
             res = cur.execute(
@@ -789,7 +819,6 @@ class ShowWikiArticle(object):
                          article_title=ntitle,
                          newest_article_title=title,
                          revision=revision,
-                         permanent_revision=permanent_revision,
                          threads_id=threads_id,
                          categories=categories,
                          redirects=self.redirect_path)
@@ -2258,6 +2287,7 @@ control.register_handlers([front_page,
                            category_list,
                            recent_changes_list,
                            delete_article_page,
-                           search])
+                           search,
+                           permalink])
 control.start_server(config.SERVER_PORT)
 

@@ -33,6 +33,8 @@ SERVER = "paste" # OR "lighttpd"
 
 SERVER_PORT = 3000
 
+BASE_URL = "http://gliki.whsites.net"
+
 
 #
 # ==== Unicode/encoding options ====
