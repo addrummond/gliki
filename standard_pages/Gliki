@@ -1,4 +1,6 @@
 #CATEGORY [[gliki]]
+#CATEGORY [[silly category]]
+#CATEGORY [[another silly]]
 
 ==The basics==
 This section covers everything you need to know to get started editing.
@@ -11,9 +13,9 @@ There's plenty of room for everyone to advocate their pet theories. It's not a g
 
 ====Capital letters====
 Gliki article titles are case-sensitive. By convention, the first word in an article title
- //always// begins with a capital letter. Also by convention, subsequent words are only capitalized if they're proper nouns. The names of theories and grammatical processes count as proper nouns (e.g. "Government And Binding Theory", "Heavy NP Shift", "Optimality Theory"). Capitalize little words like "and" and "or" if they're part of a proper noun phrase -- it's ugly but it's easier to be consistent this way.
+ //always// begins with a capital letter. Also by convention, subsequent words are only capitalized if they're proper nouns. The names of theories and grammatical processes count as proper nouns (e.g. ``Government And Binding Theory'', ``Heavy NP Shift'', ``Optimality Theory''). Capitalize little words like ``and'' and ``or'' if they're part of a proper noun phrase -- it's ugly but it's easier to be consistent this way.
 
-There's a couple of exceptions to the rule: user pages begin with a lowercase "user " to distinguish them from articles, and pages about categories begin with a lower case "category ".
+There's a couple of exceptions to the rule: user pages begin with a lowercase ``user '' to distinguish them from articles, and pages about categories begin with a lower case ``category ''.
 
 ====Nothing is off-topic====
 Although this is //intended// to be a wiki for generative linguistics and linguistics in general, there are not any official rules about what's on topic and what isn't, and you should not delete material which isn't relevant to linguistics (unless it's vandalism or {{http://en.wikipedia.org/wiki/Wikipedia:Patent_nonsense|patent nonsense}}).
@@ -26,7 +28,7 @@ Although this is //intended// to be a wiki for generative linguistics and lingui
 These are imposed by the law, the terms of the web host, and good taste. No copyrighted material (unless you are the copyright holder and agree to license it), no porn, no libel, no illegal images, and no links to any of the former, with the exception of copyrighted material legitimately hosted on another site.
 
 ===Security===
-Gliki accounts are **not** particularly secure. Don't use a high-value password for your Gliki account. This is especially so if you are using Internet Explorer 6 or lower, since its implementation of the more secure HTTP "digest" authentication system is buggy, forcing Gliki to use the less secure "basic" authentication system with this browser. Digest authentication works with just about every other browser (tested on IE7, Firefox, Opera, Safari, Konqueror and w3m).
+Gliki accounts are **not** particularly secure. Don't use a high-value password for your Gliki account. This is especially so if you are using Internet Explorer 6 or lower, since its implementation of the more secure HTTP ``digest'' authentication system is buggy, forcing Gliki to use the less secure ``basic'' authentication system with this browser. Digest authentication works with just about every other browser (tested on IE7, Firefox, Opera, Safari, Konqueror and w3m).
 
 ===Gliki markup===
 The markup language used by Gliki is specially designed to do the sorts of things that linguists (or at least, syntacticians) like to do, chief among these being numbered examples and footnotes. Before we get onto those, a quick overview of the basic markup.
@@ -37,7 +39,7 @@ Gliki allows for **bold**, //italic//, __underlined__ and ||small caps|| text, a
 ><@@
 **some bold text**
 //some italic text//
-__some underlined text__ (two "_" underscores in a row there)
+__some underlined text__ (two ``_'' underscores in a row there)
 ||some small caps text|| (lower case letters will automatically be converted to upper case)
 |^a superscript^|
 |_a subscript_|
@@ -67,7 +69,7 @@ And an automatically numbered reference back to it: [:example:]. Here's the code
     He helps me wash his car
 @@
 
-You introduce the example by putting four (or more) spaces at the beginning of a line. The first part of the above code (":example:") is the label for the example. We've been imaginative and called this one "example". Labels are optional, but they allow you to refer back to examples easily. The second line is the native sentence and the third its literal translation. Note how the words are grouped together using "<...>", allowing the two lines to be properly matched even if there isn't a one-to-one correspondence of words. The fourth line is the gloss. If we want to refer back to this example, we can just write:
+You introduce the example by putting four (or more) spaces at the beginning of a line. The first part of the above code (``:example:'') is the label for the example. We've been imaginative and called this one ``example''. Labels are optional, but they allow you to refer back to examples easily. The second line is the native sentence and the third its literal translation. Note how the words are grouped together using ``<...>'', allowing the two lines to be properly matched even if there isn't a one-to-one correspondence of words. The fourth line is the gloss. If we want to refer back to this example, we can just write:
 
 ><@@
 [:example:]
@@ -104,7 +106,7 @@ If you want to give the link a different name to the article title, you can do i
 
 (This gives [[Heavy NP Shift|a link to the Heavy NP Shift article]].)
 
-Links to external websites look the same, except they use "\{\{" instead of "\[\[":
+Links to external websites look the same, except they use ``\{\{'' instead of ``\[\['':
 
 ><@@
 {{http://www.google.com|a link to Google}}
@@ -118,7 +120,7 @@ Blah blah blah ^^footnote text^^ blah blah blah...
 @@
 
 ====Indented paragraphs====
-If you begin a paragraph with one or more ">" characters, it will be indented. This can be useful for organizing discussions, or for block quotes. The first ">" must be the first character on the line (i.e. no spaces or tabs can precede it), and there cannot be any spaces between subsequent ">" characters.
+If you begin a paragraph with one or more ``>'' characters, it will be indented. This can be useful for organizing discussions, or for block quotes. The first ``>'' must be the first character on the line (i.e. no spaces or tabs can precede it), and there cannot be any spaces between subsequent ``>'' characters.
 
 ><@@
 > An indented paragraph.
@@ -132,14 +134,14 @@ The above looks like this:
 
 >> An even more indented paragraph.
 
-Note to wikipedians who are used to indenting using ":". In Gliki, there must be a blank line separating every paragaph, so the following will **not** do what you want:
+Note to wikipedians who are used to indenting using ``:''. In Gliki, there must be a blank line separating every paragaph, so the following will **not** do what you want:
 
 ><@@
 > An indented paragraph.
 >> Not an even more indented paragraph because there's no blank line.
 @@
 
-You can also follow the ">" characters with "<" characters to indent from the right as well as from the left:
+You can also follow the ``>'' characters with ``<'' characters to indent from the right as well as from the left:
 
 ><@@
 >><<This paragraph is doubly right- and left- indented.
@@ -205,21 +207,21 @@ Gliki has a simple system of categories. To add an article to a category, just p
 #CATEGORY [[category name]]
 @@
 
-Categories are always converted to lower case (trendy!). Categories are flat, i.e. there is no way of saying that one category is a subcategory of another. Apart from making categories easier to implement, this lack of a complex structure prevents an un-wiki-like hierarchical organization of articles. This article is in the "gliki" category, which contains a small number of articles about various aspects of Gliki. To see all the articles in a category, you can go to http://gliki.whsites.net/categories/CATEGORY_NAME
+Categories are always converted to lower case (trendy!). Categories are flat, i.e. there is no way of saying that one category is a subcategory of another. Apart from making categories easier to implement, this lack of a complex structure prevents an un-wiki-like hierarchical organization of articles. This article is in the ``gliki'' category, which contains a small number of articles about various aspects of Gliki. To see all the articles in a category, you can go to http://gliki.whsites.net/categories/CATEGORY_NAME
 
 ====Signatures====
-Sometimes, it's useful to "sign" an edit with the time and your username. You can do this by entering \~\~\~\~ (just like in Wikipedia). You can use \~\~\~ to sign with your username only, and \~\~\~\~\~ to sign with the time only (rather arbitrary, but it's the same system used by Wikipedia).
+Sometimes, it's useful to ``sign'' an edit with the time and your username. You can do this by entering \~\~\~\~ (just like in Wikipedia). You can use \~\~\~ to sign with your username only, and \~\~\~\~\~ to sign with the time only (rather arbitrary, but it's the same system used by Wikipedia).
 
 ====Escaping special characters====
-If you want to write something like \*\*foo\*\* without this being interpreted as bold text, you can use "\\" to "escape" special characters. For example:
+If you want to write something like \*\*foo\*\* without this being interpreted as bold text, you can use ``\\'' to ``escape'' special characters. For example:
 
 ><@@
 \\*\\*This is not bold text (it's text with two asterisks on either side).\\*\\*
 @@
 
-Note that backslashes themselves need to be escaped (i.e. in order to make a "\\" appear in the article text, you need to write "\\\\").
+Note that backslashes themselves need to be escaped (i.e. in order to make a ``\\'' appear in the article text, you need to write ``\\\\'').
 
-Gliki has a special rule for URLs: if you write http://foo, you don't need to escape the "\/\/" sequence (this also works for ftp://, etc.)
+Gliki has a special rule for URLs: if you write http://foo, you don't need to escape the ``\/\/'' sequence (this also works for ftp://, etc.)
 
 ====Preformatted text====
 The yellow boxes with markup code in the previous sections are created like this:
@@ -234,5 +236,6 @@ Some preformatted text.
 Blah blah blah...
 @@
 
-You don't need to escape special character sequences like "\*\*" in blocks of preformatted text. However, you do still need to escape backslashes (i.e. you need to write "\\\\" to get "\\"). You can also use "\\" within a block of preformatted text to escape the "@@" sequence (that's how the preformatted block above was written).
+You don't need to escape special character sequences like ``\*\*'' in blocks of preformatted text. However, you do still need to escape backslashes (i.e. you need to write ``\\\\'' to get ``\\''). You can also use ``\\'' within a block of preformatted text to escape the ``@@'' sequence (that's how the preformatted block above was written).
+
 

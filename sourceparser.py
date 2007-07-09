@@ -319,7 +319,10 @@ class Formatted(object):
 
 class MDash(object):
     __slots__ = []
-    pass
+class LDQuo(object):
+    __slots__ = []
+class RDQuo(object):
+    __slots__ = []
 
 #
 # Earlier versions of the parser parsed nested formatting tags
@@ -418,6 +421,10 @@ def build_formatted(list):
                     currently_in.pop()
             elif elem.text == "--":
                 ensure_children(current_node).children.append(MDash())
+            elif elem.text == '``':
+                ensure_children(current_node).children.append(LDQuo())
+            elif elem.text == "''":
+                ensure_children(current_node).children.append(RDQuo())
             else:
                 assert False
         elif isinstance(elem, ArticleRef) or isinstance(elem, ExternalRef) or \
@@ -457,7 +464,7 @@ def formatted_(stop_with_single_newline, stop_with_gt, stop_with_bullet):
             ))
             ,
             Apply(lambda x_lc: Elem(x_lc[1][0], x_lc[1][1], True, x_lc[0]),
-                  Strs("//", "**", "__", "||", "|^", "^|", "|_", "_|", "--") >>
+                  Strs("//", "**", "__", "||", "|^", "^|", "|_", "_|", "--", "``", "''") >>
                   (lambda str:
                   GetPos() >>
                   (lambda lc:
@@ -478,7 +485,7 @@ def formatted_(stop_with_single_newline, stop_with_gt, stop_with_bullet):
             (lambda lc:
             SUntil1(
                 escchr,
-                Strs("://", "//", "**", "__", "^^", "||", "[[", "{{", "|^", "^|", "|_", "_|", "[:", "--", "#") *
+                Strs("://", "//", "**", "__", "^^", "||", "[[", "{{", "|^", "^|", "|_", "_|", "[:", "--", "#", "``", "''") *
                 (stop_with_single_newline and Chr("\n") or Str("\n\n"))                *
                 (stop_with_gt and Chr('>') or RError())                                *
                 (stop_with_bullet and (Str("(*)") * Str("(#)")) or RError())           *
@@ -1191,6 +1198,10 @@ def translate_to_xhtml_(state, elem, writer, article_exists_pred):
             writer.write(markup[elem.kind][1])
     elif isinstance(elem, MDash):
         writer.write('&mdash;')
+    elif isinstance(elem, LDQuo):
+        writer.write('&ldquo;')
+    elif isinstance(elem, RDQuo):
+        writer.write('&rdquo;')
     elif isinstance(elem, ExternalRef):
         writer.write('<a class="external_link" href="')
         writer.write(link_encode(elem.url))
