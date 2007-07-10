@@ -178,8 +178,8 @@ def __make_list_link(name, from_, n):
     assert_is_int_or_none(from_)
     assert_is_int_or_none(n)
     return '/' + name + '/' + \
-           (from_ and FROM_SUFFIX + '/' + str(from_) + '/' or '') + \
-           (n and str(n) or '')
+           ((from_ is not None) and FROM_SUFFIX + '/' + str(from_) + '/' or '') + \
+           ((n is not None) and str(n) or '')
 def recent_changes_link(from_=None, n=None):
     return __make_list_link(RECENT_CHANGES, from_, n)
 def category_list_link(from_=None, n=None):

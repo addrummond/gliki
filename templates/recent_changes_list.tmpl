@@ -25,12 +25,13 @@
 #extends base
 
 #def title#Recent changes#end def#
+#def np_preamble#Recent changes#end def#
+#def np_postamble#:#end def#
+#def np_empty#As of yet, no edits have been made to any articles in $FRONT_PAGE_TITLE.#end def#
 
 #def body
-    <p>Recent changes $from_ to <%= str(self.getVar('from_') + len(self.getVar('changes'))) %>:</p>
-    <p>
-        $next_and_prev_links($from_, $n, links.recent_changes_link)
-    </p>
+    $next_and_prev_links($from_, $n, links.recent_changes_link)
+    #if $max >= $from_
     <table class="history">
         <tr>
             <th>Date</th>
@@ -65,5 +66,6 @@
         </tr>
         #end for#
     </table>
+    #end if
 #end def
 

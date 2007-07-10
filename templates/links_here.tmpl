@@ -24,20 +24,17 @@
 
 #def title#$article_title - Links here#end def#
 
+#def np_preamble#Articles#end def#
+#def np_postamble# linking to &lsquo;$article_title&rsquo;:#end def#
+#def np_empty#Currently, no articles link to &lsquo;$article_title&rsquo;#end def#
+
 #def body
-    <p>Articles from $from_ to $n linking to &lsquo;$article_title&rsquo;:</p>
-    <p>
-        $next_and_prev_links($from_, $n, lambda x, y: links.links_here_link(self.getVar('article_title'), x, y))
-    </p>
-    #if len($titles) == 0
-    <p>
-        Currently, no articles link to <a class="article_ref" href="<%= links.article_link(self.getVar('article_title')) %>">$article_title</a>.
-    </p>
-    #else
+    $next_and_prev_links($from_, $n, lambda x, y: links.links_here_link(self.getVar('article_title'), x, y))
+    #if $max >= $from_
     <p>
         The following articles link to <a class="article_ref" href="<%= links.article_link(self.getVar('article_title')) %>">$article_title</a>.
         <ul class="links-here">
-            #for $t in titles
+            #for $t in $titles
             <li>
                 <a class="article_ref" href="<%= links.article_link(t) %>">$t</a>
             </li>

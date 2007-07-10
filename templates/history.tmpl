@@ -26,11 +26,12 @@
 
 #def title#$article_title - History#end def#
 
+#def np_preamble#Revisions#end def#
+#def np_postamble#for <a href="<%= links.article_link(self.getVar('article_title')) %>" class="article_ref"><b>$article_title</b></a>:#end def#
+
 #def body
-    <p>Revisions $from_ to $n for <a href="<%= links.article_link(self.getVar('article_title')) %>" class="article_ref"><b>$article_title</b></a>:</p>
-    <p>
-        $next_and_prev_links($from_, $n, lambda x, y: links.article_history_link(self.getVar('article_title'), x, y))
-    </p>
+    $next_and_prev_links($from_, $n, lambda x, y: links.article_history_link(self.getVar('article_title'), x, y))
+    #if $max >= $from_
     <table class="history">
         <tr>
             <th>Date</th>
@@ -65,5 +66,6 @@
         </tr>
         #end for
     </table>
+    #end if
 #end def
 

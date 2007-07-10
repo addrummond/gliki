@@ -24,7 +24,21 @@
 
 #def title#Category $category#end def#
 
-#def body#
+#def np_preamble#Articles in category &lsquo;$category&rsquo;#end def#
+#def np_postamble#:#end def#
+#def np_empty#There are currently no articles in category &lsquo;$category&rsquo;#end def#
+
+#def body
+    $next_and_prev_links($from_, $n, lambda x, y: links.category_link(self.getVar('category'), x, y))
+
+    #if $max >= $from_
+    <ol class="article-list">
+        #for $title in $article_titles
+        <li><a href="<%= links.article_link(title) %>" class="article_ref">$title</a></li>
+        #end for
+    </ol>
+    #end if
+
     <p>
         You can also look at a list of <a class="category_ref" href="<%= links.category_list_link() %>">all the categories</a> in the wiki.
     </p>
@@ -32,25 +46,5 @@
         By convention, any information relating to this category should go in
         <a class="article_ref" href="<%= links.category_page_link(self.getVar('category')) %>"><%=links.CATEGORY_PAGE_PREFIX%>$category</a>.
     </p>
-
-    #if len($article_titles) > 0
-    <p>Articles from $from_ to $n in category &lsquo;$category&rsquo;:</p>
-    #end if
-
-    <p>
-        $next_and_prev_links($from_, $n, lambda x, y: links.category_link(self.getVar('category'), x, y))
-    </p>
-
-    #if len($article_titles) > 0
-    <ol class="article-list">
-        #for $title in $article_titles
-        <li><a href="<%= links.article_link(title) %>" class="article_ref">$title</a></li>
-        #end for
-    </ol>
-    #else
-    <p>
-        There are currently no articles in category &lsquo;$category&rsquo;.
-    </p>
-    #end if
-#end def#
+#end def
 

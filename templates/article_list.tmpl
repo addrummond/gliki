@@ -24,13 +24,12 @@
 
 #def title#List of all articles#end def#
 
+#def np_preamble#Articles#end def#
+#def np_postamble# in $FRONT_PAGE_TITLE:#end def#
+#def np_empty#There are currently no articles in $FRONT_PAGE_TITLE#end def#
+
 #def body
-    <p>
-        Articles from $from_ to $n:
-    </p>
-    <p>
-        $next_and_prev_links($from_, $n, links.article_list_link)
-    </p>
+    $next_and_prev_links($from_, $n, links.article_list_link)
 
     <ol class="article-list">
         #for $title in $article_titles

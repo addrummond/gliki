@@ -25,17 +25,38 @@
 ##
 ## SOME GENERAL UTILITIES.
 ##
+#def np_preamble
+Default preamble
+#end def
+#def np_postamble
+Default postamble
+#end def
+#def np_empty
+Default empty.
+#end def
+#def np_out_of_range
+No results in this range.
+#end def
 #def next_and_prev_links($from_, $n, $linkf)
-    #if $max > 0
+    #if $max >= $from_
+    <p>
+        $np_preamble from $from_ to #if $max < $from_ + $n#$max#else#<%= from_+ n %>#end if# out of ${max}${np_postamble}
+    </p>
+    <p>
         #if $from_ + $n <= $max
             <a class="next-prev-link" href="<%= linkf(from_ + n, n) %>">Next $n &raquo;</a>
         #end if
-        #if $from_ + $n <= $max and $from_ > 0
+        #if $from_ + $n <= $max and $from_ > 1
             <span class="category-sep">|</span>
         #end if
-        #if $from_ > 0
-            <a class="next-prev-link" href="<%= linkf(((from_ - n < 0) and (0,) or (from_ - n),)[0], n) %>">&laquo; Previous $n</a>
+        #if $from_ > 1
+            <a class="next-prev-link" href="<%= linkf(((from_ - n < 1) and (1,) or (from_ - n,))[0], n) %>">&laquo; Previous $n</a>
         #end if
+    </p>
+    #elif $max == 0
+    $np_empty
+    #else
+    $np_out_of_range
     #end if
 #end def
 

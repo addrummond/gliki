@@ -63,7 +63,7 @@ from my_utils import *
 
 threads_id_cache = cache.FSThreadsIdCache(config.THREADS_IDS_CACHE_DIR)
 
-LIST_START_DEFAULT = 0
+LIST_START_DEFAULT = 1
 LIST_N_DEFAULT = 50
 def list_uri(prelude):
     """Create a parser for the URI for a list page (e.g. list of recent changes)."""
@@ -298,9 +298,13 @@ __threads_id_select = \
      WHERE query1.title = ?
     ) 
     """
-__qstring_template = \
+__pull_out_everything = \
     """
     SELECT articles.title, articles.source, articles.cached_xhtml, articles.id, revision_histories.threads_id, revision_histories.revision_date, revision_histories.user_comment, articles.redirect, wikiusers.username, deleted_wikiusers.username
+    """
+__qstring_template = \
+    """
+        %s
         FROM
             %s query2
             INNER JOIN revision_histories ON revision_histories.threads_id = query2.threads_id
@@ -308,7 +312,7 @@ __qstring_template = \
             LEFT JOIN wikiusers ON revision_histories.wikiusers_id = wikiusers.id
             LEFT JOIN deleted_wikiusers ON revision_histories.wikiusers_id = deleted_wikiusers.id
         ORDER BY revision_histories.revision_date %s
-        LIMIT %i OFFSET %i
+        %s
     """
 
 def get_threads_id_select_statement(title):
@@ -349,7 +353,7 @@ def get_revision(dbcon, cur, title, revision):
     offset = abs(revision) - 1
 
     stmt, add_to_cache, give_title = get_threads_id_select_statement(title)
-    qstring = __qstring_template % (stmt, use_desc and "DESC" or "", -1, offset)
+    qstring = __qstring_template % (__pull_out_everything, stmt, use_desc and "DESC" or "", "LIMIT %i OFFSET %i" % (-1, offset))
 
     rows = cur.execute(
         qstring,
@@ -401,7 +405,7 @@ def get_ordered_revisions(dbcon, cur, title, limit=0, offset=0):
     assert type(title) == types.UnicodeType
 
     stmt, add_to_cache, give_title = get_threads_id_select_statement(title)
-    qstring = __qstring_template % (stmt, "DESC", limit, offset)
+    qstring = __qstring_template % (__pull_out_everything, stmt, "DESC", "LIMIT %i OFFSET %i" % (limit, offset))
     rows = cur.execute(
         qstring,
         give_title and (title,) or ()
@@ -414,6 +418,14 @@ def get_ordered_revisions(dbcon, cur, title, limit=0, offset=0):
     if l > 0 and add_to_cache:
         threads_id_cache.set_threads_id(title, rows[0]['threads_id'])
     return rows
+
+def get_number_of_revisions(dbcon, cur, title):
+    assert type(title) == types.UnicodeType
+
+    stmt, add_to_cache, give_title = get_threads_id_select_statement(title)
+    qstring = __qstring_template % ("SELECT COUNT (articles.title)", stmt, '', '')
+    res = cur.execute(qstring, give_title and (title,) or ())
+    return int(list(res)[0][0])
 
 def get_diff_revision_number_pair(dbcon, cur, threads_id, revision_date):
     revs = cur.execute(
@@ -852,6 +864,8 @@ class RecentChangesList(object):
         try:
             from_ = int(uu_decode(parms['from']))
             n = int(uu_decode(parms['n']))
+            if from_ < 1 or n < 1:
+                raise control.BadRequestError()
         except ValueError:
             raise control.BadRequestError()
 
@@ -886,7 +900,7 @@ class RecentChangesList(object):
             num_query = "SELECT COUNT(title) %s" % base
             res_query = "SELECT title, user_comment, revision_date, threads_id, wikiusers.username, deleted_wikiusers.username, newest_title %s LIMIT ? OFFSET ?" % base
             max = int(list(cur.execute(num_query))[0][0])
-            most_recent_revisions = cur.execute(res_query, (n, from_))
+            most_recent_revisions = cur.execute(res_query, (n, from_ - 1))
             most_recent_revisions = list(most_recent_revisions)
 
             # For each of these changes, we want to find out the revision number
@@ -1346,6 +1360,8 @@ class Category(object):
         try:
             from_ = int(uu_decode(parms['from']))
             n = int(uu_decode(parms['n']))
+            if from_ < 1 or n < 1:
+                raise control.BadRequestError()
         except ValueError:
             raise control.BadRequestError()
 
@@ -1355,9 +1371,8 @@ class Category(object):
             dbcon = get_dbcon()
             cur = dbcon.cursor()
 
-            res = cur.execute(
+            base = \
                 """
-                SELECT query1.title
                 FROM
                     (SELECT MAX(revision_date), threads_id, title
                      FROM revision_histories
@@ -1367,13 +1382,13 @@ class Category(object):
                 INNER JOIN category_specs ON query1.threads_id = category_specs.threads_id AND
                                              category_specs.name = ?
                 ORDER BY title
-                LIMIT ?
-                OFFSET ?
-                """,
-                (category, n, from_)
-            )
+                """
+            num_query = "SELECT COUNT(query1.title) %s" % base
+            res_query = "SELECT query1.title %s LIMIT ? OFFSET ?" % base
+            max = int(list(cur.execute(num_query, (category,)))[0][0])
+            res = cur.execute(res_query, (category, n, from_ - 1))
 
-            return merge_login(dbcon, cur, extras, dict(category=category, article_titles=list(map(lambda x: x[0], res)), from_=from_, n=n))
+            return merge_login(dbcon, cur, extras, dict(category=category, article_titles=list(map(lambda x: x[0], res)), from_=from_, n=n, max=max))
         except db.Error, e:
             dberror(e)
 category = Category()
@@ -1391,23 +1406,25 @@ class CategoryList(object):
                 try:
                     from_ = int(uu_decode(parms['from']))
                     n = int(uu_decode(parms['n']))
+                    if from_ < 1 or n < 1:
+                        raise control.BadRequestError()
                 except ValueError:
                     raise control.BadRequestError()
 
             dbcon = get_dbcon()
             cur = dbcon.cursor()
 
-            res = cur.execute(
+            base = \
                 """
                 SELECT DISTINCT name FROM category_specs
                 ORDER BY name
-                LIMIT ?
-                OFFSET ?
-                """,
-                (n, from_)
-            )
+                """
+            num_query = "SELECT COUNT(name) FROM (%s)" % base
+            res_query = "%s LIMIT ? OFFSET ?" % base
+            max = int(list(cur.execute(num_query))[0][0])
+            res = cur.execute(res_query, (n, from_ - 1))
 
-            return merge_login(dbcon, cur, extras, dict(categories=map(lambda x: x[0].lower(), res), from_=from_, n=n))
+            return merge_login(dbcon, cur, extras, dict(categories=map(lambda x: x[0].lower(), res), from_=from_, n=n, max=max))
         except db.Error, e:
             raise dberror(e)
 category_list = CategoryList()
@@ -1422,6 +1439,8 @@ class WikiArticleHistory(object):
         try:
             from_ = int(uu_decode(parms['from']))
             n = int(uu_decode(parms['n']))
+            if from_ < 1 or n < 1:
+                raise control.BadRequestError()
         except ValueError:
             raise control.BadRequestError()
 
@@ -1431,9 +1450,8 @@ class WikiArticleHistory(object):
             dbcon = get_dbcon()
             cur = dbcon.cursor()
 
-            rows = get_ordered_revisions(dbcon, cur, title, n, from_)
-            if not rows:
-                raise control.NotFoundError()
+            max = get_number_of_revisions(dbcon, cur, title)
+            rows = get_ordered_revisions(dbcon, cur, title, n, from_ - 1)
             d = { }
             merge_login(dbcon, cur, extras, d)
             return merge_dicts(d,
@@ -1447,7 +1465,8 @@ class WikiArticleHistory(object):
                                          for row in rows
                                         ],
                                     from_ = from_,
-                                    n = n
+                                    n = n,
+                                    max = max
                                ))
         except db.Error, e:
             dberror(e)
@@ -1469,6 +1488,8 @@ class WikiArticleList(object):
             try:
                 from_ = int(uu_decode(parms['from']))
                 n = int(uu_decode(parms['n']))
+                if from_ < 1 or n < 1:
+                    raise control.BadRequestError()
             except ValueError:
                 raise control.BadRequestError()
 
@@ -1476,24 +1497,25 @@ class WikiArticleList(object):
             dbcon = get_dbcon()
             cur = dbcon.cursor()
 
-            rows = cur.execute(
+            base = \
                 """
                 SELECT MAX(revision_date), title FROM revision_histories
                 INNER JOIN articles ON articles.id = revision_histories.articles_id
                 GROUP BY revision_histories.threads_id
                 ORDER BY articles.title
-                LIMIT ?
-                OFFSET ?
-                """,
-                (n, from_)
-            )
+                """
+            num_query = "SELECT COUNT(q1.title) FROM (%s) q1" % base
+            res_query = "%s LIMIT ? OFFSET ?" % base
+            max = int(list(cur.execute(num_query))[0][0])
+            rows = cur.execute(res_query, (n, from_ - 1))
 
             titles = [row[1] for row in rows]
             return merge_login(dbcon, cur,
                                extras,
                                dict(article_titles=titles,
                                     from_=from_,
-                                    n=n))
+                                    n=n,
+                                    max=max))
         except db.Error, e:
             dberror(e)
 wiki_article_list = WikiArticleList()
@@ -1506,10 +1528,12 @@ class LinksHere(object):
     def GET(self, parms, extras):
         title = unfutz_article_title(uu_decode(parms[links.ARTICLE_LINK_PREFIX]))
 
-        from_, n = None, None
+        from_, n = LIST_START_DEFAULT, LIST_N_DEFAULT
         try:
             from_ = int(uu_decode(parms['from']))
             n = int(uu_decode(parms['n']))
+            if from_ < 1 or n < 1:
+                raise control.BadRequestError()
         except ValueError:
             raise control.BadRequestError()
 
@@ -1517,9 +1541,9 @@ class LinksHere(object):
             dbcon = get_dbcon()
             cur = dbcon.cursor()
 
-            rows = cur.execute(
+            base = \
             """
-            SELECT title FROM links
+            FROM links
             INNER JOIN
                 (SELECT MAX(revision_date), threads_id, title
                  FROM revision_histories
@@ -1529,14 +1553,14 @@ class LinksHere(object):
             ON query1.threads_id = links.threads_id
             WHERE links.to_title = ?
             ORDER BY title
-            LIMIT ?
-            OFFSET ?
-            """,
-            (title, n, from_)
-            )
+            """
+            num_query = "SELECT COUNT(title) %s" % base
+            res_query = "SELECT title %s LIMIT ? OFFSET ?" % base
+            max = int(list(cur.execute(num_query, (title,)))[0][0])
+            rows = cur.execute(res_query, (title, n, from_ -1))
 
             titles = map(lambda x: x[0], list(rows))
-            return merge_login(dbcon, cur, extras, dict(article_title=title, titles=titles, from_=from_, n=n))
+            return merge_login(dbcon, cur, extras, dict(article_title=title, titles=titles, from_=from_, n=n, max=max))
         except db.Error, e:
             dberror(e)
 links_here = LinksHere()
@@ -2023,6 +2047,8 @@ class Watchlist(object):
         try:
             from_ = int(uu_decode(parms['from']))
             n = int(uu_decode(parms['n']))
+            if from_ < 1 or n < 1:
+                raise control.BadRequestError()
         except ValueError:
             raise control.BadRequestError()
 
@@ -2050,7 +2076,7 @@ class Watchlist(object):
                 LIMIT ?
                 OFFSET ?
                 """,
-                (d['username'], n, from_)
+                (d['username'], n, from_ - 1)
             )
 
             d['article_titles'] = [r[0] for r in res if len(r) == 1]

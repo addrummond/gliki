@@ -24,12 +24,12 @@
 
 #def title#List of all categories#end def#
 
-#def body
-    <p>Categories from $from_ to $n in $FRONT_PAGE_TITLE:</p>
+#def np_preamble#Categories#end def#
+#def np_postamble# in $FRONT_PAGE_TITLE:#end def#
+#def np_empty#There are currently no categories in $FRONT_PAGE_TITLE.#end def#
 
-    <p>
+#def body
     $next_and_prev_links($from_, $n, links.category_list_link)    
-    </p>
 
     <ol class="article-list">
         #for $cat in $categories
