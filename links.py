@@ -164,9 +164,6 @@ def unwatch_article_link(title):
     title = my_utils.webencode(title)
     return '/' + ARTICLE_LINK_PREFIX + '/' + qaf(title) + '/' + UNWATCH_SUFFIX
 
-def tracked_changes_link():
-    return '/' + TRACKED_CHANGES
-
 def render_syntax_tree_link():
     return '/' + RENDER_SYNTAX_TREE
 
@@ -193,4 +190,6 @@ def watchlist_link(from_=None, n=None):
 def article_history_link(title, from_=None, n=None):
     title = my_utils.webencode(title)
     return __make_list_link(ARTICLE_LINK_PREFIX + '/' + qaf(title) + '/' + HISTORY_SUFFIX, from_, n)
+def tracked_changes_link(from_=None, n=None):
+    return __make_list_link(TRACKED_CHANGES, from_, n)
 

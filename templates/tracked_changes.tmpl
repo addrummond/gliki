@@ -24,21 +24,18 @@
 #extends base
 
 #def title#$username#end def#
+#def np_preamble#Tracked changes#end def#
+#def np_postamble#:#end def#
+#def np_empty#None of your tracked articles have been changed recently.#end def#
 
 #def body
+    $next_and_prev_links($from_, $n, links.tracked_changes_link)
+
     #if $getVar('error', False)
     <p>
         $error
     </p>
-    #else
-    <p>
-        Articles from $from_ to $n on your watchlist which were recently modified:
-    </p>
-    #if len($revisions) == 0
-    <p>
-        Currently, you do not have any articles on your watchlist.
-    </p>
-    #else
+    #elif $max >= $from_
     <table class="history">
         <tr>
             <th>Date</th>
@@ -70,7 +67,7 @@
                 <a class="article_ref" href="<%= links.user_page_link(r['username']) %>">$r.username</a>
             </td>
             <td>
-                <a href="<%= links.article_link(r['article_title']) %>">$r.article_title</a>
+                <a class="article_ref" href="<%= links.article_link(r['article_title']) %>">$r.article_title</a>
             </td>
             <td>
                 $r.comment
@@ -78,7 +75,6 @@
         </tr>
         #end for
     </table>
-    #end if
     #end if
 #end def
 

@@ -2088,11 +2088,18 @@ class Watchlist(object):
 watchlist = Watchlist()
 
 class TrackedChanges(object):
-    uris = [Abs(links.TRACKED_CHANGES)]
+    uris = [list_uri(Abs(links.TRACKED_CHANGES))]
 
     @ok_html()
     @show_cheetah('templates/tracked_changes')
     def GET(self, parms, extras):
+        from_,n = None,None
+        try:
+            from_ = int(parms['from'])
+            n = int(parms['n'])
+        except ValueError:
+            raise control.BadRequestError()
+
         try:
             dbcon = get_dbcon()
             cur = dbcon.cursor()
@@ -2102,10 +2109,10 @@ class TrackedChanges(object):
             if len(d) == 0:
                 return dict(error=u"You must be logged in to view your recent changes list.")
 
-            # Select the 50 items on the watchlist with the most recent changes.
-            res = cur.execute(
+            # Select items on the watchlist with the most recent changes.
+            base = \
                 """
-                SELECT title, revision_date, _threads_id, wikiusers.username, deleted_wikiusers.username, user_comment
+                %s
                 FROM
                     (SELECT MAX(revision_date), revision_date, articles_id, user_comment, revision_histories.threads_id AS _threads_id, revision_histories.wikiusers_id AS _wikiusers_id FROM watchlist_items
                      INNER JOIN revision_histories ON revision_histories.threads_id = watchlist_items.threads_id
@@ -2117,16 +2124,18 @@ class TrackedChanges(object):
                 LEFT JOIN wikiusers ON wikiusers.id = q1._wikiusers_id
                 LEFT JOIN deleted_wikiusers ON wikiusers.id = q1._wikiusers_id
                 ORDER BY q1.revision_date DESC
-                """,
-                (d['username'],)
-            )
-            res = list(res)
+                %s
+                """
+            num_query = base % ('SELECT COUNT(title)', '')
+            res_query = base % ('SELECT title, revision_date, _threads_id, wikiusers.username, deleted_wikiusers.username, user_comment', 'LIMIT ? OFFSET ?')
+            max = int(list(cur.execute(num_query, (d['username'],)))[0][0])
+            changes = list(cur.execute(res_query, (d['username'], n, from_)))
 
             # TODO: Some minor copy/pasting from RecentChangesList.
             # For each of these changes, we want to find out the revision number
             # of the preceding revision so we can give a link to a diff.
             revnos = []
-            for r in res:
+            for r in changes:
                 threads_id = r[2]
                 revision_date = r[1]
 
@@ -2142,10 +2151,13 @@ class TrackedChanges(object):
                              username=get_username(r_and_d[0][3], r_and_d[0][4]),
                              comment=r_and_d[0][5],
                              diff_revs_pair=r_and_d[1]),
-                    itertools.izip(res, revnos)
+                    itertools.izip(changes, revnos)
                 )
                     
             d['revisions'] = revisions
+            d['from_'] = from_
+            d['n'] = n
+            d['max'] = max
             return d
         except db.Error, e:
             dberror(e)
