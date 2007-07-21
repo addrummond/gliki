@@ -77,7 +77,6 @@ def list_uri(prelude):
 # Code for the AES-32/base64 encryption scheme used for user account passwords.
 # See dbcreate.sql for a description of the encryption scheme.
 #
-AES_PASSWORD_KEY = "%$GHnfgh;['*(12SDvZ\\dfgt><?@:{!!"
 AES_MODE = 2 # Must be 2, don't ask me why...
 def pad_string(s):
     r = len(s) % 16
@@ -91,10 +90,10 @@ def make_len16(s):
         rem = len(s) % 16
         return s + (':' * (16 - rem))
 def encrypt_password(iv, plaintext):
-    a = pyaes.Python_AES(AES_PASSWORD_KEY, AES_MODE, make_len16(iv))
+    a = pyaes.Python_AES(config.AES_PASSWORD_KEY, AES_MODE, make_len16(iv))
     return base64.b64encode(a.encrypt(pad_string(plaintext)))
 def decrypt_password(iv, ciphertext):
-    a = pyaes.Python_AES(AES_PASSWORD_KEY, AES_MODE, make_len16(iv))
+    a = pyaes.Python_AES(config.AES_PASSWORD_KEY, AES_MODE, make_len16(iv))
     dec = base64.b64decode(ciphertext)
     return unpad_string(a.decrypt(dec).decode('utf-8'))
 

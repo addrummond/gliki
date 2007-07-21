@@ -106,6 +106,14 @@ CACHE_THREADS_IDS = True
 THREADS_IDS_CACHE_DIR = 'cache/threads_id'
 
 
+
+#
+# ==== Security options ====
+#
+
+AES_PASSWORD_KEY = "%$GHnfgh;['*(12SDvZ\\dfgt><?@:{!!"
+
+
 #
 # ==== Misc. options ====
 #
