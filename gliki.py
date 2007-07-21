@@ -2113,11 +2113,13 @@ class Watchlist(object):
             if len(d) == 0:
                 return dict(error=u"You must be logged in to view your watchlist.")
 
-            res = cur.execute(
-                # Don't actually need a subquery here, but putting the second
-                # join outside the subquery should be more efficient.
+            # Don't actually need a subquery here, but putting the second
+            # join outside the subquery should be more efficient (I think).
+            base = \
                 """
-                SELECT title FROM
+                %s
+                FROM
+                -- SELECT title FROM
                     (SELECT MAX(revision_date), articles_id FROM watchlist_items
                      INNER JOIN revision_histories ON revision_histories.threads_id = watchlist_items.threads_id
                      WHERE watchlist_items.wikiusers_id IN
@@ -2125,15 +2127,17 @@ class Watchlist(object):
                      GROUP BY revision_histories.threads_id) q1
                 INNER JOIN articles ON articles.id = q1.articles_id
                 ORDER BY title
-                LIMIT ?
-                OFFSET ?
-                """,
-                (d['username'], n, from_ - 1)
-            )
+                %s
+                """
+            num_query = base % ('SELECT COUNT(title)', '')
+            res_query = base % ('SELECT title', 'LIMIT ? OFFSET ?')
+            max = int(list(cur.execute(num_query, (d['username'],)))[0][0])
+            res = list(cur.execute(res_query, (d['username'], n, from_ - 1)))
 
             d['article_titles'] = [r[0] for r in res if len(r) == 1]
             d['from_'] = from_
             d['n'] = n
+            d['max'] = max
             return d
         except db.Error, e:
             dberror(e)
@@ -2184,7 +2188,7 @@ class TrackedChanges(object):
             num_query = base % ('SELECT COUNT(title)', '')
             res_query = base % ('SELECT title, revision_date, _threads_id, wikiusers.username, deleted_wikiusers.username, user_comment', 'LIMIT ? OFFSET ?')
             max = int(list(cur.execute(num_query, (d['username'],)))[0][0])
-            changes = list(cur.execute(res_query, (d['username'], n, from_)))
+            changes = list(cur.execute(res_query, (d['username'], n, from_ - 1)))
 
             # TODO: Some minor copy/pasting from RecentChangesList.
             # For each of these changes, we want to find out the revision number

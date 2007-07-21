@@ -23,6 +23,9 @@
 #extends base
 
 #def title#$username - Watchlist#end def#
+#def np_preamble#Articles on your watchlist#end def#
+#def np_postamble#:#end def#
+#def np_empty#There are no articles on your watchlist.#end def#
 
 #def body#
     #if $getVar('error', False)
@@ -30,27 +33,18 @@
         $error
     </p>
     #else
-        <p>
-        Articles from $from_ to $n on your watchlist:
-        </p>
+        $next_and_prev_links($from_, $n, links.watchlist_link)
 
-        #if len($article_titles) == 0
-        <p>
-        Currently, you do not have any articles on your watchlist.
-        </p>
-        #else
+        #if $max >= $from_
+        <ul class="article-list">
+            #for $title in $article_titles
+            <li><a href="<%= links.article_link(title) %>" class="article_ref">$title</a></li>
+            #end for
+        </ul>
         <p>
         You can look at the list of
         <a href="<%= links.tracked_changes_link() %>">articles on your watchlist which have recently changed</a>.
         </p>
-        <p>
-            $next_and_prev_links($from_, $n, links.watchlist_link)
-        </p>
-        <ol class="article-list">
-            #for $title in $article_titles
-            <li><a href="<%= links.article_link(title) %>" class="article_ref">$title</a></li>
-            #end for
-        </ol>
         #end if
     #end if
 #end def#

@@ -31,10 +31,10 @@
 #def body
     $next_and_prev_links($from_, $n, links.category_list_link)    
 
-    <ol class="article-list">
+    <ul class="article-list">
         #for $cat in $categories
         <li><a class="category_ref" href="<%= links.category_link(cat) %>">$cat</a></li>
         #end for
-    </ol>
+    </ul>
 #end def
 

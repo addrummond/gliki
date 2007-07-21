@@ -32,11 +32,11 @@
     $next_and_prev_links($from_, $n, lambda x, y: links.category_link(self.getVar('category'), x, y))
 
     #if $max >= $from_
-    <ol class="article-list">
+    <ul class="article-list">
         #for $title in $article_titles
         <li><a href="<%= links.article_link(title) %>" class="article_ref">$title</a></li>
         #end for
-    </ol>
+    </ul>
     #end if
 
     <p>

@@ -54,12 +54,12 @@
         <table>
             <tr>
                 <th>Email</th>
-                <td><input type="text" name="email" value="#if $getVar('default_email', False)#default_email#end if#"></input></td>
+                <td><input type="text" name="email" value="#if $getVar('default_email', False)#$default_email#end if#"></input></td>
                 <td><i>(optional)</i></td>
             </tr>
             <tr>
                 <th>Username</th>
-                <td><input type="text" name="username" value="#if $getVar('default_username', False)#default_username#end if#"></input></td>
+                <td><input type="text" name="username" value="#if $getVar('default_username', False)#$default_username#end if#"></input></td>
             </tr>
             <tr>
                 <th>Password</th>
