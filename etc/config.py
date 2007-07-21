@@ -124,3 +124,7 @@ DIFF_LINE_LENGTH = 60
 # Comments on edits truncated for display if they exceed this length.
 COMMENT_TRUNCATE_LENGTH = 250
 
+LIST_START_DEFAULT = 1
+LIST_N_DEFAULT = 50
+LIST_N_MAX = 100
+

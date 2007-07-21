@@ -63,13 +63,11 @@ from my_utils import *
 
 threads_id_cache = cache.FSThreadsIdCache(config.THREADS_IDS_CACHE_DIR)
 
-LIST_START_DEFAULT = 1
-LIST_N_DEFAULT = 50
 def list_uri(prelude):
     """Create a parser for the URI for a list page (e.g. list of recent changes)."""
     return (
         prelude >>
-        Opt(VParm(links.FROM_SUFFIX), {'from' : str(LIST_START_DEFAULT)}) >> Opt(Selector('n'), {'n' : str(LIST_N_DEFAULT)}) >>
+        Condition(Opt(VParm(links.FROM_SUFFIX), {'from' : str(config.LIST_START_DEFAULT)}) >> Opt(Selector('n'), {'n' : str(config.LIST_N_DEFAULT)}) >>
         OptDir()
     )
 
@@ -849,6 +847,10 @@ class ShowWikiArticle(object):
             dberror(e)
 show_wiki_article = ShowWikiArticle()
 
+def checkn(n):
+    if n > config.LIST_N_MAX:
+        raise control.BadRequestError()
+
 class RecentChangesList(object):
     # /recent-changes/             List of 50 most recent changes
     # /recent-changes/100          List of 100 most recent changes
@@ -867,10 +869,7 @@ class RecentChangesList(object):
                 raise control.BadRequestError()
         except ValueError:
             raise control.BadRequestError()
-
-        # Don't allow enormous requests.
-        if n > 1000:
-            raise control.BadRequestError()
+        checkn(n)
 
         try:
             dbcon = get_dbcon()
@@ -1355,7 +1354,7 @@ class Category(object):
         # NOTE THAT CATEGORIES ARE CASE INSENSITIVE, SO THERE ARE SOME
         # CASE INSENSITIVE SQL STRING COMPARISONS HERE.
 
-        from_,n = LIST_START_DEFAULT, LIST_N_DEFAULT
+        from_,n = config.LIST_START_DEFAULT, config.LIST_N_DEFAULT
         try:
             from_ = int(uu_decode(parms['from']))
             n = int(uu_decode(parms['n']))
@@ -1363,6 +1362,7 @@ class Category(object):
                 raise control.BadRequestError()
         except ValueError:
             raise control.BadRequestError()
+        checkn(n)
 
         category = unfutz_article_title(uu_decode(parms[links.CATEGORIES_PREFIX])).lower()
 
@@ -1400,7 +1400,7 @@ class CategoryList(object):
     @show_cheetah('templates/category_list')
     def GET(self, parms, extras):
         try:
-            from_, n = LIST_START_DEFAULT, LIST_N_DEFAULT
+            from_, n = config.LIST_START_DEFAULT, config.LIST_N_DEFAULT
             if parms.has_key('from'):
                 try:
                     from_ = int(uu_decode(parms['from']))
@@ -1409,6 +1409,7 @@ class CategoryList(object):
                         raise control.BadRequestError()
                 except ValueError:
                     raise control.BadRequestError()
+                checkn(n)
 
             dbcon = get_dbcon()
             cur = dbcon.cursor()
@@ -1442,6 +1443,7 @@ class WikiArticleHistory(object):
                 raise control.BadRequestError()
         except ValueError:
             raise control.BadRequestError()
+        checkn(n)
 
         title = unfutz_article_title(uu_decode(parms[links.ARTICLE_LINK_PREFIX]))
 
@@ -1482,7 +1484,7 @@ class WikiArticleList(object):
     @ok_html()
     @show_cheetah('templates/article_list')
     def GET(self, parms, extras):
-        from_, n = LIST_START_DEFAULT, LIST_N_DEFAULT
+        from_, n = config.LIST_START_DEFAULT, config.LIST_N_DEFAULT
         if parms.has_key('from'):
             try:
                 from_ = int(uu_decode(parms['from']))
@@ -1491,6 +1493,7 @@ class WikiArticleList(object):
                     raise control.BadRequestError()
             except ValueError:
                 raise control.BadRequestError()
+            checkn(n)
 
         try:
             dbcon = get_dbcon()
@@ -1527,7 +1530,7 @@ class LinksHere(object):
     def GET(self, parms, extras):
         title = unfutz_article_title(uu_decode(parms[links.ARTICLE_LINK_PREFIX]))
 
-        from_, n = LIST_START_DEFAULT, LIST_N_DEFAULT
+        from_, n = config.LIST_START_DEFAULT, config.LIST_N_DEFAULT
         try:
             from_ = int(uu_decode(parms['from']))
             n = int(uu_decode(parms['n']))
@@ -1535,6 +1538,7 @@ class LinksHere(object):
                 raise control.BadRequestError()
         except ValueError:
             raise control.BadRequestError()
+        checkn(n)
 
         try:
             dbcon = get_dbcon()
@@ -2050,6 +2054,7 @@ class Watchlist(object):
                 raise control.BadRequestError()
         except ValueError:
             raise control.BadRequestError()
+        checkn(n)
 
         try:
             dbcon = get_dbcon()
@@ -2098,6 +2103,7 @@ class TrackedChanges(object):
             n = int(parms['n'])
         except ValueError:
             raise control.BadRequestError()
+        checkn(n)
 
         try:
             dbcon = get_dbcon()
