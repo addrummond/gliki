@@ -67,7 +67,7 @@ def list_uri(prelude):
     """Create a parser for the URI for a list page (e.g. list of recent changes)."""
     return (
         prelude >>
-        Condition(Opt(VParm(links.FROM_SUFFIX), {'from' : str(config.LIST_START_DEFAULT)}) >> Opt(Selector('n'), {'n' : str(config.LIST_N_DEFAULT)}) >>
+        Opt(VParm(links.FROM_SUFFIX), {'from' : str(config.LIST_START_DEFAULT)}) >> Opt(Selector('n'), {'n' : str(config.LIST_N_DEFAULT)}) >>
         OptDir()
     )
 
@@ -177,6 +177,8 @@ def dbcon_update_last_seen(user_id):
         return update_last_seen(dbcon, cur, user_id)
     except db.Error, e:
         dberror(e)
+    finally:
+        dbcon.close()
 
 def get_auth_method(extras):
     """IE6 has a buggy digest auth implementation, and I haven't yet got round
@@ -260,6 +262,8 @@ def dbcon_merge_login(extras, dict, dont_update_last_seen=False):
         return merge_login(dbcon, cur, extras, dict, dont_update_last_seen)
     except db.Error, e:
         dberror(e)
+    finally:
+        dbcon.close()
 
 def get_ZonedDate(d, time):
     """Given a time (as given by time.time()) and a dictionary which may have
@@ -501,6 +505,8 @@ def dbcon_article_is_on_watchlist(username, title):
         return article_is_on_watchlist(username, title)
     except db.Error, e:
         dberror(e)
+    finally:
+        dbcon.close()
 
 def get_list_of_categories_for_thread(dbcon, cur, thread):
     res = cur.execute(
@@ -587,6 +593,8 @@ def dbcon_check_bonafides(username, check_func):
         return check_bonafides(dbcon, cur, username, check_func)
     except db.Error, e:
         dberror(e)
+    finally:
+        dbcon.close()
 
 class DatabaseError(object):
     @ok_html()
@@ -641,6 +649,8 @@ def get_anon_user_wikiuser_id(ipaddress):
         return id
     except db.Error, e:
         dberror(e)
+    finally:
+        dbcon.close()
 
 class GenericInternalError(object):
     @ok_html()
@@ -699,6 +709,8 @@ class EditWikiArticle(object):
                 rev = get_revision(dbcon, cur, title, revision)
             except db.Error, e:
                 dberror(e)
+            finally:
+                dbcon.close()
         source = ''
         if rev:
             source = rev['source']
@@ -751,6 +763,8 @@ class Permalink(object):
                 permanent_revision = get_positive_revision_number(dbcon, cur, get_revision(dbcon, cur, title, revision))
             except db.Error, e:
                 dberror(e)
+            finally:
+                dbcon.close()
 
         return dict(
             title=title,
@@ -845,6 +859,8 @@ class ShowWikiArticle(object):
             return rdict
         except db.Error, e:
             dberror(e)
+        finally:
+            dbcon.close()
 show_wiki_article = ShowWikiArticle()
 
 def checkn(n):
@@ -929,6 +945,8 @@ class RecentChangesList(object):
                                     max=max))
         except db.Error, e:
             dberror(e)
+        finally:
+            dbcon.close()
 recent_changes_list = RecentChangesList()
 
 class ReviseWikiArticle(object):
@@ -1000,6 +1018,8 @@ class ReviseWikiArticle(object):
             cur = dbcon.cursor()
         except db.Error, e:
             dberror(e)
+        finally:
+            dbcon.close()
 
         # Find out who's making the revision.
         revision_user_id = None
@@ -1125,6 +1145,8 @@ class ReviseWikiArticle(object):
                 xhtml_output = sb.getvalue() # TODO: Some unicode stuff?
             except db.Error, e:
                 dberror(e)
+            finally:
+                dbcon.close()
 
         # Now, if it's a preview, we'll go straight to the preview page.
         if parms.has_key('preview'):
@@ -1340,6 +1362,8 @@ class ReviseWikiArticle(object):
                 )
         except db.Error, e:
             dberror(e)
+        finally:
+            dbcon.close()
         raise control.Redirect(links.article_link(new_title),
                                'text/html; charset=UTF-8',
                                'see_other')
@@ -1390,6 +1414,8 @@ class Category(object):
             return merge_login(dbcon, cur, extras, dict(category=category, article_titles=list(map(lambda x: x[0], res)), from_=from_, n=n, max=max))
         except db.Error, e:
             dberror(e)
+        finally:
+            dbcon.close()
 category = Category()
 
 class CategoryList(object):
@@ -1427,6 +1453,8 @@ class CategoryList(object):
             return merge_login(dbcon, cur, extras, dict(categories=map(lambda x: x[0].lower(), res), from_=from_, n=n, max=max))
         except db.Error, e:
             raise dberror(e)
+        finally:
+            dbcon.close()
 category_list = CategoryList()
 
 class WikiArticleHistory(object):
@@ -1475,6 +1503,8 @@ class WikiArticleHistory(object):
             # The use of int(...) above could potentially raise an exception.
             logging.log(config.INTERNAL_LOG, "Not int\n")
             raise control.SwitchHandler(generic_internal_error, { }, 'GET')
+        finally:
+            dbcon.close()
 wiki_article_history = WikiArticleHistory()
 
 class WikiArticleList(object):
@@ -1520,6 +1550,8 @@ class WikiArticleList(object):
                                     max=max))
         except db.Error, e:
             dberror(e)
+        finally:
+            dbcon.close()
 wiki_article_list = WikiArticleList()
 
 class LinksHere(object):
@@ -1566,6 +1598,8 @@ class LinksHere(object):
             return merge_login(dbcon, cur, extras, dict(article_title=title, titles=titles, from_=from_, n=n, max=max))
         except db.Error, e:
             dberror(e)
+        finally:
+            dbcon.close()
 links_here = LinksHere()
 
 class Diff(object):
@@ -1622,6 +1656,8 @@ class Diff(object):
                                     revision_comment=revision_comment))
         except db.Error, e:
             dberror(e)
+        finally:
+            dbcon.close()
 diff = Diff()
 
 class FrontPage(object):
@@ -1787,6 +1823,8 @@ class MakeNewAccount(object):
             raise control.Redirect(links.login_new_account_link(), 'text/html; charset=UTF-8', 'see_other')
         except db.Error, e:
             dberror(e)
+        finally:
+            dbcon.close()
 make_new_account = MakeNewAccount()
 
 class DeleteAccountConfirm(object):
@@ -1854,6 +1892,8 @@ class DeleteAccount(object):
             assert False
         except db.Error, e:
             dberror(e)
+        finally:
+            dbcon.close()
 delete_account = DeleteAccount()
 
 class Login(object):
@@ -1901,6 +1941,8 @@ class Preferences(object):
             )
         except db.Error, e:
             dberror(e)
+        finally:
+            dbcon.close()
 preferences = Preferences()
 
 class UpdatePreferences(object):
@@ -1942,6 +1984,8 @@ class UpdatePreferences(object):
             dberror(e)
         except ValueError: # Use of int(...) above
             raise control.BadRequestError()
+        finally:
+            dbcon.close()
 update_preferences = UpdatePreferences()
 
 class Watch(object):
@@ -1993,6 +2037,8 @@ class Watch(object):
             return d
         except db.Error, e:
             dberror(e)
+        finally:
+            dbcon.close()
 watch = Watch()
 
 class Unwatch(object):
@@ -2038,6 +2084,8 @@ class Unwatch(object):
             return d
         except db.Error, e:
             dberror(e)
+        finally:
+            dbcon.close()
 unwatch = Unwatch()
 
 class Watchlist(object):
@@ -2089,6 +2137,8 @@ class Watchlist(object):
             return d
         except db.Error, e:
             dberror(e)
+        finally:
+            dbcon.close()
 watchlist = Watchlist()
 
 class TrackedChanges(object):
@@ -2166,6 +2216,8 @@ class TrackedChanges(object):
             return d
         except db.Error, e:
             dberror(e)
+        finally:
+            dbcon.close()
 tracked_changes = TrackedChanges()
 
 class Search(object):
@@ -2220,6 +2272,8 @@ class Search(object):
             return merge_login(dbcon, cur, extras, dict())
         except db.Error, e:
             dberror(e)
+        finally:
+            dbcon.close()
 search = Search()
 
 class RenderTree(object):
@@ -2304,6 +2358,8 @@ class DeleteArticle(object):
                 return merge_dicts(d, dict(title=title, exists_and_deleted=False))
         except db.Error, e:
             dberror(e)
+        finally:
+            dbcon.close()
 delete_article_page = DeleteArticle() # Named so as not to conflict with delete_article function
 
 control.register_handlers([front_page,
