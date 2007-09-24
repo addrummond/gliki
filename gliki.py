@@ -2172,7 +2172,8 @@ class TrackedChanges(object):
                 """
                 %s
                 FROM
-                    (SELECT MAX(revision_date), revision_date, articles_id, user_comment, revision_histories.threads_id AS _threads_id, revision_histories.wikiusers_id AS _wikiusers_id FROM watchlist_items
+                    (SELECT MAX(revision_date), revision_date, articles_id, user_comment, revision_histories.threads_id AS _threads_id, revision_histories.wikiusers_id AS _wikiusers_id
+                     FROM watchlist_items
                      INNER JOIN revision_histories ON revision_histories.threads_id = watchlist_items.threads_id
                      WHERE watchlist_items.wikiusers_id IN
                          (SELECT id FROM wikiusers WHERE wikiusers.username = ?)
@@ -2180,7 +2181,7 @@ class TrackedChanges(object):
                      LIMIT 50) q1
                 INNER JOIN articles ON articles.id = articles_id
                 LEFT JOIN wikiusers ON wikiusers.id = q1._wikiusers_id
-                LEFT JOIN deleted_wikiusers ON wikiusers.id = q1._wikiusers_id
+                LEFT JOIN deleted_wikiusers ON deleted_wikiusers.id = q1._wikiusers_id
                 ORDER BY q1.revision_date DESC
                 %s
                 """
