@@ -69,6 +69,8 @@ define(`SEARCH_BOX_BACKGROUND', BODY_BACKGROUND)
 body {
   margin-top: 2px;
   padding-top: 0;
+  margin-left: 2%;
+  margin-right: 2%;
   font-family: verdana, arial, helvetica, sans-serif;
   font-size: TEXT_BASE(0);
   line-height: LINE_HEIGHT;

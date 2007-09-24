@@ -22,7 +22,7 @@ preferences. Who needs ORM when you can use a nasty hack instead?
 
 import sys
 import my_utils
-import logging
+import my_logging
 import re
 import etc.config as config
 
@@ -32,7 +32,7 @@ def safe_intize(n, default=0):
     try:
         return int(n)
     except ValueError:
-        logging.log(config.SERVER_LOG, "DATABASE CORRUPTION: Non-integer time preference")
+        my_logging.log(config.SERVER_LOG, "DATABASE CORRUPTION: Non-integer time preference")
         return default
 def oktimeoffset(offset):
     try:

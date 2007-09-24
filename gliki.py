@@ -22,7 +22,6 @@ handlers registered with control.py.
 
 import Cheetah
 import Cheetah.Template
-import kid
 import etc.config as config
 import sys
 import re
@@ -50,7 +49,7 @@ import parcombs
 import cairo
 import StringIO
 import links
-import logging
+import my_logging
 import diffengine
 import userprefs
 import aes.Python_AES as pyaes
@@ -96,8 +95,8 @@ def decrypt_password(iv, ciphertext):
     return unpad_string(a.decrypt(dec).decode('utf-8'))
 
 def show_cheetah(path):
-    module = __import__(path)
-    lst = path.split('/')
+    lst = path.split('.')
+    module = __import__(path, fromlist=[lst[0]])
     class_ = getattr(module, lst[len(lst) - 1])
     instance = class_()
 
@@ -687,7 +686,7 @@ class EditWikiArticle(object):
     uris = [VParm(links.ARTICLE_LINK_PREFIX) >> Opt(VParm(links.REVISIONS_SUFFIX), { links.REVISIONS_SUFFIX: '-1' }) >> Abs(links.EDIT_SUFFIX) >> OptDir()]
 
     @ok_html()
-    @show_cheetah('templates/edit')
+    @show_cheetah('templates.edit')
     def GET(self, parms, extras):
         int_time = int(time.time()) # For edit_time key for template dict.
 
@@ -736,7 +735,7 @@ class NoSuchRevision(object):
         self.title = title
 
     @ok_html()
-    @show_cheetah('templates/no_such_revision')
+    @show_cheetah('templates.no_such_revision')
     def GET(self, parms, extras):
         return dict(kind=self.kind, article_title=self.title)
 
@@ -745,7 +744,7 @@ class Permalink(object):
     uris = [VParm(links.ARTICLE_LINK_PREFIX) >> VParm(links.REVISIONS_SUFFIX) >> Abs(links.PERMALINK_SUFFIX) >> OptDir()]
 
     @ok_html()
-    @show_cheetah('templates/permalink')
+    @show_cheetah('templates.permalink')
     def GET(self, parms, extras):
         title = unfutz_article_title(uu_decode(parms[links.ARTICLE_LINK_PREFIX]))
         revision = None
@@ -780,7 +779,7 @@ class ShowWikiArticle(object):
         self.redirect_path = redirect_path
 
     @ok_html()
-    @show_cheetah('templates/article')
+    @show_cheetah('templates.article')
     def GET(self, d, extras):
         try:
             title = unfutz_article_title(uu_decode(d[links.ARTICLE_LINK_PREFIX]))
@@ -814,7 +813,7 @@ class ShowWikiArticle(object):
                 # hack.
                 is_circular, path = get_redirect_path(dbcon, cur, title, row['redirect'])
                 if is_circular:
-                    logging.log(config.INTERNAL_LOG, 'Unexpected circular redirect,"%s"\n' % htmlutils.htmlencode(row['title']))
+                    my_logging.log(config.INTERNAL_LOG, 'Unexpected circular redirect,"%s"\n' % htmlutils.htmlencode(row['title']))
                     raise control.SwitchHandler(generic_internal_error, { }, 'GET')
                 # We use a temporary redirect because the redirect could go
                 # away at any time, and we don't want any weird cash issues.
@@ -875,7 +874,7 @@ class RecentChangesList(object):
     uris = [list_uri(Abs(links.RECENT_CHANGES))]
 
     @ok_html()
-    @show_cheetah('templates/recent_changes_list')
+    @show_cheetah('templates.recent_changes_list')
     def GET(self, parms, extras):
         from_, n = None, None
         try:
@@ -961,7 +960,7 @@ class ReviseWikiArticle(object):
     ]
 
     @ok_html()
-    @show_cheetah('templates/edit')
+    @show_cheetah('templates.edit')
     def POST(self, parms, extras):
         int_time = int(time.time())
 
@@ -1114,7 +1113,7 @@ class ReviseWikiArticle(object):
         sinfo = sourceparser.Siginfo(uname, ZonedDate(int_time, 0))
         result = sourceparser.parse_wiki_document(unixify_text(source).decode(config.WEB_ENCODING), sinfo)
         if isinstance(result, sourceparser.ParserError):
-            # This goes to the edit.kid template.
+            # This goes to the edit.templ template.
             return my_utils.merge_dicts(
                 d,
                 dict(
@@ -1260,7 +1259,7 @@ class ReviseWikiArticle(object):
 
                 dbcon.commit()
 
-                logging.log(
+                my_logging.log(
                     config.EDITS_LOG,
                     u'%s,%s,%s,redirect,"%s",%i\n' % (
                         extras.remote_ip,
@@ -1350,7 +1349,7 @@ class ReviseWikiArticle(object):
                 dbcon.commit()
 
                 # Make a log of the edit.
-                logging.log(
+                my_logging.log(
                     config.EDITS_LOG,
                     u'%s,%s,%s,edit,"%s",%i\n' % (
                         extras.remote_ip,
@@ -1373,7 +1372,7 @@ class Category(object):
     uris = [list_uri(VParm(links.CATEGORIES_PREFIX))]
 
     @ok_html()
-    @show_cheetah('templates/articles_matching_category')
+    @show_cheetah('templates.articles_matching_category')
     def GET(self, parms, extras):
         # NOTE THAT CATEGORIES ARE CASE INSENSITIVE, SO THERE ARE SOME
         # CASE INSENSITIVE SQL STRING COMPARISONS HERE.
@@ -1423,7 +1422,7 @@ class CategoryList(object):
             list_uri(Abs(links.CATEGORY_LIST))]
 
     @ok_html()
-    @show_cheetah('templates/category_list')
+    @show_cheetah('templates.category_list')
     def GET(self, parms, extras):
         try:
             from_, n = config.LIST_START_DEFAULT, config.LIST_N_DEFAULT
@@ -1461,7 +1460,7 @@ class WikiArticleHistory(object):
     uris = [list_uri(VParm(links.ARTICLE_LINK_PREFIX) >> Abs(links.HISTORY_SUFFIX))]
 
     @ok_html()
-    @show_cheetah('templates/history')
+    @show_cheetah('templates.history')
     def GET(self, parms, extras):
         from_,n = None,None
         try:
@@ -1501,7 +1500,7 @@ class WikiArticleHistory(object):
             dberror(e)
         except ValueError:
             # The use of int(...) above could potentially raise an exception.
-            logging.log(config.INTERNAL_LOG, "Not int\n")
+            my_logging.log(config.INTERNAL_LOG, "Not int\n")
             raise control.SwitchHandler(generic_internal_error, { }, 'GET')
         finally:
             dbcon.close()
@@ -1512,7 +1511,7 @@ class WikiArticleList(object):
             list_uri(Abs(links.ARTICLE_LIST))]
 
     @ok_html()
-    @show_cheetah('templates/article_list')
+    @show_cheetah('templates.article_list')
     def GET(self, parms, extras):
         from_, n = config.LIST_START_DEFAULT, config.LIST_N_DEFAULT
         if parms.has_key('from'):
@@ -1558,7 +1557,7 @@ class LinksHere(object):
     uris = [list_uri(VParm(links.ARTICLE_LINK_PREFIX) >> Abs(links.LINKS_HERE_SUFFIX))]
 
     @ok_html()
-    @show_cheetah('templates/links_here')
+    @show_cheetah('templates.links_here')
     def GET(self, parms, extras):
         title = unfutz_article_title(uu_decode(parms[links.ARTICLE_LINK_PREFIX]))
 
@@ -1606,7 +1605,7 @@ class Diff(object):
     uris = [VParm(links.ARTICLE_LINK_PREFIX) >> VParm(links.DIFF_SUFFIX) >> Selector('with') >> OptDir()]
 
     @ok_html()
-    @show_cheetah('templates/diff')
+    @show_cheetah('templates.diff')
     def GET(self, parms, extras):
         title = unfutz_article_title(uu_decode(parms[links.ARTICLE_LINK_PREFIX]))
         rev1 = uu_decode(parms[links.DIFF_SUFFIX])
@@ -1664,7 +1663,7 @@ class FrontPage(object):
     uris = [Abs("")]
 
     @ok_html()
-    @show_cheetah('templates/frontpage')
+    @show_cheetah('templates.frontpage')
     def GET(self, parms, extras):
         return dbcon_merge_login(extras, { })
 front_page = FrontPage()
@@ -1673,7 +1672,7 @@ class Block(object):
     # No uris because this is only ever switched to.
 
     @ok_html()
-    @show_cheetah('templates/block')
+    @show_cheetah('templates.block')
     def GET(self, parms, extras):
         return dict(because=parms['because'])
 block_handler = Block()
@@ -1682,7 +1681,7 @@ class CreateAccount(object):
     uris = [Abs(links.CREATE_ACCOUNT) >> OptDir()]
 
     @ok_html()
-    @show_cheetah('templates/create_account')
+    @show_cheetah('templates.create_account')
     def GET(self, parms, extras):
         return dbcon_merge_login(extras, { })
 create_account = CreateAccount()
@@ -1694,7 +1693,7 @@ class MakeNewAccount(object):
     ip_addy_regex = re.compile(ip_addy_regex_string)
 
     @ok_html()
-    @show_cheetah('templates/create_account') # Go here if there's an error.
+    @show_cheetah('templates.create_account') # Go here if there's an error.
     def POST(self, parms, extras):
         if not (parms.has_key('username') and
                 parms.has_key('password')):
@@ -1831,7 +1830,7 @@ class DeleteAccountConfirm(object):
     uris = [Abs(links.DELETE_ACCOUNT_CONFIRM)]
 
     @ok_html()
-    @show_cheetah('templates/delete_account_confirm')
+    @show_cheetah('templates.delete_account_confirm')
     def GET(self, parms, extras):
         d = { }
         dbcon_merge_login(extras, d)
@@ -1846,7 +1845,7 @@ class DeleteAccount(object):
     uris = [Abs(links.DELETE_ACCOUNT)]
 
     @ok_html()
-    @show_cheetah('templates/delete_account')
+    @show_cheetah('templates.delete_account')
     def POST(self, parms, extras):
         try:
             dbcon = get_dbcon()
@@ -1920,7 +1919,7 @@ class Preferences(object):
     uris = [Abs(links.PREFERENCES)]
 
     @ok_html()
-    @show_cheetah('templates/preferences')
+    @show_cheetah('templates.preferences')
     def GET(self, parms, extras):
         # Get the preferences for this user.
         try:
@@ -1994,7 +1993,7 @@ class Watch(object):
     # Unfortunately we can't use a POST here because of inconsistent display of
     # the form across browsers. Using a GET with Pragma: no-cache instead.
     @ok_html(cache=False)
-    @show_cheetah('templates/watch')
+    @show_cheetah('templates.watch')
     def GET(self, parms, extras):
         title = unfutz_article_title(uu_decode(parms[links.ARTICLE_LINK_PREFIX]))
 
@@ -2047,7 +2046,7 @@ class Unwatch(object):
     # Unfortunately we can't use a POST here because of inconsistent display of
     # the form across browsers. Using a GET with Pragma: no-cache instead.
     @ok_html(cached=False)
-    @show_cheetah('templates/unwatch')
+    @show_cheetah('templates.unwatch')
     def GET(self, parms, extras):
         title = unfutz_article_title(uu_decode(parms[links.ARTICLE_LINK_PREFIX]))
 
@@ -2092,7 +2091,7 @@ class Watchlist(object):
     uris = [list_uri(Abs(links.WATCHLIST))]
 
     @ok_html()
-    @show_cheetah('templates/watchlist')
+    @show_cheetah('templates.watchlist')
     def GET(self, parms, extras):
         from_,n = None,None
         try:
@@ -2149,7 +2148,7 @@ class TrackedChanges(object):
     uris = [list_uri(Abs(links.TRACKED_CHANGES))]
 
     @ok_html()
-    @show_cheetah('templates/tracked_changes')
+    @show_cheetah('templates.tracked_changes')
     def GET(self, parms, extras):
         from_,n = None,None
         try:
@@ -2230,7 +2229,7 @@ class Search(object):
     search_query_regex = re.compile(r"""\s*((?:(?:"|')[^\"]*(?:"|'))|(?:\S+))\s*""")
 
     @ok_html()
-    @show_cheetah('templates/search')
+    @show_cheetah('templates.search')
     def GET(self, parms, extras):
         assert parms.has_key('query') # This key will be added by FollowedByQuery.
 
@@ -2324,7 +2323,7 @@ class SyntaxTree(object):
     uris = [Abs(links.SYNTAX_TREE)]
 
     @ok_html()
-    @show_cheetah('templates/syntax_tree')
+    @show_cheetah('templates.syntax_tree')
     def GET(self, parms, extras):
         d = { }
         dbcon_merge_login(extras, d)
@@ -2335,7 +2334,7 @@ class DeleteArticle(object):
     uris = [VParm(links.ARTICLE_LINK_PREFIX) >> Abs(links.DELETE_SUFFIX) >> OptDir()]
 
     @ok_html()
-    @show_cheetah('templates/deleted')
+    @show_cheetah('templates.deleted')
     def GET(self, parms, extras):
         try:
             dbcon = get_dbcon()
@@ -2354,7 +2353,7 @@ class DeleteArticle(object):
                 # DB, make sure we remove the threads_id cache entry.
                 if not threads_id_cache.stop_caching(title):
                     # Log a warning that the cache is now incorrect.
-                    logging.log(config.INTERNAL_LOG, "WARNING: Could not remove threads_id cache for '%s'; cache now incorrect." % title)
+                    my_logging.log(config.INTERNAL_LOG, "WARNING: Could not remove threads_id cache for '%s'; cache now incorrect." % title)
                 dbcon.commit()
                 return merge_dicts(d, dict(title=title, exists_and_deleted=True))
             else:

@@ -21,7 +21,7 @@ done by IP address, IP address range, or username.
 """
 
 import re
-import logging
+import my_logging
 import itertools
 import types
 import os
@@ -130,9 +130,9 @@ def is_blocked(username, ip_4tuple):
             __current_block_list, bad_lines = parse_block_list(contents)
             __time_block_list_file_was_last_parsed = time.time()
             if len(bad_lines) > 0:
-                logging.log(config.SERVER_LOG, "Bad lines in block list at these line numbers: %s", str(bad_lines))
+                my_logging.log(config.SERVER_LOG, "Bad lines in block list at these line numbers: %s", str(bad_lines))
         except Exception, e:
-            logging.log(config.SERVER_LOG, "Error opening etc/block_list: %s", str(e))
+            my_logging.log(config.SERVER_LOG, "Error opening etc/block_list: %s", str(e))
 
     return in_block_list(__current_block_list, username, ip_4tuple)
 

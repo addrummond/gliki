@@ -36,7 +36,7 @@ import mimetools
 import my_utils
 import time
 import md5
-import logging
+import my_logging
 
 __http_methods = ["OPTIONS", "GET", "HEAD", "POST", "PUT", "DELETE", "TRACE", "CONNECT"]
 
@@ -465,8 +465,8 @@ def control(env, start_response):
                 method = e.method
             handler_method = getattr(e.handler_instance, method)
             if not handler_method:
-                logging.log(config.SERVER_LOG, 'WARNING: Bad SwitchHandler,"%s","%s","%s"' % \
-                                               (str(e.handler_instance), str(e.method), str(e.dict)))
+                my_logging.log(config.SERVER_LOG, 'WARNING: Bad SwitchHandler,"%s","%s","%s"' % \
+                                                  (str(e.handler_instance), str(e.method), str(e.dict)))
                 raise NotFoundError()
             goto = handler_method
             goto_dict = e.dict
@@ -511,7 +511,7 @@ def paste_server_static_wrapper(path, control_func):
             else:
                 # We found the file, but it didn't have an extension so we
                 # couldn't work out what kind of file it was.
-                logging.log(config.SERVER_LOG, "WARNING: 500 error due to unknown file type of %s" % local_path)
+                my_logging.log(config.SERVER_LOG, "WARNING: 500 error due to unknown file type of %s" % local_path)
                 return signal_error('500', 'Internal Server Error', [], start_response)
     return control
 
