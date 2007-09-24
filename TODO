@@ -1,6 +1,3 @@
-== Make development easier ==
-* Allow KID templates to be modified without restarting server.
-
 == Cruicial ==
 * Tree drawing (bugs in sizing trees, but 90% complete).
 * Fix bad line/column numbers in parser (this is now 90% done).
