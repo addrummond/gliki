@@ -759,7 +759,10 @@ class Permalink(object):
                 dbcon = get_dbcon()
                 cur = dbcon.cursor()
 
-                permanent_revision = get_positive_revision_number(dbcon, cur, get_revision(dbcon, cur, title, revision))
+		r = get_revision(dbcon, cur, title, revision)
+                if not r:
+                    raise control.SwitchHandler(NoSuchRevision('show', title), { }, 'GET')
+                permanent_revision = get_positive_revision_number(dbcon, cur, r)
             except db.Error, e:
                 dberror(e)
             finally:
