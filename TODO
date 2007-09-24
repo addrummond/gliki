@@ -15,17 +15,10 @@
 * Remove all error messages from gliki.py and shift them to templates.
 * Table of contents for articles.
 * Do diffs properly (not just line by line).
-* Unicode audit (unicode seems to work fine, but only by a UTF-8 miracle)
-* Color links to existent/non-existent articles differently.
 * Orphaned, abandoned pages, etc.
 * Provide a way of uploading images.
 * Correct positioning of example numbers.
 * Automatically find the dimensions of images + check that the link isn't broken.
-* Bibliography features. (Could this ever be worth the trouble?)
-
-==When I have a lot of free time==
-* Write a custom templating system that makes it easier to customize how
-  Gliki looks without using the nasty customize.py
 
 == Fixing parser error messages ==
 Make sure we get good errors for the following specific cases:
