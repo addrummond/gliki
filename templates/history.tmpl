@@ -27,7 +27,7 @@
 #def title#$article_title - History#end def#
 
 #def np_preamble#Revisions#end def#
-#def np_postamble#for <a href="<%= links.article_link(self.getVar('article_title')) %>" class="article_ref"><b>$article_title</b></a>:#end def#
+#def np_postamble# for <a href="<%= links.article_link(self.getVar('article_title')) %>" class="article_ref"><b>$article_title</b></a>:#end def#
 
 #def body
     $next_and_prev_links($from_, $n, lambda x, y: links.article_history_link(self.getVar('article_title'), x, y))
