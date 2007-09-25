@@ -281,7 +281,7 @@ def get_username(current, deleted):
     if current:
         return current
     elif deleted:
-        return deleted + ' (deleted)'
+        return deleted + config.DELETED_USER_PAGE_SUFFIX #' (deleted)'
     else:
         # A user ID should either belong to a current user or a deleted user.
         assert False
@@ -901,7 +901,7 @@ class RecentChangesList(object):
             # which don't work).
             base = \
                 """
-                newest_title FROM revision_histories
+                FROM revision_histories
                 INNER JOIN articles ON revision_histories.articles_id = articles.id
                 LEFT JOIN wikiusers ON wikiusers_id = wikiusers.id
                 LEFT JOIN deleted_wikiusers ON wikiusers_id = deleted_wikiusers.id
@@ -1724,6 +1724,12 @@ class MakeNewAccount(object):
                         default_username=username,
                         error="contains_colon")
 
+	# Usernames can't end with the suffix used for deleted user pages.
+        if username.endswith(config.DELETED_USER_PAGE_SUFFIX):
+            return dict(default_email=email,
+                        default_username=username,
+                        error="deleted_suffix")
+
         try:
             dbcon = get_dbcon()
             cur = dbcon.cursor()
@@ -1860,7 +1866,7 @@ class DeleteAccount(object):
                 return dict(error=u"You cannot delete your account because you are not logged in.")
             username = uu_decode(d['username'])
 
-            # Check this user exists.
+            # Check that this user exists.
             res = cur.execute(
                 """
                 SELECT id FROM wikiusers WHERE
@@ -1878,6 +1884,9 @@ class DeleteAccount(object):
                     """,
                     (r[0],)
                 )
+
+                # NOTE: deleting a wikiuser table sets of a trigger in the DB
+                # which performs some important operations.
 
                 dbcon.commit()
 
@@ -2233,20 +2242,30 @@ class Search(object):
     search_query_regex = re.compile(r"""\s*((?:(?:"|')[^\"]*(?:"|'))|(?:\S+))\s*""")
 
     @ok_html()
-    @show_cheetah('templates.search')
+    @show_cheetah('templates.search_results')
     def GET(self, parms, extras):
         assert parms.has_key('query') # This key will be added by FollowedByQuery.
 
-        qs = cgi.parse_qs(parms['query'])
-        if not qs.has_key('query'):
-            # Temporary measure; should do something sensible in this case.
-            raise control.BadRequestError()
-
         # Now decode the query string (since we've been working in ASCII so far).
-        qs['query'][0] = qs['query'][0].decode(config.WEB_ENCODING)
-        #print qs['query'][0]
+        decoded_query = uu_decode(parms['query'])
 
-        strings = re.findall(Search.search_query_regex, qs['query'][0])
+        qs = cgi.parse_qs(decoded_query)
+        for k in qs:
+            qs[k] = qs[k][0]
+
+        from_,n = config.LIST_START_DEFAULT, config.LIST_N_DEFAULT
+        try:
+            if qs.has_key('from'):
+                from_ = int(qs['from'])
+            if qs.has_key('n'):
+                n = int(qs['n'])
+            if from_ < 1 or n < 1:
+                raise control.BadRequestError()
+        except ValueError:
+            raise control.BadRequestError()
+        checkn(n)
+
+        strings = re.findall(Search.search_query_regex, qs['query'])
         if not strings:
             raise control.BadRequestError()
         strings = map(lambda s: s.strip(u'"').strip(u"'"), strings)
@@ -2255,12 +2274,12 @@ class Search(object):
             dbcon = get_dbcon()
             cur = dbcon.cursor()
 
+            all_results = []
             for s in strings:
                 like_string = '%' + s.replace('%', '\\%').replace('_', '\\_') + '%'
 
-                res = cur.execute(
+                base = \
                     u"""
-                    SELECT DISTINCT query1.threads_id, query1.title
                     FROM
                         (SELECT MAX(revision_date), revision_histories.threads_id AS threads_id, title
                          FROM revision_histories
@@ -2269,14 +2288,26 @@ class Search(object):
                         ) query1
                     INNER JOIN category_specs ON category_specs.threads_id = query1.threads_id
                     WHERE query1.title LIKE ? OR category_specs.name LIKE ?
-                """,
-                (like_string, like_string)
+                    """
+                num_query = "SELECT DISTINCT COUNT(query1.title) %s" % base
+                res_query = "SELECT DISTINCT query1.threads_id, query1.title %s LIMIT ? OFFSET ?" % base
+		max = int(list(cur.execute(num_query, (like_string, like_string)))[0][0])
+                res = cur.execute(res_query, (like_string, like_string, n, from_ - 1))
+
+                all_results.extend(res)
+
+            return merge_login(
+                dbcon,
+                cur,
+                extras,
+                dict(
+                    query=qs['query'],
+                    from_=from_,
+                    n=n,
+                    max=max,
+                    article_titles=map(lambda x: x[1], all_results)
                 )
-
-                for r in res:
-                    print r[0], r[1]
-
-            return merge_login(dbcon, cur, extras, dict())
+            )
         except db.Error, e:
             dberror(e)
         finally:

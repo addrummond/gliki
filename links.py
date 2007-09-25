@@ -193,3 +193,9 @@ def article_history_link(title, from_=None, n=None):
 def tracked_changes_link(from_=None, n=None):
     return __make_list_link(TRACKED_CHANGES, from_, n)
 
+# Search link is special because it uses query syntax.
+def make_search_link(query, from_=None, n=None):
+    return '/' + SEARCH_PREFIX + '?query=' + urllib.quote(query) + \
+           ((from_ is not None) and '&' + FROM_SUFFIX + '=' + str(from_) or '') + \
+           ((n is not None) and '&n=' + str(n) or '')
+

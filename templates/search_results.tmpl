@@ -20,9 +20,30 @@
 #import links
 #from templates.base import base
 
-#def title#Search#end def#
+#extends base
+
+#def title#&lsquo;${query}&rsquo; - Search Results#end def#
+#def np_preamble#Search results#end def#
+#def np_postamble#:#end def#
+#def np_empty#No results were found for the query &lsquo;<%= my_utils.htmlencode(self.getVar('query')) %>&rsquo;#end def#
 
 #def body
-    <p>Search</p>
+    #if $getVar('error', False)
+        #if $error == 'empty_query'
+        <p>
+            You cannot use an empty search string.
+        </p>
+        #end if
+    #else
+        $next_and_prev_links($from_, $n, lambda x, y: links.make_search_link(self.getVar('query'), x, y))
+
+        #if $max >= $from_
+        <ul class="article-list">
+            #for $title in $article_titles
+            <li><a href="<%= links.article_link(title) %>" class="article_ref">$title</a></li>
+            #end for
+        </ul>
+	#end if
+    #end if
 #end def
 

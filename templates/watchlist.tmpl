@@ -33,7 +33,7 @@
         $error
     </p>
     #else
-        $next_and_prev_links($from_, $n, links.watchlist_link)
+        $next_and_prev_links($from_, $n, lambda from_, n: links.watchlist_link($query, from_, n))
 
         #if $max >= $from_
         <ul class="article-list">
