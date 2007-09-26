@@ -1018,142 +1018,147 @@ class ReviseWikiArticle(object):
         try:
             dbcon = get_dbcon()
             cur = dbcon.cursor()
-        except db.Error, e:
-            dberror(e)
-        finally:
-            dbcon.close()
 
-        # Find out who's making the revision.
-        revision_user_id = None
-        d = { }
-        merge_login(dbcon, cur, extras, d)
-        if not d.has_key('username'):
-            # Note that get_anon_wikiuser_id(...) raises an exception if there's
-            # a DB error.
-            revision_user_id = get_anon_user_wikiuser_id(extras.remote_ip)
-        else:
-            try:
-                revision_user_id = d['user_id']
-            except ValueError:
-                raise control.BadRequestError()
+            # Find out who's making the revision.
+            revision_user_id = None
+            d = { }
+            merge_login(dbcon, cur, extras, d)
+            if not d.has_key('username'):
+                # Note that get_anon_wikiuser_id(...) raises an exception if there's
+                # a DB error.
+                revision_user_id = get_anon_user_wikiuser_id(extras.remote_ip)
+            else:
+                try:
+                    revision_user_id = d['user_id']
+                except ValueError:
+                    raise control.BadRequestError()
 
-        # Check for an edit conflict if an edit time is specified.
-        if parms.has_key('edit_time'):
-            try:
-                et = int(parms['edit_time'])
-            except ValueError:
-                raise control.BadRequestError()
+            # Check for an edit conflict if an edit time is specified.
+            if parms.has_key('edit_time'):
+                try:
+                    et = int(parms['edit_time'])
+                except ValueError:
+                    raise control.BadRequestError()
 
-            def edit_conflict(old_source, new_source):
-                """old_source is the source before either user edited it.
-                   new_source is the source of the edit made by the user who
-                   created the edit conflict."""
-                return dict(
-                    article_source = source,
-                    article_title = title_for_user,
-                    old_article_title = old_title,
-                    threads_id = threads_id, # If there's an edit conflict, the article must exist, so there will be a threads_id.
-                    comment = comment,
-                    error = "edit_conflict",
-                    line = None,
-                    column = None,
-                    diff_xhtml = diffengine.pretty_diff(new_source, old_source or '', config.DIFF_LINE_LENGTH),
-                    edit_time = int_time
+                def edit_conflict(old_source, new_source):
+                    """old_source is the source before either user edited it.
+                       new_source is the source of the edit made by the user who
+                       created the edit conflict."""
+                    return dict(
+                        article_source = source,
+                        article_title = title_for_user,
+                        old_article_title = old_title,
+                        threads_id = threads_id, # If there's an edit conflict, the article must exist, so there will be a threads_id.
+                        comment = comment,
+                        error = "edit_conflict",
+                        line = None,
+                        column = None,
+                        diff_xhtml = diffengine.pretty_diff(new_source, old_source or '', config.DIFF_LINE_LENGTH),
+                        edit_time = int_time
+                    )
+
+                if parms.has_key('by_title'):
+                    rev = get_revision(dbcon, cur, title, -1)
+                    if rev and rev['revision_date'] >= et:
+                        # EDIT CONFLICT!
+                        old_source = None
+                        orev = get_revision(dbcon, cur, title, -2)
+                        if orev:
+                            old_source = orev['source']
+                        return edit_conflict(old_source, rev['source'])
+                elif parms.has_key('by_threads_id'):
+                    # Article was specified by threads_id.
+                    res = cur.execute(
+                        """
+                        SELECT revision_date, source FROM revision_histories
+                        INNER JOIN articles ON id = articles_id
+                        WHERE threads_id = ?
+                        ORDER BY revision_date DESC
+                        LIMIT 2
+                        """,
+                        (threads_id,)
+                    )
+                    res = list(res)
+                    assert len(res) == 0 or len(res) == 1 or len(res) == 2
+                    if len(res) > 0 and res[0][0] >= et:
+                        # EDIT CONFLICT!
+                        old_source = None
+                        if len(res) == 2:
+                            old_source = res[1][1]
+                        return edit_conflict(old_source, res[0][1])
+
+            # Cant' have '-' or '_' in the title.
+            tfu = get_title_for_user()
+            if '-' in tfu or '_' in tfu:
+                return my_utils.merge_dicts(
+                    d,
+                    dict(
+                        article_source = source,
+                        article_title = title_for_user,
+                        old_article_title = old_title,
+                        threads_id = threads_id,
+                        comment = comment,
+                        error = "bad_title_char",
+                        line = None,
+                        column = None,
+                        edit_time = int_time
+                    )
                 )
 
-            if parms.has_key('by_title'):
-                rev = get_revision(dbcon, cur, title, -1)
-                if rev and rev['revision_date'] >= et:
-                    # EDIT CONFLICT!
-                    old_source = None
-                    orev = get_revision(dbcon, cur, title, -2)
-                    if orev:
-                        old_source = orev['source']
-                    return edit_conflict(old_source, rev['source'])
-            elif parms.has_key('by_threads_id'):
-                # Article was specified by threads_id.
-                res = cur.execute(
-                    """
-                    SELECT revision_date, source FROM revision_histories
-                    INNER JOIN articles ON id = articles_id
-                    WHERE threads_id = ?
-                    ORDER BY revision_date DESC
-                    LIMIT 2
-                    """,
-                    (threads_id,)
+            year,month,hour,day,minute,second = my_utils.get_ymdhms_tuple()
+
+            # Parse the wiki markup.
+            uname = d.has_key('username') and d['username'] or extras.remote_ip
+            sinfo = sourceparser.Siginfo(uname, ZonedDate(int_time, 0))
+            result = sourceparser.parse_wiki_document(unixify_text(source).decode(config.WEB_ENCODING), sinfo)
+            if isinstance(result, sourceparser.ParserError):
+                # This goes to the edit.templ template.
+                return my_utils.merge_dicts(
+                    d,
+                    dict(
+                        article_source=source,
+                        article_title=get_title_for_user(),
+                        old_article_title=old_title,
+                        threads_id = threads_id,
+                        comment=comment,
+                        error = "parse_error",
+                        parse_error = result.message,
+                        line=result.line,
+                        column=result.col,
+                        edit_time = int_time
+                    )
                 )
-                res = list(res)
-                assert len(res) == 0 or len(res) == 1 or len(res) == 2
-                if len(res) > 0 and res[0][0] >= et:
-                    # EDIT CONFLICT!
-                    old_source = None
-                    if len(res) == 2:
-                        old_source = res[1][1]
-                    return edit_conflict(old_source, res[0][1])
+            # sig_source is the source with signatures replaced.
+            r, sourceparser_state, sig_source = result
 
-        # Cant' have '-' or '_' in the title.
-        tfu = get_title_for_user()
-        if '-' in tfu or '_' in tfu:
-            return my_utils.merge_dicts(
-                d,
-                dict(
-                    article_source = source,
-                    article_title = title_for_user,
-                    old_article_title = old_title,
-                    threads_id = threads_id,
-                    comment = comment,
-                    error = "bad_title_char",
-                    line = None,
-                    column = None,
-                    edit_time = int_time
-                )
-            )
-
-        year,month,hour,day,minute,second = my_utils.get_ymdhms_tuple()
-
-        # Parse the wiki markup.
-        uname = d.has_key('username') and d['username'] or extras.remote_ip
-        sinfo = sourceparser.Siginfo(uname, ZonedDate(int_time, 0))
-        result = sourceparser.parse_wiki_document(unixify_text(source).decode(config.WEB_ENCODING), sinfo)
-        if isinstance(result, sourceparser.ParserError):
-            # This goes to the edit.templ template.
-            return my_utils.merge_dicts(
-                d,
-                dict(
-                    article_source=source,
-                    article_title=get_title_for_user(),
-                    old_article_title=old_title,
-                    threads_id = threads_id,
-                    comment=comment,
-                    error = "parse_error",
-                    parse_error = result.message,
-                    line=result.line,
-                    column=result.col,
-                    edit_time = int_time
-                )
-            )
-        # sig_source is the source with signatures replaced.
-        r, sourceparser_state, sig_source = result
-
-        # If it was parsed successfully AND it's not a redirect,
-        # convert the source to XHTML.
-        xhtml_output = None
-        if not isinstance(r, sourceparser.Redirect):
-            try:
+            # If it was parsed successfully AND it's not a redirect,
+            # convert the source to XHTML.
+            xhtml_output = None
+            if not isinstance(r, sourceparser.Redirect):
                 #dbcon = get_dbcon() # For marking existent/non-existent article links.
                 #cur = dbcon.cursor()
                 sb = StringIO.StringIO()
                 sourceparser.translate_to_xhtml(r, sb) #, make_article_exists_pred(dbcon, cur))
                 xhtml_output = sb.getvalue() # TODO: Some unicode stuff?
-            except db.Error, e:
-                dberror(e)
-            finally:
-                dbcon.close()
 
-        # Now, if it's a preview, we'll go straight to the preview page.
-        if parms.has_key('preview'):
-            # You can't preview a redirect!
-            if xhtml_output is None: # If it's a redirect.
+            # Now, if it's a preview, we'll go straight to the preview page.
+            if parms.has_key('preview'):
+                # You can't preview a redirect!
+                if xhtml_output is None: # If it's a redirect.
+                    return my_utils.merge_dicts(
+                        d,
+                        dict(
+                            article_source = sig_source,
+                            article_title = get_title_for_user(),
+                            old_article_title = old_title,
+                            threads_id = threads_id,
+                            comment = comment,
+                            error = "preview_redirect",
+                            line = None,
+                            column = None,
+                            edit_time = int_time,
+                        )
+                    )
                 return my_utils.merge_dicts(
                     d,
                     dict(
@@ -1162,27 +1167,12 @@ class ReviseWikiArticle(object):
                         old_article_title = old_title,
                         threads_id = threads_id,
                         comment = comment,
-                        error = "preview_redirect",
-                        line = None,
-                        column = None,
-                        edit_time = int_time,
+                        preview = xhtml_output,
+                        edit_time = int_time
                     )
                 )
-            return my_utils.merge_dicts(
-                d,
-                dict(
-                    article_source = sig_source,
-                    article_title = get_title_for_user(),
-                    old_article_title = old_title,
-                    threads_id = threads_id,
-                    comment = comment,
-                    preview = xhtml_output,
-                    edit_time = int_time
-                )
-            )
 
-        # If it's not a preview, we'd better update the DB.
-        try:
+            # If it's not a preview, we'd better update the DB.
             # If threads_id is set make sure it is valid.
             if threads_id:
                 res = cur.execute(
