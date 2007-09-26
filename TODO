@@ -3,7 +3,6 @@
 * Fix bad line/column numbers in parser (this is now 90% done).
 * Get cursor placement working in IE and other non-Firefox browsers.
 * Use watchlist preference.
-* Finish work on lists.
 * List of a user's contributions.
 * Facility for changing password.
 
