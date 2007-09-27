@@ -35,9 +35,9 @@
         #elif $error == 'contains_colon'
             Usernames and passwords cannot contain the &lsquo;:&rsquo; character.
         #elif $error == 'email_exists'
-            An account using that email address already exists.
+            An account using the email address $default_email already exists.
         #elif $error == 'username_exists'
-            An account using that username already exists.
+            An account using the username &lsquo;$default_username&rsquo; already exists.
         #elif $error == 'username_is_ip_address'
             A username cannot be an IP address, since these usernames are used
             for anonymous editors.
