@@ -211,16 +211,16 @@ def merge_login(dbcon, cur, extras, dict, dont_update_last_seen=False):
         else:
             authfunc = extras.auth.test
 
-        id = check_bonafides(dbcon, cur, extras.auth.username, authfunc)
-        if not id:
-            raise control.AuthenticationRequired(config.USER_AUTH_REALM, get_auth_method(extras))
-
         # Is this user blocked?
         ip = parse_ip_to_4tuple(extras.remote_ip)
         assert ip
         because = block.is_blocked(extras.auth.username, ip)
         if because: 
             raise control.SwitchHandler(block_handler, { 'because' : because }, 'GET')
+
+        id = check_bonafides(dbcon, cur, extras.auth.username, authfunc)
+        if not id:
+            raise control.AuthenticationRequired(config.USER_AUTH_REALM, get_auth_method(extras))
 
         # Has the user's userpage been edited since they last logged on?
         if not dont_update_last_seen:
