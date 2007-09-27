@@ -1714,7 +1714,7 @@ class MakeNewAccount(object):
                         default_username=username,
                         error="contains_colon")
 
-	# Usernames can't end with the suffix used for deleted user pages.
+	    # Usernames can't end with the suffix used for deleted user pages.
         if username.endswith(config.DELETED_USER_PAGE_SUFFIX):
             return dict(default_email=email,
                         default_username=username,
