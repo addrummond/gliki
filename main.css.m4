@@ -448,6 +448,7 @@ p.error-loc a {
 
 form.search-box {
   margin-top: LMESSAGE_TOP_PADDING;
+  margin-bottom: 0.5em;
   padding-top: LMESSAGE_TOP_PADDING;
   padding-left: 1em;
   padding-right: 1em;

@@ -23,19 +23,19 @@
 
 #extends base
 
-#def title#$username#end def#
+#def title#$getVar('username', '')#end def#
 #def np_preamble#Tracked changes#end def#
 #def np_postamble#:#end def#
 #def np_empty#None of your tracked articles have been changed recently.#end def#
 
 #def body
-    $next_and_prev_links($from_, $n, links.tracked_changes_link)
-
     #if $getVar('error', False)
     <p>
         $error
     </p>
     #elif $max >= $from_
+    $next_and_prev_links($from_, $n, links.tracked_changes_link)
+
     <table class="history">
         <tr>
             <th>Date</th>

@@ -90,23 +90,23 @@ class TreeNode(object):
 
     def size(self, cs, root=False):
         self.label.size(cs)
-        dims = self.label.dimensions
+        label_dims = self.label.dimensions
         tallest_child_height = 0
         total_width = 0
         i = 0
         for i in xrange(len(self.children)):
             self.children[i].size(cs)
             total_width += self.children[i].dimensions[0]
-            if i < len(self.children) - 1:
+            if i > 0:
                 total_width += H_SPACING_FACTOR * cs.font_size
             if self.children[i].dimensions[1] > tallest_child_height:
                 tallest_child_height = self.children[i].dimensions[1]
         self.dimensions = (total_width,
-                           dims[1] + \
+                           label_dims[1] + \
                            tallest_child_height + \
                            (V_SPACING_FACTOR * cs.font_size))
-        if dims[0] > total_width:
-            self.dimensions = (dims[0], self.dimensions[1])
+        if label_dims[0] > total_width:
+            self.dimensions = (label_dims[0], self.dimensions[1])
 
         # If this is a root node, add some extra space at the bottom for
         # arrows.

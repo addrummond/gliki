@@ -132,7 +132,11 @@ $preview
             }
             else if (str[i] == '\r') {
                 line -= 1;
-                ++i; // Presumably '\n' will follow.
+                // Presumably '\n' will follow. However, for the purposes of
+                // cursor positioning, I.E. treats '\r\n' as a single char.
+                if (document.selection) {
+                    ++i;
+                }
             }
         }
 
@@ -144,8 +148,8 @@ $preview
             textArea.selectionStart = index;
             textArea.selectionEnd = index == 0 ? index : index + 5;
         }
-        else if (false) { // IE.
-            // TODO.
+        else if (document.selection) { // IE.
+
         }
     }
 
