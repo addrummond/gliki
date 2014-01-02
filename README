@@ -1,3 +1,5 @@
+**Note:** This is an old Wiki engine that I wrote for a linguistics Wiki many years ago. Not useful now, but there is some interesting code in here. For example, the Python parser combinator library which is used to parse the Wiki syntax.
+
 1. Introduction
 ----------
 This is the software behind the Gliki website, licensed under the GPL (see
@@ -126,19 +128,4 @@ Gliki, which you may or may not find useful.
       DB would not be difficult (but since it uses raw SQL, it wouldn't be
       trivial either).
 
-
-9. Patches.
-----------
-
-I'm always happy to accept patches. However, I don't want any of the following:
-
-    * Additional features for the markup parser. It's already getting too
-      hard to modify and debug. In future, I intend to expand it by allowing
-      embedding of other markup languages within Gliki pages (e.g. HTML, TeX
-      equations). Contributions towards this end are very welcome.
-    * Any attempt to use ORM or make Gliki more OO. I'm a luddite.
-    * Backwards-incompatible changes to the DB schema (unless absolutely
-      necessary in the service of a compellingly useful feature).
-
-If you want some ideas, take a look at the TODO file.
 
