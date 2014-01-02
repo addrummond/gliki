@@ -1,4 +1,4 @@
-**Note:** This is an old Wiki engine that I wrote for a linguistics Wiki many years ago. Not useful now, but there is some interesting code in here. For example, the Python parser combinator library which is used to parse the Wiki syntax.
+**Note:** This is an old Wiki engine that I wrote for a linguistics Wiki many years ago. Not useful now, but there is some interesting code in here. For example, the Python parser combinator library (`parcombs.py`) which is used to parse the Wiki syntax (`sourceparser.py`).
 
 1. Introduction
 ----------
